@@ -12,6 +12,7 @@ export function parseConfig(input) {
     capture: { throttleMinutes },
     agents: cfg.agents ?? {},
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
+    strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
   };
   if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');
   if (!Number.isFinite(out.network.timeoutMs) || out.network.timeoutMs < 1000) throw new Error('network.timeoutMs must be a finite number >= 1000');

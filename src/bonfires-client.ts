@@ -56,18 +56,42 @@ export class HostedBonfiresClient implements BonfiresClient {
 
   private async fetchJson(path: string, init: any) {
     const url = `${this.cfg.baseUrl.replace(/\/$/, '')}${path}`;
-    const controller = new AbortController();
     const timeoutMs = this.cfg.network?.timeoutMs ?? 12000;
-    const t = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { ...init, signal: controller.signal });
-      let body: any = {};
-      try { body = await res.json(); } catch {}
-      if (!res.ok) throw new Error(`Bonfires ${path} failed: HTTP ${res.status}`);
-      return body;
-    } finally {
-      clearTimeout(t);
+    const configuredBackoff = this.cfg.network?.retryBackoffMs;
+    const delays = Array.isArray(configuredBackoff)
+      && configuredBackoff.length >= 2
+      && Number.isFinite(Number(configuredBackoff[0]))
+      && Number.isFinite(Number(configuredBackoff[1]))
+      ? [0, Number(configuredBackoff[0]), Number(configuredBackoff[1])]
+      : [0, 5000, 15000];
+
+    let lastErr: any = null;
+    for (let i = 0; i < delays.length; i++) {
+      if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...init, signal: controller.signal });
+        let body: any = {};
+        try { body = await res.json(); } catch {}
+        if (!res.ok) {
+          const retriable = res.status === 429 || (res.status >= 500 && res.status <= 599);
+          const err = new Error(`Bonfires ${path} failed: HTTP ${res.status}`);
+          if (!retriable || i === delays.length - 1) throw err;
+          lastErr = err;
+          continue;
+        }
+        return body;
+      } catch (e: any) {
+        lastErr = e;
+        const msg = String(e?.message ?? e);
+        const retriable = /HTTP (429|5\d\d)/.test(msg) || /abort|network|fetch/i.test(msg);
+        if (!retriable || i === delays.length - 1) throw e;
+      } finally {
+        clearTimeout(t);
+      }
     }
+    throw lastErr ?? new Error(`Bonfires ${path} failed`);
   }
 
   async search(req: { agentId: string; query: string; limit: number }) {
@@ -139,7 +163,9 @@ export class HostedBonfiresClient implements BonfiresClient {
 
 export function createBonfiresClient(cfg: any, logger?: { warn?: (msg: string) => void }): BonfiresClient {
   const hasKey = Boolean(process.env[cfg.apiKeyEnv]);
+  const strictHosted = Boolean(cfg.strictHostedMode);
   if (hasKey && cfg.bonfireId) return new HostedBonfiresClient(cfg, logger);
+  if (strictHosted) throw new Error(`Hosted mode required but missing env ${cfg.apiKeyEnv} or bonfireId`);
   logger?.warn?.(`Using MockBonfiresClient (missing env ${cfg.apiKeyEnv} or bonfireId)`);
   return new MockBonfiresClient();
 }

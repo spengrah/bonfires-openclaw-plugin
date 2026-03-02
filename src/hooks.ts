@@ -31,7 +31,19 @@ export async function handleAgentEnd(event, ctx, deps){
 }
 
 export async function handleSessionEnd(event, ctx, deps){
-  void event;
-  void ctx;
-  void deps;
+  try{
+    const sessionKey=ctx?.sessionKey; if(!sessionKey) return;
+    const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId); if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
+    const msgs = Array.isArray(event?.messages) ? event.messages : [];
+    if(!msgs.length) return;
+
+    const mark=deps.ledger.get(sessionKey);
+    const start=mark ? mark.lastPushedIndex+1 : 0;
+    const endIndex=msgs.length-1;
+    if(endIndex <= (mark?.lastPushedIndex ?? -1)) return;
+
+    const slice=msgs.slice(start);
+    await deps.client.capture({agentId:agent, sessionKey, messages:slice});
+    deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:endIndex});
+  }catch(e){ deps.logger?.warn?.(`session_end error: ${e?.message ?? e}`); }
 }

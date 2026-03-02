@@ -8,6 +8,7 @@ const cfg = {
   bonfireId: '507f1f77bcf86cd799439011',
 };
 const cfgWithTimeout = { ...cfg, network: { timeoutMs: 2500 } };
+const cfgNoRetry = { ...cfg, network: { timeoutMs: 2500, retryBackoffMs: [0, 0] } };
 
 test('hosted search maps delve response to normalized results', async () => {
   const oldKey = process.env.DELVE_API_KEY;
@@ -250,7 +251,7 @@ test('hosted processStack handles non-json error body path', async () => {
   const oldFetch = globalThis.fetch;
   globalThis.fetch = (async () => new Response('oops', { status: 500, headers: { 'Content-Type': 'text/plain' } })) as any;
   try {
-    const c = new HostedBonfiresClient(cfg);
+    const c = new HostedBonfiresClient(cfgNoRetry);
     await assert.rejects(async () => c.processStack!({ agentId: 'a1' }));
   } finally {
     globalThis.fetch = oldFetch;
@@ -275,6 +276,13 @@ test('createBonfiresClient selects mock when env missing or bonfire missing', as
   const c2 = createBonfiresClient({ ...cfg, bonfireId: '' });
   assert.equal(c2 instanceof MockBonfiresClient, true);
   if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+});
+
+test('createBonfiresClient strictHostedMode throws when hosted env missing', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  delete process.env.DELVE_API_KEY;
+  assert.throws(() => createBonfiresClient({ ...cfg, strictHostedMode: true }));
+  if (oldKey !== undefined) process.env.DELVE_API_KEY = oldKey;
 });
 
 test('mock client processStack path', async () => {

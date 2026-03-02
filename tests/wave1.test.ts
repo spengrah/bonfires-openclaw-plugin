@@ -148,6 +148,13 @@ test('before_agent_start returns undefined when result set is empty', async () =
   assert.equal(res, undefined);
 });
 
+test('before_agent_start handles missing results field from search response', async () => {
+  const client = new MockBonfiresClient();
+  client.search = async () => ({} as any);
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  assert.equal(res, undefined);
+});
+
 test('agent_end skips unknown agent mapping', async () => {
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
@@ -170,6 +177,103 @@ test('agent_end skips when there are no new messages since watermark', async () 
 test('handleSessionEnd is safe no-op', async () => {
   await handleSessionEnd({ sessionId: 'x' }, { sessionKey: 's' }, { logger: { warn: () => {} } });
   assert.ok(true);
+});
+
+test('session_end flush captures uncaptured tail immediately when messages are present', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
+    { agentId: 'lyle', sessionKey: 's-session-end' },
+    { cfg, client, ledger, logger: { warn: () => {} }, nowMs: () => 42 },
+  );
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(client.captureCalls[0].messages.length, 2);
+  assert.equal(ledger.get('s-session-end').lastPushedIndex, 1);
+});
+
+test('session_end flush respects endIndex <= lastPushedIndex guard', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  ledger.set('s-session-end-guard', { lastPushedAt: 1, lastPushedIndex: 1 });
+
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
+    { agentId: 'lyle', sessionKey: 's-session-end-guard' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+
+  assert.equal(client.captureCalls.length, 0);
+});
+
+test('session_end flush skips when sessionKey is missing', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'lyle' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+  assert.equal(client.captureCalls.length, 0);
+});
+
+test('session_end flush skips unknown agent mapping', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'unknown-agent', sessionKey: 's-session-end-unknown' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+  assert.equal(client.captureCalls.length, 0);
+});
+
+test('session_end flush catch path swallows capture errors', async () => {
+  const client = new MockBonfiresClient();
+  client.capture = async () => { throw new Error('session-end-boom'); };
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'lyle', sessionKey: 's-session-end-catch' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+  assert.equal(ledger.get('s-session-end-catch'), undefined);
+});
+
+test('session_end flush no-messages branch returns without capture', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    {},
+    { agentId: 'lyle', sessionKey: 's-session-end-empty' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+  assert.equal(client.captureCalls.length, 0);
+});
+
+test('session_end flush sets lastPushedAt from Date.now when nowMs is absent', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'lyle', sessionKey: 's-session-end-now' },
+    { cfg, client, ledger, logger: { warn: () => {} } },
+  );
+  const mark = ledger.get('s-session-end-now');
+  assert.equal(typeof mark.lastPushedAt, 'number');
+  assert.equal(mark.lastPushedIndex, 0);
+});
+
+test('session_end catch path is safe with non-Error throw and missing logger', async () => {
+  const client = new MockBonfiresClient();
+  client.capture = async () => { throw 'session-end-string-failure'; };
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'lyle', sessionKey: 's-session-end-string-catch' },
+    { cfg, client, ledger },
+  );
+  assert.equal(ledger.get('s-session-end-string-catch'), undefined);
 });
 
 test('capture ledger persists and reloads from disk', async () => {
@@ -239,6 +343,14 @@ test('handleAgentEnd catch path swallows capture errors', async () => {
   assert.equal(ledger.get('s-catch'), undefined);
 });
 
+test('handleAgentEnd catch path is safe when logger is missing and error is non-Error', async () => {
+  const client = new MockBonfiresClient();
+  client.capture = async () => { throw 'string-failure'; };
+  const ledger = new InMemoryCaptureLedger();
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
+  assert.equal(ledger.get('s-catch-nolog'), undefined);
+});
+
 test('before_agent_start handles undefined event and logger-present catch path', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => { throw new Error('forced'); };
@@ -248,6 +360,13 @@ test('before_agent_start handles undefined event and logger-present catch path',
   const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client, logger: { warn: () => { warned = true; } } });
   assert.equal(res2, undefined);
   assert.equal(warned, true);
+});
+
+test('before_agent_start catch path is safe with non-Error throw and missing logger', async () => {
+  const client = new MockBonfiresClient();
+  client.search = async () => { throw 'forced-string'; };
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  assert.equal(res, undefined);
 });
 
 test('agent_end handles unknown agent with missing agentId and logger', async () => {
