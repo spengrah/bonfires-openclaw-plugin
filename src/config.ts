@@ -4,21 +4,24 @@ export function parseConfig(input) {
   const throttleMinutes = Number(cfg.capture?.throttleMinutes ?? 15);
   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
   if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
+  const stateDir = String(cfg.stateDir ?? '.bonfires-state');
+
   const out = {
-    baseUrl: String(cfg.baseUrl ?? 'https://tnt-v2.api.bonfires.ai/'),
-    apiKeyEnv: String(cfg.apiKeyEnv ?? 'DELVE_API_KEY'),
+    baseUrl: String(cfg.baseUrl ?? process.env.BONFIRES_BASE_URL ?? 'https://tnt-v2.api.bonfires.ai/'),
+    apiKeyEnv: String(cfg.apiKeyEnv ?? process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY'),
     bonfireId: String(cfg.bonfireId ?? process.env.BONFIRE_ID ?? ''),
     search: { maxResults },
     capture: { throttleMinutes },
     agents: cfg.agents ?? {},
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
+    stateDir,
     ingestion: {
       enabled: Boolean(cfg.ingestion?.enabled ?? false),
       everyMinutes: Number(cfg.ingestion?.everyMinutes ?? 1440),
       rootDir: String(cfg.ingestion?.rootDir ?? process.cwd()),
-      ledgerPath: String(cfg.ingestion?.ledgerPath ?? '.ai/log/plan/ingestion-hash-ledger.json'),
-      summaryPath: String(cfg.ingestion?.summaryPath ?? '.ai/log/plan/ingestion-cron-summary-current.json'),
+      ledgerPath: String(cfg.ingestion?.ledgerPath ?? `${stateDir}/ingestion-hash-ledger.json`),
+      summaryPath: String(cfg.ingestion?.summaryPath ?? `${stateDir}/ingestion-cron-summary-current.json`),
     },
   };
   const mappedAgents = Object.entries(out.agents).filter(([, v]) => typeof v === 'string');

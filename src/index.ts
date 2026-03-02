@@ -10,9 +10,9 @@ export default function register(api){
   const cfg=parseConfig(api.pluginConfig ?? {});
   const client=createBonfiresClient(cfg, api.logger);
   const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
-  const logDir=resolvePath('.ai/log');
-  const ledgerPath=resolvePath('.ai/log/bonfires-ledger.json');
-  const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);
+  const stateDir=resolvePath(cfg.stateDir);
+  const ledgerPath=resolvePath(`${cfg.stateDir}/capture-ledger.json`);
+  const ledger=new InMemoryCaptureLedger(ledgerPath, stateDir);
 
   const recoveryCandidates = [
     api.getPersistedSessions,
@@ -22,16 +22,16 @@ export default function register(api){
   ];
   const recoveryFn = recoveryCandidates.find((fn) => typeof fn === 'function');
 
-  startStackHeartbeat({
+  const stopHeartbeat = startStackHeartbeat({
     cfg,
     client,
     ledger,
     logger: api.logger,
-    statePath: resolvePath('.ai/log/plan/wave-3-heartbeat-state.json'),
+    statePath: resolvePath(`${cfg.stateDir}/heartbeat-state.json`),
     recoverySource: recoveryFn ? () => recoveryFn() : undefined,
   });
 
-  startIngestionCron({
+  const stopIngestion = startIngestionCron({
     enabled: cfg.ingestion.enabled,
     everyMinutes: cfg.ingestion.everyMinutes,
     rootDir: cfg.ingestion.rootDir,
@@ -50,4 +50,13 @@ export default function register(api){
     parameters:{type:'object',properties:{query:{type:'string'},limit:{type:'number',minimum:1,maximum:50}},required:['query']},
     execute: async (params,ctx)=>bonfiresSearchTool(params,ctx,{cfg,client,logger:api.logger})
   });
+
+  // Return dispose handle for lifecycle management (PM5-R5).
+  // If the host calls this, background loops stop deterministically.
+  return {
+    dispose() {
+      stopHeartbeat?.();
+      stopIngestion?.();
+    },
+  };
 }

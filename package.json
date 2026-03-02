@@ -3,6 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "openclaw": {
+    "extensions": {
+      "plugin": "src/index.ts"
+    }
+  },
   "scripts": {
     "lint": "tsx scripts/spec-lint.ts && tsc --noEmit",
     "test": "tsx scripts/spec-test.ts && node --import tsx --test tests/*.test.ts",

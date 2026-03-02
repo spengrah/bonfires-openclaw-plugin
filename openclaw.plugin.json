@@ -1,0 +1,109 @@
+{
+  "id": "bonfires-plugin",
+  "name": "Bonfires Memory",
+  "version": "0.1.0",
+  "description": "Connects OpenClaw agents to Bonfires memory for context-aware retrieval, capture, and ingestion.",
+  "entry": "src/index.ts",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "Bonfires API base URL. Env fallback: BONFIRES_BASE_URL.",
+        "default": "https://tnt-v2.api.bonfires.ai/"
+      },
+      "apiKeyEnv": {
+        "type": "string",
+        "description": "Name of the environment variable holding the Bonfires API key. Env fallback: BONFIRES_API_KEY_ENV.",
+        "default": "DELVE_API_KEY"
+      },
+      "bonfireId": {
+        "type": "string",
+        "description": "Bonfire workspace ID. Env fallback: BONFIRE_ID."
+      },
+      "agents": {
+        "type": "object",
+        "description": "Mapping of local agent IDs to Bonfires agent IDs. At least one string mapping is required.",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "search": {
+        "type": "object",
+        "properties": {
+          "maxResults": {
+            "type": "number",
+            "description": "Maximum number of search results to return per query.",
+            "default": 5,
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "capture": {
+        "type": "object",
+        "properties": {
+          "throttleMinutes": {
+            "type": "number",
+            "description": "Minimum interval between captures for the same session.",
+            "default": 15,
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "network": {
+        "type": "object",
+        "properties": {
+          "timeoutMs": {
+            "type": "number",
+            "description": "HTTP request timeout in milliseconds.",
+            "default": 12000,
+            "minimum": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "strictHostedMode": {
+        "type": "boolean",
+        "description": "When true, plugin will throw if hosted API credentials are missing instead of falling back to mock client.",
+        "default": false
+      },
+      "ingestion": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable periodic content ingestion.",
+            "default": false
+          },
+          "everyMinutes": {
+            "type": "number",
+            "description": "Interval between ingestion scans in minutes.",
+            "default": 1440,
+            "minimum": 1
+          },
+          "rootDir": {
+            "type": "string",
+            "description": "Root directory to scan for ingestion content."
+          },
+          "ledgerPath": {
+            "type": "string",
+            "description": "Path for the ingestion hash ledger. Relative paths resolved by plugin."
+          },
+          "summaryPath": {
+            "type": "string",
+            "description": "Path for the ingestion run summary. Relative paths resolved by plugin."
+          }
+        },
+        "additionalProperties": false
+      },
+      "stateDir": {
+        "type": "string",
+        "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Defaults to .bonfires-state/ within the plugin scope."
+      }
+    },
+    "required": ["agents"],
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,38 @@
+Implement Wave 7 for bonfires-plugin using the existing plan/spec artifacts.
+
+Scope (in):
+1) Add OpenClaw plugin metadata for install/discovery (`openclaw.plugin.json`, package metadata).
+2) Add/validate env-friendly fallback behavior for `baseUrl`, `apiKeyEnv`, `bonfireId` with precedence: config value > env fallback > default.
+3) Document heartbeat naming collision and subsystem boundaries (Gateway heartbeat vs plugin stack heartbeat).
+4) Define and implement plugin state persistence policy aligned with runtime operation (plugin-scoped durable paths, configurable overrides), and avoid requiring `.ai/log/plan/*` as runtime dependency.
+5) Align background loops with plugin lifecycle service semantics if available in plugin API; otherwise implement deterministic start/stop handling and document behavior.
+6) Update README/operator docs for install/config/troubleshooting.
+
+Artifacts to follow:
+- .ai/log/plan/wave-7-plan-20260302w7a.md
+- .ai/log/plan/verification-matrix-wave-7-20260302w7a.md
+- .ai/spec/spec/packaging-runtime/plugin-packaging-and-openclaw-integration.md
+- .ai/spec/spec/functionality/requirements-index.md
+
+Constraints:
+- Do not add unrelated product features.
+- Keep existing behavior stable except where required for Wave 7.
+- Keep secrets out of logs/artifacts.
+- Commit prefix: `task:`
+
+Required verification before finish:
+- npm run lint
+- npm run test
+- npm run verify:hosted
+- npm run gate:all
+- openclaw plugins doctor (for local plugin metadata validation)
+
+On completion print a final block exactly:
+WAVE7_SUMMARY
+{
+  "result": "success|partial|blocked",
+  "commit_shas": [],
+  "changed_files": [],
+  "gate_results": {"gate:all":"pass|fail"},
+  "notes": []
+}
