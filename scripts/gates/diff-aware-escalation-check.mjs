@@ -31,7 +31,7 @@ function getChangedFiles() {
 
 function run() {
   const changed = getChangedFiles();
-  const touchedSensitive = changed.filter(f => SENSITIVE_FILES.includes(f));
+  const touchedSensitive = changed.filter(f => SENSITIVE_FILES.includes(f) && existsSync(f));
 
   if (touchedSensitive.length === 0) {
     console.log('diff-aware-escalation: no sensitive files touched — PASS (no escalation needed)');
@@ -48,15 +48,19 @@ function run() {
     failures.push('Coverage report missing — cannot verify critical-path branch threshold');
   } else {
     const report = JSON.parse(readFileSync('coverage/coverage-summary.json', 'utf8'));
-    for (const mod of touchedSensitive.filter(f => f.endsWith('.js'))) {
-      const key = Object.keys(report).find(k => k !== 'total' && k.endsWith(mod));
+    const modules = Array.from(new Set(
+      touchedSensitive.map(f => f.replace(/\.ts$/, '').replace(/\.js$/, ''))
+    ));
+    for (const modBase of modules) {
+      const candidates = [`${modBase}.ts`, `${modBase}.js`];
+      const key = Object.keys(report).find(k => k !== 'total' && candidates.some(c => k.endsWith(c)));
       if (!key) {
-        failures.push(`${mod}: not found in coverage report`);
+        failures.push(`${modBase}: not found in coverage report`);
         continue;
       }
       const branch = report[key].branches?.pct ?? 0;
       if (branch < 90) {
-        failures.push(`${mod}: branch coverage ${branch.toFixed(1)}% < 90% (escalated threshold)`);
+        failures.push(`${modBase}: branch coverage ${branch.toFixed(1)}% < 90% (escalated threshold)`);
       }
     }
   }

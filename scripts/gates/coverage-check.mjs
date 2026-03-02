@@ -11,10 +11,10 @@ const GLOBAL_LINE_FLOOR = 70;
 const CRITICAL_BRANCH_FLOOR = 90;
 
 const CRITICAL_MODULES = [
-  'src/hooks.js',
-  'src/config.js',
-  'src/capture-ledger.js',
-  'src/tools/bonfires-search.js',
+  ['src/hooks.ts', 'src/hooks.js'],
+  ['src/config.ts', 'src/config.js'],
+  ['src/capture-ledger.ts', 'src/capture-ledger.js'],
+  ['src/tools/bonfires-search.ts', 'src/tools/bonfires-search.js'],
 ];
 
 const REPORT_PATH = 'coverage/coverage-summary.json';
@@ -40,17 +40,17 @@ function run() {
   }
 
   // Critical module branch coverage
-  for (const mod of CRITICAL_MODULES) {
-    // c8 keys are absolute or relative paths; find matching key
-    const key = Object.keys(report).find(k => k !== 'total' && k.endsWith(mod));
+  for (const modVariants of CRITICAL_MODULES) {
+    const [canonical, ...alts] = modVariants;
+    const candidates = [canonical, ...alts];
+    const key = Object.keys(report).find(k => k !== 'total' && candidates.some(m => k.endsWith(m)));
     if (!key) {
-      // Module not in report — may not have been exercised at all
-      failures.push(`${mod}: not found in coverage report (0% branch coverage)`);
+      failures.push(`${canonical}: not found in coverage report (0% branch coverage)`);
       continue;
     }
     const branch = report[key].branches?.pct ?? 0;
     if (branch < CRITICAL_BRANCH_FLOOR) {
-      failures.push(`${mod}: branch coverage ${branch.toFixed(1)}% < ${CRITICAL_BRANCH_FLOOR}%`);
+      failures.push(`${canonical}: branch coverage ${branch.toFixed(1)}% < ${CRITICAL_BRANCH_FLOOR}%`);
     }
   }
 

@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseConfig, resolveBonfiresAgentId } from '../src/config.js';
-import { MockBonfiresClient } from '../src/bonfires-client.js';
-import { InMemoryCaptureLedger } from '../src/capture-ledger.js';
-import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src/hooks.js';
-import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
+import { parseConfig, resolveBonfiresAgentId } from '../src/config.ts';
+import { MockBonfiresClient } from '../src/bonfires-client.ts';
+import { InMemoryCaptureLedger } from '../src/capture-ledger.ts';
+import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src/hooks.ts';
+import { bonfiresSearchTool } from '../src/tools/bonfires-search.ts';
+import register from '../src/index.ts';
 
 const cfg = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
 
@@ -262,4 +263,43 @@ test('bonfires_search uses config default when limit omitted', async () => {
   const client = new MockBonfiresClient();
   await bonfiresSearchTool({ query: 'abc' }, { agentId: 'lyle' }, { cfg, client });
   assert.equal(client.searchCalls.at(-1).limit, cfg.search.maxResults);
+});
+
+test('plugin register wires hooks and tool', async () => {
+  const events = [];
+  let toolDef = null;
+  const api = {
+    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
+    resolvePath: (p) => p,
+    logger: { warn: () => {} },
+    on: (name, fn) => events.push([name, fn]),
+    registerTool: (def) => { toolDef = def; },
+  };
+  register(api);
+  assert.equal(events.length, 3);
+  assert.ok(toolDef);
+  assert.equal(toolDef.name, 'bonfires_search');
+  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'lyle' });
+  assert.equal(Array.isArray(result.results), true);
+});
+
+test('plugin register fallback path works when resolvePath missing', async () => {
+  const events = [];
+  const api = {
+    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
+    logger: { warn: () => {} },
+    on: (name, fn) => events.push([name, fn]),
+    registerTool: () => {},
+  };
+  register(api);
+  assert.equal(events.length, 3);
+});
+
+test('plugin register throws when pluginConfig is missing required mappings', async () => {
+  const api = {
+    logger: { warn: () => {} },
+    on: () => {},
+    registerTool: () => {},
+  };
+  assert.throws(() => register(api));
 });
