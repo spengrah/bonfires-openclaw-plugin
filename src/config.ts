@@ -13,9 +13,18 @@ export function parseConfig(input) {
     agents: cfg.agents ?? {},
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
+    ingestion: {
+      enabled: Boolean(cfg.ingestion?.enabled ?? false),
+      everyMinutes: Number(cfg.ingestion?.everyMinutes ?? 1440),
+      rootDir: String(cfg.ingestion?.rootDir ?? process.cwd()),
+      ledgerPath: String(cfg.ingestion?.ledgerPath ?? '.ai/log/plan/ingestion-hash-ledger.json'),
+      summaryPath: String(cfg.ingestion?.summaryPath ?? '.ai/log/plan/ingestion-cron-summary-current.json'),
+    },
   };
-  if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');
+  const mappedAgents = Object.entries(out.agents).filter(([, v]) => typeof v === 'string');
+  if (!mappedAgents.length) throw new Error('agents must include at least one string mapping');
   if (!Number.isFinite(out.network.timeoutMs) || out.network.timeoutMs < 1000) throw new Error('network.timeoutMs must be a finite number >= 1000');
+  if (!Number.isFinite(out.ingestion.everyMinutes) || out.ingestion.everyMinutes < 1) throw new Error('ingestion.everyMinutes must be a finite number >= 1');
 
   let parsed: URL;
   try { parsed = new URL(out.baseUrl); } catch { throw new Error('baseUrl must be a valid URL'); }

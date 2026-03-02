@@ -14,7 +14,7 @@ import {
 } from '../src/heartbeat.js';
 
 const cfg = {
-  agents: { lyle: 'agent-lyle', reviewer: 'agent-reviewer' },
+  agents: { agent_primary: 'agent-primary', agent_secondary: 'agent-secondary' },
   capture: { throttleMinutes: 15 },
   network: { retryBackoffMs: [0, 0] },
 };
@@ -41,7 +41,7 @@ test('wave3: recovery overlap precedence uses endIndex guard and dedupe key iden
     sessions: [
       {
         sessionKey: 's-overlap',
-        agentId: 'lyle',
+        agentId: 'agent_primary',
         ended: true,
         messages: [
           { role: 'user', content: 'm0' },
@@ -71,7 +71,7 @@ test('wave3: recovery overlap precedence uses endIndex guard and dedupe key iden
     sessions: [
       {
         sessionKey: 's-overlap',
-        agentId: 'lyle',
+        agentId: 'agent_primary',
         ended: true,
         messages: [
           { role: 'user', content: 'm0' },
@@ -116,7 +116,7 @@ test('wave3: recovery skips sessions that are not ended and not inactive long en
     sessions: [
       {
         sessionKey: 's-active',
-        agentId: 'lyle',
+        agentId: 'agent_primary',
         lastActivityAtMs: 100_000,
         messages: [{ role: 'user', content: 'recent' }],
       },
@@ -142,7 +142,7 @@ test('wave3: process stack retry policy retries retriable failures and stops on 
   const retryCfg = { ...cfg, network: { retryBackoffMs: [1, 2] } };
 
   const ok = await runProcessStackWithRetry({
-    agentId: 'agent-lyle',
+    agentId: 'agent-primary',
     client: retriableThenSuccess,
     cfg: retryCfg,
     sleepFn: async (ms: number) => { delays.push(ms); },
@@ -162,7 +162,7 @@ test('wave3: process stack retry policy retries retriable failures and stops on 
   };
 
   const fail = await runProcessStackWithRetry({
-    agentId: 'agent-lyle',
+    agentId: 'agent-primary',
     client: nonRetriable,
     cfg: retryCfg,
     sleepFn: async (ms: number) => { delays.push(ms); },
@@ -194,7 +194,7 @@ test('wave3: recovery capture failure is fail-open and logs warning', async () =
       get: (k: string) => ledgerMap.get(k),
       set: (k: string, v: any) => { ledgerMap.set(k, v); },
     },
-    sessions: [{ sessionKey: 's-recovery-fail', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'x' }] }],
+    sessions: [{ sessionKey: 's-recovery-fail', agentId: 'agent_primary', ended: true, messages: [{ role: 'user', content: 'x' }] }],
     logger: { warn: () => { warned = true; } },
     nowMs: () => 123,
   });
@@ -242,7 +242,7 @@ test('wave3: startStackHeartbeat runs first tick, persists state, and supports s
         set: (k: string, v: any) => { ledgerMap.set(k, v); },
       },
       recoverySource: () => ([
-        { sessionKey: 's-heartbeat', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'm0' }] },
+        { sessionKey: 's-heartbeat', agentId: 'agent_primary', ended: true, messages: [{ role: 'user', content: 'm0' }] },
       ]),
       statePath,
       nowMs: () => 10_000,
@@ -253,9 +253,9 @@ test('wave3: startStackHeartbeat runs first tick, persists state, and supports s
     stop();
 
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    assert.equal(processCalls.length >= 2, true); // mapped agents (lyle + reviewer)
+    assert.equal(processCalls.length >= 2, true); // mapped agents (agent_primary + agent_secondary)
     assert.equal(captureCalls.length, 1);
-    assert.equal(state.agents['agent-lyle'].last_status, 'success');
+    assert.equal(state.agents['agent-primary'].last_status, 'success');
     assert.equal(typeof state.recovery['s-heartbeat'].last_dedupe_key, 'string');
   } finally {
     (globalThis as any).setTimeout = oldSetTimeout;

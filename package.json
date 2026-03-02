@@ -9,6 +9,7 @@
     "test:coverage": "c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts",
     "coverage": "npm run test:coverage",
     "verify:hosted": "tsx scripts/hosted-integration-verify.ts",
+    "ingest:bonfires": "tsx scripts/ingest-to-bonfires.ts",
     "gate:traceability": "tsx scripts/gates/traceability-check.ts",
     "gate:quality": "tsx scripts/gates/quality-check.ts",
     "gate:coverage": "tsx scripts/gates/coverage-check.ts",

@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const PROBES = [
   {
     file: 'src/config.ts',
-    find: "if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');",
+    find: "if (!mappedAgents.length) throw new Error('agents must include at least one string mapping');",
     replace: "// mutation: validation removed",
     description: 'Remove required-agents validation in parseConfig',
   },

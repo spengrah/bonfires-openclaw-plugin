@@ -2,6 +2,7 @@ export interface BonfiresClient {
   search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
   capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
+  ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
 }
 
 export class MockBonfiresClient implements BonfiresClient {
@@ -35,6 +36,10 @@ export class MockBonfiresClient implements BonfiresClient {
 
   async processStack() {
     return { success: true, message_count: 0 };
+  }
+
+  async ingestContent(_req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
+    return { accepted: 1 };
   }
 }
 
@@ -158,6 +163,21 @@ export class HostedBonfiresClient implements BonfiresClient {
       headers: this.headers(),
     });
     return { success: Boolean(body.success ?? true), message_count: body.message_count };
+  }
+
+  async ingestContent(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
+    const body = await this.fetchJson('/ingest_content', {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({
+        bonfire_id: this.cfg.bonfireId,
+        source_path: req.sourcePath,
+        content: req.content,
+        content_hash: req.contentHash,
+        metadata: req.metadata ?? {},
+      }),
+    });
+    return { accepted: Number(body.accepted ?? 1) };
   }
 }
 

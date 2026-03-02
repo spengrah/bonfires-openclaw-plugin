@@ -10,18 +10,18 @@ import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src
 import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
 import register from '../src/index.js';
 
-const cfg = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
+const cfg = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
 
 test('before_agent_start calls search and returns prependContext', async () => {
   const client = new MockBonfiresClient();
-  const res = await handleBeforeAgentStart({ prompt: 'hello world' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'hello world' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.length, 1);
   assert.ok(res?.prependContext?.includes('Bonfires context'));
 });
 
 test('before_agent_start skips empty prompt', async () => {
   const client = new MockBonfiresClient();
-  const res = await handleBeforeAgentStart({ prompt: '   ' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: '   ' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.length, 0);
   assert.equal(res, undefined);
 });
@@ -29,7 +29,7 @@ test('before_agent_start skips empty prompt', async () => {
 test('before_agent_start fail-open on search error', async () => {
   const client = new MockBonfiresClient();
   client.shouldThrowSearch = true;
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -39,31 +39,31 @@ test('agent_end throttles per session', async () => {
   let now = 1000;
   const nowMs = () => now;
   const event = { messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }] };
-  await handleAgentEnd(event, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
-  await handleAgentEnd(event, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+  await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+  await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 1);
   now += 16 * 60_000;
-  await handleAgentEnd({ messages: [...event.messages, { role: 'user', content: 'c' }] }, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+  await handleAgentEnd({ messages: [...event.messages, { role: 'user', content: 'c' }] }, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 2);
 });
 
 test('bonfires_search validates query and returns deterministic shape', async () => {
   const client = new MockBonfiresClient();
-  const out = await bonfiresSearchTool({ query: 'abc', limit: 2 }, { agentId: 'lyle' }, { cfg, client });
+  const out = await bonfiresSearchTool({ query: 'abc', limit: 2 }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(out.results.length, 2);
-  await assert.rejects(async () => bonfiresSearchTool({}, { agentId: 'lyle' }, { cfg, client }));
+  await assert.rejects(async () => bonfiresSearchTool({}, { agentId: 'agent_primary' }, { cfg, client }));
 });
 
 test('bonfires_search clamps limit to max 50', async () => {
   const client = new MockBonfiresClient();
-  await bonfiresSearchTool({ query: 'abc', limit: 9999 }, { agentId: 'lyle' }, { cfg, client });
+  await bonfiresSearchTool({ query: 'abc', limit: 9999 }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.at(-1).limit, 50);
 });
 
 test('before_agent_start truncates query to 500 chars', async () => {
   const client = new MockBonfiresClient();
   const longPrompt = 'a'.repeat(800);
-  await handleBeforeAgentStart({ prompt: longPrompt }, { agentId: 'lyle' }, { cfg, client });
+  await handleBeforeAgentStart({ prompt: longPrompt }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.length, 1);
   assert.equal(client.searchCalls[0].query.length, 500);
 });
@@ -77,7 +77,7 @@ test('before_agent_start caps prependContext at 2000 chars', async () => {
       score: 0.9,
     })),
   });
-  const res = await handleBeforeAgentStart({ prompt: 'cap-test' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'cap-test' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.ok(res?.prependContext);
   assert.ok(res.prependContext.length <= 2000);
 });
@@ -92,34 +92,35 @@ test('before_agent_start skips unknown agent mapping', async () => {
 test('agent_end skips when sessionKey is missing', async () => {
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle' }, { cfg, client, ledger });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary' }, { cfg, client, ledger });
   assert.equal(client.captureCalls.length, 0);
 });
 
-test('parseConfig rejects missing agent mappings', async () => {
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1' } }));
-  assert.throws(() => parseConfig({ agents: { reviewer: 'a2' } }));
+test('parseConfig requires at least one mapped agent id', async () => {
+  assert.doesNotThrow(() => parseConfig({ agents: { agent_primary: 'a1' } }));
+  assert.doesNotThrow(() => parseConfig({ agents: { any_agent: 'a2' } }));
+  assert.throws(() => parseConfig({ agents: {} }));
 });
 
 test('parseConfig validates numeric bounds', async () => {
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: 0 } }));
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: 0 } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: 0 } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: 0 } }));
 });
 
 test('resolveBonfiresAgentId ignores inherited prototype keys', async () => {
-  const local = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
+  const local = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
   assert.equal(resolveBonfiresAgentId(local, '__proto__'), null);
 });
 
 test('resolveBonfiresAgentId handles missing agentId and unknown key', async () => {
-  const local = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
+  const local = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
   assert.equal(resolveBonfiresAgentId(local, undefined), null);
   assert.equal(resolveBonfiresAgentId(local, 'nope'), null);
-  assert.equal(resolveBonfiresAgentId(local, 'lyle'), 'a1');
+  assert.equal(resolveBonfiresAgentId(local, 'agent_primary'), 'a1');
 });
 
 test('parseConfig uses defaults for optional values', async () => {
-  const out = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
+  const out = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
   assert.equal(out.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
   assert.equal(out.apiKeyEnv, 'DELVE_API_KEY');
   assert.equal(out.search.maxResults, 5);
@@ -128,30 +129,40 @@ test('parseConfig uses defaults for optional values', async () => {
 });
 
 test('parseConfig rejects non-finite numeric values', async () => {
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: Infinity } }));
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: NaN } }));
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, network: { timeoutMs: 0 } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: Infinity } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: NaN } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, network: { timeoutMs: 0 } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1' }, ingestion: { everyMinutes: 0 } }));
+});
+
+test('parseConfig ingestion defaults and mapped-agent validation', async () => {
+  const out = parseConfig({ agents: { only: 'a1' } });
+  assert.equal(out.ingestion.enabled, false);
+  assert.equal(out.ingestion.everyMinutes, 1440);
+  assert.equal(typeof out.ingestion.ledgerPath, 'string');
+  assert.equal(typeof out.ingestion.summaryPath, 'string');
+  assert.throws(() => parseConfig({ agents: { only: 123 } }));
 });
 
 test('parseConfig validates baseUrl host and protocol', async () => {
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evil.example.com/' }));
-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evilbonfires.ai/' }));
-  const ok = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://tnt-v2.api.bonfires.ai/' });
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://evil.example.com/' }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://evilbonfires.ai/' }));
+  const ok = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://tnt-v2.api.bonfires.ai/' });
   assert.equal(ok.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
 });
 
 test('before_agent_start returns undefined when result set is empty', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => ({ results: [] });
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
 test('before_agent_start handles missing results field from search response', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => ({} as any);
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -166,11 +177,11 @@ test('agent_end skips when there are no new messages since watermark', async () 
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
   const nowMs = () => 10_000_000;
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 1);
   // Force no-throttle but no new messages branch
   ledger.set('s3', { lastPushedAt: 0, lastPushedIndex: 0 });
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 1);
 });
 
@@ -184,7 +195,7 @@ test('session_end flush captures uncaptured tail immediately when messages are p
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
-    { agentId: 'lyle', sessionKey: 's-session-end' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end' },
     { cfg, client, ledger, logger: { warn: () => {} }, nowMs: () => 42 },
   );
   assert.equal(client.captureCalls.length, 1);
@@ -199,7 +210,7 @@ test('session_end flush respects endIndex <= lastPushedIndex guard', async () =>
 
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
-    { agentId: 'lyle', sessionKey: 's-session-end-guard' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end-guard' },
     { cfg, client, ledger, logger: { warn: () => {} } },
   );
 
@@ -211,7 +222,7 @@ test('session_end flush skips when sessionKey is missing', async () => {
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }] },
-    { agentId: 'lyle' },
+    { agentId: 'agent_primary' },
     { cfg, client, ledger, logger: { warn: () => {} } },
   );
   assert.equal(client.captureCalls.length, 0);
@@ -234,7 +245,7 @@ test('session_end flush catch path swallows capture errors', async () => {
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }] },
-    { agentId: 'lyle', sessionKey: 's-session-end-catch' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end-catch' },
     { cfg, client, ledger, logger: { warn: () => {} } },
   );
   assert.equal(ledger.get('s-session-end-catch'), undefined);
@@ -245,7 +256,7 @@ test('session_end flush no-messages branch returns without capture', async () =>
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     {},
-    { agentId: 'lyle', sessionKey: 's-session-end-empty' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end-empty' },
     { cfg, client, ledger, logger: { warn: () => {} } },
   );
   assert.equal(client.captureCalls.length, 0);
@@ -256,7 +267,7 @@ test('session_end flush sets lastPushedAt from Date.now when nowMs is absent', a
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }] },
-    { agentId: 'lyle', sessionKey: 's-session-end-now' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end-now' },
     { cfg, client, ledger, logger: { warn: () => {} } },
   );
   const mark = ledger.get('s-session-end-now');
@@ -270,7 +281,7 @@ test('session_end catch path is safe with non-Error throw and missing logger', a
   const ledger = new InMemoryCaptureLedger();
   await handleSessionEnd(
     { messages: [{ role: 'user', content: 'm0' }] },
-    { agentId: 'lyle', sessionKey: 's-session-end-string-catch' },
+    { agentId: 'agent_primary', sessionKey: 's-session-end-string-catch' },
     { cfg, client, ledger },
   );
   assert.equal(ledger.get('s-session-end-string-catch'), undefined);
@@ -301,13 +312,13 @@ test('capture ledger rejects unsafe path outside baseDir', async () => {
 
 test('bonfires_search uses fallback maxResults when limit is NaN', async () => {
   const client = new MockBonfiresClient();
-  await bonfiresSearchTool({ query: 'abc', limit: Number.NaN }, { agentId: 'lyle' }, { cfg, client });
+  await bonfiresSearchTool({ query: 'abc', limit: Number.NaN }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.at(-1).limit, cfg.search.maxResults);
 });
 
 test('bonfires_search clamps limit to minimum 1', async () => {
   const client = new MockBonfiresClient();
-  await bonfiresSearchTool({ query: 'abc', limit: 0 }, { agentId: 'lyle' }, { cfg, client });
+  await bonfiresSearchTool({ query: 'abc', limit: 0 }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.at(-1).limit, 1);
 });
 
@@ -318,8 +329,8 @@ test('bonfires_search unknown agent without logger returns empty', async () => {
 });
 
 test('resolveBonfiresAgentId returns null for non-string mapped value', async () => {
-  const weird = { ...cfg, agents: { ...cfg.agents, lyle: 123 } };
-  assert.equal(resolveBonfiresAgentId(weird, 'lyle'), null);
+  const weird = { ...cfg, agents: { ...cfg.agents, agent_primary: 123 } };
+  assert.equal(resolveBonfiresAgentId(weird, 'agent_primary'), null);
 });
 
 test('handleBeforeAgentStart handles unknown agent without logger safely', async () => {
@@ -331,7 +342,7 @@ test('handleBeforeAgentStart handles unknown agent without logger safely', async
 test('handleAgentEnd uses Date.now path when nowMs is absent', async () => {
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-date-now' }, { cfg, client, ledger });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-date-now' }, { cfg, client, ledger });
   assert.equal(client.captureCalls.length, 1);
 });
 
@@ -339,7 +350,7 @@ test('handleAgentEnd catch path swallows capture errors', async () => {
   const client = new MockBonfiresClient();
   client.capture = async () => { throw new Error('boom'); };
   const ledger = new InMemoryCaptureLedger();
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch' }, { cfg, client, ledger, logger: { warn: () => {} } });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-catch' }, { cfg, client, ledger, logger: { warn: () => {} } });
   assert.equal(ledger.get('s-catch'), undefined);
 });
 
@@ -347,7 +358,7 @@ test('handleAgentEnd catch path is safe when logger is missing and error is non-
   const client = new MockBonfiresClient();
   client.capture = async () => { throw 'string-failure'; };
   const ledger = new InMemoryCaptureLedger();
-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
+  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
   assert.equal(ledger.get('s-catch-nolog'), undefined);
 });
 
@@ -355,9 +366,9 @@ test('before_agent_start handles undefined event and logger-present catch path',
   const client = new MockBonfiresClient();
   client.search = async () => { throw new Error('forced'); };
   let warned = false;
-  const res1 = await handleBeforeAgentStart(undefined, { agentId: 'lyle' }, { cfg, client, logger: { warn: () => { warned = true; } } });
+  const res1 = await handleBeforeAgentStart(undefined, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
   assert.equal(res1, undefined);
-  const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client, logger: { warn: () => { warned = true; } } });
+  const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
   assert.equal(res2, undefined);
   assert.equal(warned, true);
 });
@@ -365,7 +376,7 @@ test('before_agent_start handles undefined event and logger-present catch path',
 test('before_agent_start catch path is safe with non-Error throw and missing logger', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => { throw 'forced-string'; };
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -379,18 +390,18 @@ test('agent_end handles unknown agent with missing agentId and logger', async ()
 test('agent_end handles missing messages array branch', async () => {
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
-  await handleAgentEnd({}, { agentId: 'lyle', sessionKey: 's-empty-msg' }, { cfg, client, ledger, nowMs: () => 1000 });
+  await handleAgentEnd({}, { agentId: 'agent_primary', sessionKey: 's-empty-msg' }, { cfg, client, ledger, nowMs: () => 1000 });
   assert.equal(client.captureCalls.length, 0);
 });
 
 test('bonfires_search rejects non-string query', async () => {
   const client = new MockBonfiresClient();
-  await assert.rejects(async () => bonfiresSearchTool({ query: 123 }, { agentId: 'lyle' }, { cfg, client }));
+  await assert.rejects(async () => bonfiresSearchTool({ query: 123 }, { agentId: 'agent_primary' }, { cfg, client }));
 });
 
 test('bonfires_search uses config default when limit omitted', async () => {
   const client = new MockBonfiresClient();
-  await bonfiresSearchTool({ query: 'abc' }, { agentId: 'lyle' }, { cfg, client });
+  await bonfiresSearchTool({ query: 'abc' }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.at(-1).limit, cfg.search.maxResults);
 });
 
@@ -398,7 +409,7 @@ test('plugin register wires hooks and tool', async () => {
   const events = [];
   let toolDef = null;
   const api = {
-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
+    pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
     resolvePath: (p) => p,
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
@@ -408,14 +419,31 @@ test('plugin register wires hooks and tool', async () => {
   assert.equal(events.length, 3);
   assert.ok(toolDef);
   assert.equal(toolDef.name, 'bonfires_search');
-  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'lyle' });
+  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'agent_primary' });
   assert.equal(Array.isArray(result.results), true);
 });
 
 test('plugin register fallback path works when resolvePath missing', async () => {
   const events = [];
   const api = {
-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
+    pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' } },
+    logger: { warn: () => {} },
+    on: (name, fn) => events.push([name, fn]),
+    registerTool: () => {},
+  };
+  register(api);
+  assert.equal(events.length, 3);
+});
+
+test('plugin register supports functional recovery source and enabled ingestion config', async () => {
+  const events = [];
+  const api = {
+    pluginConfig: {
+      agents: { agent_primary: 'a1', agent_secondary: 'a2' },
+      ingestion: { enabled: true, everyMinutes: 60, ledgerPath: '.ai/log/plan/custom-ledger.json', summaryPath: '.ai/log/plan/custom-summary.json' },
+    },
+    resolvePath: (p) => p,
+    getPersistedSessions: () => [],
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
     registerTool: () => {},

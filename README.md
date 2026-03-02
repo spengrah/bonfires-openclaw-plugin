@@ -27,7 +27,7 @@ Design intent:
 - Recovery/catch-up flow sharing capture watermark semantics with overlap-safe dedupe guards
 - Hosted strict-mode guard to prevent silent mock fallback in non-dev hosted contexts
 - Agent tool: `bonfires_search(query, limit?)`
-- Agent mapping support (e.g. `lyle`, `reviewer`)
+- Agent mapping support for arbitrary agent IDs (project-specific names)
 - Capture ledger for per-session throttling and incremental push behavior
 
 ## How to work with this repo
@@ -45,11 +45,17 @@ npm run test
 npm run gate:all
 npm run verify:hosted        # fixture-mode contract verification + artifact
 npm run verify:hosted -- --live  # adds live preflight probes (requires env)
+npm run ingest:bonfires      # run ingestion scan + hash-ledger update once
 ```
 
 ### Hosted verification output
 - Report path: `.ai/log/plan/hosted-integration-verification-current.json`
 - Report includes per-probe status and redacted config metadata (never prints API key values).
+
+### Ingestion cron output
+- Ledger path (default): `.ai/log/plan/ingestion-hash-ledger.json`
+- Run summary path (default): `.ai/log/plan/ingestion-cron-summary-current.json`
+- Ingestion is idempotent by content hash (`sha256:*`) and restart-safe via persisted ledger.
 
 ## Typical workflow
 1. Update specs/guidance under `.ai/spec/` when behavior changes.

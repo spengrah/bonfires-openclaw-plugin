@@ -22,7 +22,7 @@
 - [ ] **R4** recovery backfills missed ranges and avoids duplicates
 - [ ] **R4** session-end flush works (hook-first, inactivity fallback)
 
-- [ ] **R5** mapping resolves `lyle` and `reviewer`
+- [ ] **R5** mapping resolves configured agent IDs and safely handles unknown IDs
 - [ ] **R5** unknown agent mapping is non-fatal skip path
 - [ ] **R5** config rejects invalid numeric bounds
 - [ ] **R5** API key comes from env indirection (not checked into repo)

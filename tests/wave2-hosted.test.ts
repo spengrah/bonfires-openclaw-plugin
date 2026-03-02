@@ -305,3 +305,28 @@ test('hosted capture accepted count tracks successful post calls', async () => {
     if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
   }
 });
+
+test('hosted ingestContent maps payload to ingest_content endpoint', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  let hit = '';
+  let body: any = null;
+  globalThis.fetch = (async (url: any, init: any) => {
+    hit = String(url);
+    body = JSON.parse(String(init.body));
+    return new Response(JSON.stringify({ accepted: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    const out = await c.ingestContent!({ sourcePath: 'memory/2026-03-02.md', content: 'abc', contentHash: 'sha256:123' });
+    assert.equal(hit.includes('/ingest_content'), true);
+    assert.equal(body.bonfire_id, cfg.bonfireId);
+    assert.equal(body.source_path, 'memory/2026-03-02.md');
+    assert.equal(body.content_hash, 'sha256:123');
+    assert.equal(out.accepted, 1);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});

@@ -13,11 +13,11 @@ interface BonfiresPluginConfig {
   apiKeyEnv: string;                  // env var name, e.g. BONFIRES_API_KEY
   search: { maxResults: number };     // default: 5
   capture: { throttleMinutes: number }; // default: 15
-  agents: Record<string, string>;     // { lyle: "...", reviewer: "..." }
+  agents: Record<string, string>;     // { "agent_primary": "...", "agent_secondary": "..." }
 }
 ```
 
-2. Agents map includes `lyle` and `reviewer` Bonfires IDs.
+2. Agents map includes at least one configured Bonfires agent ID mapping.
 3. Unknown `ctx.agentId` handling: log a warning and skip the Bonfires call for that invocation. Do not fall back to a default agent ID. Non-fatal — the turn or tool call proceeds without Bonfires involvement.
 4. Secrets are loaded from env; not hardcoded in spec/runtime config files.
 

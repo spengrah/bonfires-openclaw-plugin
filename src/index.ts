@@ -4,27 +4,41 @@ import { InMemoryCaptureLedger } from './capture-ledger.js';
 import { handleAgentEnd, handleBeforeAgentStart, handleSessionEnd } from './hooks.js';
 import { bonfiresSearchTool } from './tools/bonfires-search.js';
 import { startStackHeartbeat } from './heartbeat.js';
+import { startIngestionCron } from './ingestion.js';
 
 export default function register(api){
   const cfg=parseConfig(api.pluginConfig ?? {});
   const client=createBonfiresClient(cfg, api.logger);
-  const logDir=api.resolvePath?.('.ai/log') ?? '.ai/log';
-  const ledgerPath=api.resolvePath?.('.ai/log/bonfires-ledger.json') ?? '.ai/log/bonfires-ledger.json';
+  const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
+  const logDir=resolvePath('.ai/log');
+  const ledgerPath=resolvePath('.ai/log/bonfires-ledger.json');
   const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);
 
-  const recoverySource =
-    api.getPersistedSessions
-    ?? api.getSessionTranscripts
-    ?? api.listSessionTranscripts
-    ?? api.recoverySource;
+  const recoveryCandidates = [
+    api.getPersistedSessions,
+    api.getSessionTranscripts,
+    api.listSessionTranscripts,
+    api.recoverySource,
+  ];
+  const recoveryFn = recoveryCandidates.find((fn) => typeof fn === 'function');
 
   startStackHeartbeat({
     cfg,
     client,
     ledger,
     logger: api.logger,
-    statePath: api.resolvePath?.('.ai/log/plan/wave-3-heartbeat-state.json') ?? '.ai/log/plan/wave-3-heartbeat-state.json',
-    recoverySource: typeof recoverySource === 'function' ? () => recoverySource() : undefined,
+    statePath: resolvePath('.ai/log/plan/wave-3-heartbeat-state.json'),
+    recoverySource: recoveryFn ? () => recoveryFn() : undefined,
+  });
+
+  startIngestionCron({
+    enabled: cfg.ingestion.enabled,
+    everyMinutes: cfg.ingestion.everyMinutes,
+    rootDir: cfg.ingestion.rootDir,
+    ledgerPath: resolvePath(cfg.ingestion.ledgerPath),
+    summaryPath: resolvePath(cfg.ingestion.summaryPath),
+    client,
+    logger: api.logger,
   });
 
   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
