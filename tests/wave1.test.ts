@@ -120,15 +120,25 @@ test('resolveBonfiresAgentId handles missing agentId and unknown key', async () 
 
 test('parseConfig uses defaults for optional values', async () => {
   const out = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
-  assert.equal(out.baseUrl, 'https://api.bonfires.ai');
-  assert.equal(out.apiKeyEnv, 'BONFIRES_API_KEY');
+  assert.equal(out.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
+  assert.equal(out.apiKeyEnv, 'DELVE_API_KEY');
   assert.equal(out.search.maxResults, 5);
   assert.equal(out.capture.throttleMinutes, 15);
+  assert.equal(out.network.timeoutMs, 12000);
 });
 
 test('parseConfig rejects non-finite numeric values', async () => {
   assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: Infinity } }));
   assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: NaN } }));
+  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, network: { timeoutMs: 0 } }));
+});
+
+test('parseConfig validates baseUrl host and protocol', async () => {
+  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
+  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evil.example.com/' }));
+  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evilbonfires.ai/' }));
+  const ok = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://tnt-v2.api.bonfires.ai/' });
+  assert.equal(ok.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
 });
 
 test('before_agent_start returns undefined when result set is empty', async () => {
@@ -269,7 +279,7 @@ test('plugin register wires hooks and tool', async () => {
   const events = [];
   let toolDef = null;
   const api = {
-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
+    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
     resolvePath: (p) => p,
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),

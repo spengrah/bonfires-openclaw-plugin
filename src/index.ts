@@ -1,12 +1,12 @@
 import { parseConfig } from './config.js';
-import { MockBonfiresClient } from './bonfires-client.js';
+import { createBonfiresClient } from './bonfires-client.js';
 import { InMemoryCaptureLedger } from './capture-ledger.js';
 import { handleAgentEnd, handleBeforeAgentStart, handleSessionEnd } from './hooks.js';
 import { bonfiresSearchTool } from './tools/bonfires-search.js';
 
 export default function register(api){
   const cfg=parseConfig(api.pluginConfig ?? {});
-  const client=new MockBonfiresClient();
+  const client=createBonfiresClient(cfg, api.logger);
   const logDir=api.resolvePath?.('.ai/log') ?? '.ai/log';
   const ledgerPath=api.resolvePath?.('.ai/log/bonfires-ledger.json') ?? '.ai/log/bonfires-ledger.json';
   const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);

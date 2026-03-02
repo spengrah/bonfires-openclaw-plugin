@@ -8,3 +8,6 @@ Start here:
 1. `spec/plugin/requirements-index.md`
 2. Feature specs under `spec/plugin/`
 3. Matching guidance under `guidance/plugin/`
+
+## Post-MVP
+- `post-mvp/README.md`

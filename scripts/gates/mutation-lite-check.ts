@@ -1,43 +1,49 @@
 /**
  * G6 — Mutation-lite verification for critical paths.
- * Introduces a targeted fault in a critical module, runs tests,
- * and verifies the tests catch the fault (i.e., they fail).
- * Reverts the mutation regardless of outcome.
  */
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-// Each probe: { file, find, replace, description }
 const PROBES = [
   {
-    file: 'src/config.js',
+    file: 'src/config.ts',
     find: "if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');",
     replace: "// mutation: validation removed",
     description: 'Remove required-agents validation in parseConfig',
   },
   {
-    file: 'src/hooks.js',
+    file: 'src/hooks.ts',
     find: "const raw=String(event?.prompt ?? '').trim(); if(!raw) return;",
     replace: "const raw='always_search';",
     description: 'Remove empty-prompt guard in handleBeforeAgentStart',
   },
+  {
+    file: 'src/bonfires-client.ts',
+    find: "if (!res.ok) throw new Error(`Bonfires ${path} failed: HTTP ${res.status}`);",
+    replace: "if (!res.ok) return body; // mutation: suppress error",
+    description: 'Suppress non-OK error handling in hosted fetchJson',
+  },
+  {
+    file: 'src/bonfires-client.ts',
+    find: "for (const m of req.messages) {",
+    replace: "for (const m of req.messages.slice(-1)) { // mutation: drop earlier messages",
+    description: 'Drop messages in hosted capture loop',
+  },
 ];
 
 function run() {
-  const failures = [];
+  const failures: string[] = [];
   let probesRun = 0;
 
   for (const probe of PROBES) {
-    let original;
+    let original: string;
     try {
       original = readFileSync(probe.file, 'utf8');
     } catch {
-      // File doesn't exist — skip this probe
       continue;
     }
 
     if (!original.includes(probe.find)) {
-      // Probe target not found — code may have changed; skip
       console.log(`mutation-lite: skipping probe "${probe.description}" (target not found)`);
       continue;
     }
@@ -47,21 +53,18 @@ function run() {
     writeFileSync(probe.file, mutated);
 
     try {
-      // Run tests — we EXPECT them to fail
-      execSync('node --test tests/*.test.mjs 2>&1', { encoding: 'utf8', timeout: 30000 });
-      // If we get here, tests passed under mutation — that's a failure
+      execSync('node --import tsx --test tests/*.test.ts 2>&1', { encoding: 'utf8', timeout: 30000 });
       failures.push(`Probe "${probe.description}": tests PASSED under mutation (should have failed)`);
     } catch {
-      // Tests failed under mutation — good
+      // expected failure under mutation
     } finally {
-      // Always revert
       writeFileSync(probe.file, original);
     }
   }
 
   if (probesRun === 0) {
-    console.log('mutation-lite-check: no applicable probes — PASS (informational)');
-    return;
+    console.error('mutation-lite-check FAIL: no applicable probes for current TS code paths');
+    process.exit(1);
   }
 
   if (failures.length) {

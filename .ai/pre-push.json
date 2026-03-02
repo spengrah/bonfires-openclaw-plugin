@@ -1,4 +1,20 @@
 {
-  "lint": { "enabled": false, "commands": [] },
-  "test": { "enabled": false, "commands": [] }
+  "lint": {
+    "enabled": true,
+    "commands": [
+      { "name": "lint", "command": "npm run lint" }
+    ]
+  },
+  "test": {
+    "enabled": true,
+    "commands": [
+      { "name": "test", "command": "npm run test" }
+    ]
+  },
+  "state": {
+    "enabled": true,
+    "commands": [
+      { "name": "flanders done-state", "command": "tsx scripts/gates/pre-push-state-check.ts" }
+    ]
+  }
 }

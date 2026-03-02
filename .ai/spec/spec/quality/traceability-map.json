@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "requirements": [
     {"id":"R1","spec":".ai/spec/spec/plugin/spec-for-before-agent-start.md","guidance":".ai/spec/guidance/plugin/guidance-for-before-agent-start.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
     {"id":"R2","spec":".ai/spec/spec/plugin/spec-for-bonfires-search-tool.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
@@ -7,5 +7,11 @@
     {"id":"R4","spec":".ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md","guidance":".ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
     {"id":"R5","spec":".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md","guidance":".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
     {"id":"R6","spec":".ai/spec/spec/plugin/spec-for-bonfires-client-interface.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]}
+  ],
+  "post_mvp_requirements": [
+    {"id":"PM1","spec":".ai/spec/spec/post-mvp/hosted-api-wiring.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-api-wiring.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
+    {"id":"PM2","spec":".ai/spec/spec/post-mvp/stack-processing-heartbeat.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-stack-processing-heartbeat.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
+    {"id":"PM3","spec":".ai/spec/spec/post-mvp/hosted-integration-verification.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-integration-verification.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
+    {"id":"PM4","spec":".ai/spec/spec/post-mvp/ingestion-cron-and-hash-ledger.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-ingestion-cron-and-hash-ledger.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]}
   ]
 }

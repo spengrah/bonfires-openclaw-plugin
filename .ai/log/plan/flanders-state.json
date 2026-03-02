@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
-  "wave": "wave-1",
-  "next_action": "implement-continue",
+  "wave": "wave-2",
+  "next_action": "done",
   "last_reviewer_verdict": "CONDITIONAL_GO",
   "blockers": [],
-  "updated_at": "2026-03-02T04:00:38.887Z",
+  "updated_at": "2026-03-02T07:21:54.372Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -29,9 +29,14 @@
     "Verification Quality"
   ],
   "review_artifacts": {
-    "correctness": ".ai/log/review/review-correctness-20260301k.md",
-    "security": ".ai/log/review/review-security-20260301k.md",
-    "verification_quality": ".ai/log/review/review-verification-quality-20260302a.md"
+    "correctness": ".ai/log/review/review-correctness-20260302h.md",
+    "security": ".ai/log/review/review-security-20260302h.md",
+    "verification_quality": ".ai/log/review/review-verification-quality-20260302h.md"
   },
-  "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit."
+  "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit.",
+  "deferred_followups": [
+    "Add strict hosted-mode guard to disable mock fallback in production contexts",
+    "Add explicit retry/backoff policy for retriable hosted HTTP statuses",
+    "Strengthen quality gate module-selection evidence in CI logs"
+  ]
 }

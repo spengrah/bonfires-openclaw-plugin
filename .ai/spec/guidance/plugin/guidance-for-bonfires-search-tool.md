@@ -1,5 +1,7 @@
-# Guidance: bonfires_search Tool
+# Guidance: bonfires_search Tool (Reviewer Quality Criteria)
 
-- Use strict TypeBox schema for parameters.
-- Normalize result fields at client boundary.
-- Emit clear error messages for retriable vs non-retriable failures.
+Reviewers should verify:
+- Input validation quality: schema enforcement for required query and bounded limit.
+- Normalization quality: tool outputs deterministic `{results:[{summary,source,score}]}` shape.
+- Error semantics quality: retriable vs non-retriable failures are distinguishable and non-crashing.
+- Security quality: no secret leakage in logs/errors.

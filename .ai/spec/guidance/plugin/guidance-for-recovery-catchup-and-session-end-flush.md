@@ -1,5 +1,7 @@
-# Guidance: Recovery + Session-end Flush
+# Guidance: Recovery + Session-end Flush (Reviewer Quality Criteria)
 
-- Share one ledger implementation across primary and recovery flows.
-- Recovery should be conservative: only push uncaptured ranges.
-- Keep close detection deterministic (hook-first, inactivity fallback).
+Reviewers should verify:
+- Recovery correctness: only uncaptured ranges are backfilled.
+- Shared-state integrity: recovery and primary capture use one consistent ledger model.
+- Close-detection quality: session-end hook path and fallback policy are deterministic.
+- Duplication safety: overlapping observers do not re-push identical ranges.

@@ -1,7 +1,7 @@
-# Guidance: before_agent_start
+# Guidance: before_agent_start (Reviewer Quality Criteria)
 
-- Import and use OpenClaw plugin SDK hook types directly to avoid payload-shape drift.
-- Keep handler tiny: validate inputs, call client, format context, return.
-- Enforce query truncation (500 chars), empty prompt short-circuit, and context cap (2000 chars).
-- Keep prependContext format exactly aligned to spec fixture.
-- Prefer hard timeout for Bonfires call and swallow/trace errors.
+Reviewers should verify:
+- Input handling quality: empty prompt short-circuit, 500-char truncation, and deterministic behavior under malformed input.
+- Output quality: `prependContext` formatting matches spec fixture and remains <=2000 chars.
+- Failure handling quality: retrieval faults are fail-open (no turn abort) with structured warning signal.
+- Contract quality: hook payload assumptions align with SDK types and spec contract.
