@@ -23,6 +23,9 @@ Design intent:
 - Hook-based retrieval before agent turns (`before_agent_start`)
 - Hook-based episodic capture after turns (`agent_end`)
 - Session-end integration point (`session_end`)
+- Stack-processing heartbeat runner (20-minute base cadence + jitter) with bounded retries
+- Recovery/catch-up flow sharing capture watermark semantics with overlap-safe dedupe guards
+- Hosted strict-mode guard to prevent silent mock fallback in non-dev hosted contexts
 - Agent tool: `bonfires_search(query, limit?)`
 - Agent mapping support (e.g. `lyle`, `reviewer`)
 - Capture ledger for per-session throttling and incremental push behavior
@@ -39,7 +42,14 @@ Design intent:
 ```bash
 npm run lint
 npm run test
+npm run gate:all
+npm run verify:hosted        # fixture-mode contract verification + artifact
+npm run verify:hosted -- --live  # adds live preflight probes (requires env)
 ```
+
+### Hosted verification output
+- Report path: `.ai/log/plan/hosted-integration-verification-current.json`
+- Report includes per-probe status and redacted config metadata (never prints API key values).
 
 ## Typical workflow
 1. Update specs/guidance under `.ai/spec/` when behavior changes.
