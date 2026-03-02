@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseConfig, resolveBonfiresAgentId } from '../src/config.ts';
-import { MockBonfiresClient } from '../src/bonfires-client.ts';
-import { InMemoryCaptureLedger } from '../src/capture-ledger.ts';
-import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src/hooks.ts';
-import { bonfiresSearchTool } from '../src/tools/bonfires-search.ts';
-import register from '../src/index.ts';
+import { parseConfig, resolveBonfiresAgentId } from '../src/config.js';
+import { MockBonfiresClient } from '../src/bonfires-client.js';
+import { InMemoryCaptureLedger } from '../src/capture-ledger.js';
+import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src/hooks.js';
+import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
+import register from '../src/index.js';
 
 const cfg = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
 

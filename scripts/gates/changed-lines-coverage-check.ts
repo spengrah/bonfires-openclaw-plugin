@@ -47,7 +47,7 @@ function run() {
   }
 
   const changedLines = getChangedLines();
-  const srcFiles = Object.keys(changedLines).filter(f => f.startsWith('src/') && f.endsWith('.js'));
+  const srcFiles = Object.keys(changedLines).filter(f => f.startsWith('src/') && (f.endsWith('.js') || f.endsWith('.ts')));
   if (srcFiles.length === 0) {
     console.log('changed-lines-coverage-check: no changed source lines — PASS');
     return;
@@ -68,8 +68,8 @@ function run() {
 
     const statementMap = coverage[covKey].statementMap || {};
     const s = coverage[covKey].s || {};
-    const coveredLines = new Set();
-    for (const [stId, loc] of Object.entries(statementMap)) {
+    const coveredLines = new Set<number>();
+    for (const [stId, loc] of Object.entries(statementMap) as Array<[string, any]>) {
       if (s[stId] > 0) {
         for (let l = loc.start.line; l <= loc.end.line; l++) coveredLines.add(l);
       }

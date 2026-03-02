@@ -19,16 +19,16 @@ const GATES = [
   { tier: 1, name: 'lint',                  cmd: 'npm run lint' },
   // Tier 2 — Behavioral correctness (generates coverage data)
   { tier: 2, name: 'test:coverage',         cmd: 'npm run test:coverage' },
-  { tier: 2, name: 'gate:coverage',         cmd: 'node scripts/gates/coverage-check.mjs' },
-  { tier: 2, name: 'gate:changed-lines',    cmd: 'node scripts/gates/changed-lines-coverage-check.mjs' },
+  { tier: 2, name: 'gate:coverage',         cmd: 'tsx scripts/gates/coverage-check.ts' },
+  { tier: 2, name: 'gate:changed-lines',    cmd: 'tsx scripts/gates/changed-lines-coverage-check.ts' },
   // Tier 3 — Adversarial / negative-path
-  { tier: 3, name: 'gate:quality',          cmd: 'node scripts/gates/quality-check.mjs' },
-  { tier: 3, name: 'gate:mutation-lite',    cmd: 'node scripts/gates/mutation-lite-check.mjs' },
+  { tier: 3, name: 'gate:quality',          cmd: 'tsx scripts/gates/quality-check.ts' },
+  { tier: 3, name: 'gate:mutation-lite',    cmd: 'tsx scripts/gates/mutation-lite-check.ts' },
   // Tier 4 — Traceability integrity
-  { tier: 4, name: 'gate:traceability',     cmd: 'node scripts/gates/traceability-check.mjs' },
+  { tier: 4, name: 'gate:traceability',     cmd: 'tsx scripts/gates/traceability-check.ts' },
   // Cross-cutting
-  { tier: 0, name: 'gate:diff-escalation',  cmd: 'node scripts/gates/diff-aware-escalation-check.mjs' },
-  { tier: 0, name: 'gate:anti-gaming',      cmd: 'node scripts/gates/anti-gaming-check.mjs' },
+  { tier: 0, name: 'gate:diff-escalation',  cmd: 'tsx scripts/gates/diff-aware-escalation-check.ts' },
+  { tier: 0, name: 'gate:anti-gaming',      cmd: 'tsx scripts/gates/anti-gaming-check.ts' },
 ];
 
 function run() {

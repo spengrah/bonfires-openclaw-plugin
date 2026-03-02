@@ -1,70 +1,70 @@
 {
   "wave": "current",
-  "timestamp": "2026-03-02T04:14:59.190Z",
+  "timestamp": "2026-03-02T04:33:32.495Z",
   "gates": [
     {
       "tier": 1,
       "name": "lint",
       "status": "PASS",
-      "elapsed": 1648,
-      "output": "> bonfires-plugin@0.1.0 lint\n> node scripts/spec-lint.mjs && tsc --noEmit\n\nspec-lint OK (22 markdown files checked)"
+      "elapsed": 2222,
+      "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (22 markdown files checked)"
     },
     {
       "tier": 2,
       "name": "test:coverage",
       "status": "PASS",
-      "elapsed": 881,
-      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.mjs\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.072429\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.230982\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.243\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.620761\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.824223\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.235241\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.228556\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.36476\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.179722\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.196019\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects missing agent mappings\nok 11 - parseConfig rejects missing agent mappings\n  ---\n  duration_ms: 0.337926\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.221297\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.157612\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.173463\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.18563\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.430574\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 17 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.256908\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 18 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.209611\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 19 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.241001\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 20 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.192315\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 21 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.610819\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 22 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.46539\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 23 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.247778\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 24 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.191945\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 25 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.212037\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 26 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.241481\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 27 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.176593\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 28 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.212204\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 29 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.304167\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 30 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.300445\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 31 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.197834\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 32 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.187019\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 33 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.47413\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 34 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.218204\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 35 - plugin register wires hooks and tool\n  ---\n  duration_ms: 0.546741\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 36 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.301168\n  type: 'test'\n  ...\n1..36\n# tests 36\n# suites 0\n# pass 36\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 421.153193"
+      "elapsed": 954,
+      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.125881\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.235001\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.227427\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.62191\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.820855\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.234779\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.225667\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.348835\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.243242\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.201482\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects missing agent mappings\nok 11 - parseConfig rejects missing agent mappings\n  ---\n  duration_ms: 1.748916\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.344335\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.165464\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.154186\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.149501\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.223853\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 17 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.226001\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 18 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.18563\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 19 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.247575\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 20 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.192946\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 21 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.605494\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 22 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.462335\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 23 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.249483\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 24 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.191982\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 25 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.211186\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 26 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.151334\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 27 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.166723\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 28 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.208501\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 29 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.483335\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 30 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.335909\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 31 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.208278\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 32 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.195389\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 33 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.228723\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 34 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.19039\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 35 - plugin register wires hooks and tool\n  ---\n  duration_ms: 0.541503\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 36 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.314039\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 37 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.197668\n  type: 'test'\n  ...\n1..37\n# tests 37\n# suites 0\n# pass 37\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 467.392287"
     },
     {
       "tier": 2,
       "name": "gate:coverage",
       "status": "PASS",
-      "elapsed": 35,
+      "elapsed": 323,
       "output": "coverage-check: global line 100.0% — PASS"
     },
     {
       "tier": 2,
       "name": "gate:changed-lines",
       "status": "PASS",
-      "elapsed": 44,
-      "output": "changed-lines-coverage-check: no changed source lines — PASS"
+      "elapsed": 357,
+      "output": "changed-lines-coverage-check: 100.0% of 72 changed line(s) covered — PASS"
     },
     {
       "tier": 3,
       "name": "gate:quality",
       "status": "PASS",
-      "elapsed": 41,
-      "output": "quality-check: 2 critical module(s) verified — PASS"
+      "elapsed": 348,
+      "output": "quality-check: 7 critical module(s) verified — PASS"
     },
     {
       "tier": 3,
       "name": "gate:mutation-lite",
       "status": "PASS",
-      "elapsed": 34,
+      "elapsed": 322,
       "output": "mutation-lite-check: no applicable probes — PASS (informational)"
     },
     {
       "tier": 4,
       "name": "gate:traceability",
       "status": "PASS",
-      "elapsed": 38,
+      "elapsed": 350,
       "output": "traceability-check: 6 touched requirement(s) verified — PASS"
     },
     {
       "tier": 0,
       "name": "gate:diff-escalation",
-      "status": "FAIL",
-      "elapsed": 38,
-      "output": "diff-aware-escalation: sensitive files touched: src/bonfires-client.ts, src/capture-ledger.ts, src/hooks.ts, src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced"
+      "status": "PASS",
+      "elapsed": 337,
+      "output": "diff-aware-escalation: sensitive files touched: src/bonfires-client.ts, src/capture-ledger.ts, src/hooks.ts, src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced\ndiff-aware-escalation: all escalation requirements met — PASS"
     },
     {
       "tier": 0,
       "name": "gate:anti-gaming",
       "status": "PASS",
-      "elapsed": 40,
+      "elapsed": 337,
       "output": "anti-gaming-check: 6 source file(s) scanned — PASS"
     }
   ],
-  "verdict": "FAIL"
+  "verdict": "PASS"
 }

@@ -10,11 +10,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const CRITICAL_MODULES = [
-  'src/hooks.js',
-  'src/config.js',
-  'src/capture-ledger.js',
-  'src/bonfires-client.js',
-  'src/tools/bonfires-search.js',
+  'src/hooks.js', 'src/hooks.ts',
+  'src/config.js', 'src/config.ts',
+  'src/capture-ledger.js', 'src/capture-ledger.ts',
+  'src/bonfires-client.js', 'src/bonfires-client.ts',
+  'src/tools/bonfires-search.js', 'src/tools/bonfires-search.ts',
 ];
 
 // Patterns to detect test intent
@@ -40,7 +40,7 @@ function getChangedFiles() {
 function loadTestFiles() {
   try {
     return readdirSync('tests')
-      .filter(f => f.endsWith('.test.mjs') || f.endsWith('.test.js'))
+      .filter(f => f.endsWith('.test.ts') || f.endsWith('.test.mjs') || f.endsWith('.test.js'))
       .map(f => ({ name: f, content: readFileSync(join('tests', f), 'utf8') }));
   } catch { return []; }
 }
