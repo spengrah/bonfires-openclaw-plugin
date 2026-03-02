@@ -1,0 +1,4 @@
+{
+  "lint": { "enabled": false, "commands": [] },
+  "test": { "enabled": false, "commands": [] }
+}

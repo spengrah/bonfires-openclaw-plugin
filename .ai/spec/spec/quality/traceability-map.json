@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "requirements": [
+    {"id":"R1","spec":".ai/spec/spec/plugin/spec-for-before-agent-start.md","guidance":".ai/spec/guidance/plugin/guidance-for-before-agent-start.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+    {"id":"R2","spec":".ai/spec/spec/plugin/spec-for-bonfires-search-tool.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+    {"id":"R3","spec":".ai/spec/spec/plugin/spec-for-agent-end-capture.md","guidance":".ai/spec/guidance/plugin/guidance-for-agent-end-capture.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+    {"id":"R4","spec":".ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md","guidance":".ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+    {"id":"R5","spec":".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md","guidance":".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+    {"id":"R6","spec":".ai/spec/spec/plugin/spec-for-bonfires-client-interface.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]}
+  ]
+}

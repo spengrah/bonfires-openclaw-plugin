@@ -1,0 +1,23 @@
+{
+  "name": "bonfires-plugin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "lint": "node scripts/spec-lint.mjs",
+    "test": "node scripts/spec-test.mjs && node --test tests/*.test.mjs",
+    "test:coverage": "c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --test tests/*.test.mjs",
+    "coverage": "npm run test:coverage",
+    "gate:traceability": "node scripts/gates/traceability-check.mjs",
+    "gate:quality": "node scripts/gates/quality-check.mjs",
+    "gate:coverage": "node scripts/gates/coverage-check.mjs",
+    "gate:changed-lines": "node scripts/gates/changed-lines-coverage-check.mjs",
+    "gate:mutation-lite": "node scripts/gates/mutation-lite-check.mjs",
+    "gate:diff-escalation": "node scripts/gates/diff-aware-escalation-check.mjs",
+    "gate:anti-gaming": "node scripts/gates/anti-gaming-check.mjs",
+    "gate:all": "node scripts/gates/gate-all.mjs"
+  },
+  "devDependencies": {
+    "c8": "^11.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "lint": {
+    "enabled": true,
+    "commands": [
+      { "name": "spec lint", "command": "npm run lint" }
+    ]
+  },
+  "test": {
+    "enabled": true,
+    "commands": [
+      { "name": "spec test", "command": "npm run test" }
+    ]
+  },
+  "gates": {
+    "enabled": true,
+    "commands": [
+      { "name": "verification gates", "command": "npm run gate:all" }
+    ]
+  }
+}
