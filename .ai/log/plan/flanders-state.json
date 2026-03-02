@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
   "wave": "wave-3",
-  "next_action": "done",
+  "next_action": "implement",
   "last_reviewer_verdict": "CONDITIONAL_GO",
   "blockers": [],
-  "updated_at": "2026-03-02T15:46:29.559Z",
+  "updated_at": "2026-03-02T15:51:04.189Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -48,5 +48,8 @@
       "verification_quality": ".ai/log/review/review-verification-quality-20260302h.md"
     },
     "preflight": ".ai/log/plan/wave-2-preflight.json"
-  }
+  },
+  "wave3_started_at": "2026-03-02T15:51:04.189Z",
+  "wave3_scope": ".ai/log/plan/wave-3-scope-20260302w3a.md",
+  "wave3_specrev": ".ai/log/plan/specrev-wave-3-20260302w3a-r1.md"
 }
