@@ -4,13 +4,17 @@
 Ensure stack-added messages are regularly converted into episodes.
 
 ## Requirements
-1. Trigger `POST /agents/{agent_id}/stack/process` on 15–20 minute cadence.
-2. Heartbeat runner is idempotent and safe to rerun.
-3. Failures apply bounded retry/backoff and emit structured warnings.
-4. Runner tracks last-attempt and last-success metadata per agent.
-5. Heartbeat must not block foreground hook execution.
+1. Trigger `POST /agents/{agent_id}/stack/process` on a **fixed 20-minute base cadence**.
+2. Add per-run jitter of **0–120 seconds** to avoid synchronized spikes.
+3. Retries for retriable failures (network/429/5xx):
+   - max attempts: **3** total per scheduled tick
+   - backoff schedule: **5s, 15s**
+   - stop retries on non-retriable 4xx (except 429).
+4. Heartbeat runner is idempotent and safe to rerun.
+5. Runner tracks per-agent metadata: `last_attempt_at`, `last_success_at`, `last_status`, `consecutive_failures`.
+6. Heartbeat execution must not block foreground hook execution.
 
 ## Acceptance
-- Active mapped agents receive periodic process calls.
-- Transient failures retry and recover without duplicate harmful behavior.
-- Persistent failures are visible in logs/artifacts.
+- Active mapped agents receive process calls on ~20m cadence (+ jitter).
+- Retriable failures recover within bounded retries without duplicate harmful behavior.
+- Persistent failures are visible in logs/artifacts with increasing `consecutive_failures`.

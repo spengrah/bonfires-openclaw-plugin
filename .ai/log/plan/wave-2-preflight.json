@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-03-02T07:23:39Z",
+  "base_url": "https://tnt-v2.api.bonfires.ai",
+  "checks": {
+    "healthz": {
+      "http": 200,
+      "pass": true,
+      "status": "ok"
+    },
+    "auth_bonfire_access": {
+      "http": 200,
+      "pass": true,
+      "status": "started",
+      "job_id_present": true
+    }
+  },
+  "overall_pass": true
+}

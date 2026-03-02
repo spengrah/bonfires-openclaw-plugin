@@ -1,0 +1,833 @@
+diff --git a/.ai/log/plan/flanders-state.json b/.ai/log/plan/flanders-state.json
+index 5a81f6e..3dea2b1 100644
+--- a/.ai/log/plan/flanders-state.json
++++ b/.ai/log/plan/flanders-state.json
+@@ -1,10 +1,10 @@
+ {
+   "project_slug": "bonfires-plugin",
+   "wave": "wave-1",
+-  "next_action": "implement-continue",
++  "next_action": "decide-route",
+   "last_reviewer_verdict": "CONDITIONAL_GO",
+   "blockers": [],
+-  "updated_at": "2026-03-02T04:00:38.887Z",
++  "updated_at": "2026-03-02T06:38:07.255Z",
+   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
+   "spec_review_iteration": 1,
+   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
+@@ -29,9 +29,9 @@
+     "Verification Quality"
+   ],
+   "review_artifacts": {
+-    "correctness": ".ai/log/review/review-correctness-20260301k.md",
+-    "security": ".ai/log/review/review-security-20260301k.md",
+-    "verification_quality": ".ai/log/review/review-verification-quality-20260302a.md"
++    "correctness": ".ai/log/review/review-correctness-20260302b.md",
++    "security": ".ai/log/review/review-security-20260302b.md",
++    "verification_quality": ".ai/log/review/review-verification-quality-20260302b.md"
+   },
+   "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit."
+ }
+\ No newline at end of file
+diff --git a/.ai/log/plan/verification-gates-report-current.json b/.ai/log/plan/verification-gates-report-current.json
+index 8f110bc..1765c82 100644
+--- a/.ai/log/plan/verification-gates-report-current.json
++++ b/.ai/log/plan/verification-gates-report-current.json
+@@ -1,68 +1,68 @@
+ {
+   "wave": "current",
+-  "timestamp": "2026-03-02T04:33:32.495Z",
++  "timestamp": "2026-03-02T07:15:18.495Z",
+   "gates": [
+     {
+       "tier": 1,
+       "name": "lint",
+       "status": "PASS",
+-      "elapsed": 2222,
+-      "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (22 markdown files checked)"
++      "elapsed": 2212,
++      "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (32 markdown files checked)"
+     },
+     {
+       "tier": 2,
+       "name": "test:coverage",
+       "status": "PASS",
+-      "elapsed": 954,
+-      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.125881\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.235001\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.227427\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.62191\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.820855\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.234779\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.225667\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.348835\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.243242\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.201482\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects missing agent mappings\nok 11 - parseConfig rejects missing agent mappings\n  ---\n  duration_ms: 1.748916\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.344335\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.165464\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.154186\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.149501\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.223853\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 17 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.226001\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 18 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.18563\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 19 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.247575\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 20 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.192946\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 21 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.605494\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 22 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.462335\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 23 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.249483\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 24 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.191982\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 25 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.211186\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 26 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.151334\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 27 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.166723\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 28 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.208501\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 29 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.483335\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 30 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.335909\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 31 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.208278\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 32 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.195389\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 33 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.228723\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 34 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.19039\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 35 - plugin register wires hooks and tool\n  ---\n  duration_ms: 0.541503\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 36 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.314039\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 37 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.197668\n  type: 'test'\n  ...\n1..37\n# tests 37\n# suites 0\n# pass 37\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 467.392287"
++      "elapsed": 977,
++      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.363543\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.279848\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.259552\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.814212\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.76612\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.25946\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.264515\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.451549\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 2.381598\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.310477\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects missing agent mappings\nok 11 - parseConfig rejects missing agent mappings\n  ---\n  duration_ms: 0.3047\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.290848\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.198146\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.177701\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.181757\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.283923\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 17 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.457605\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 18 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.227757\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 19 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.207701\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 20 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.264459\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 21 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.199183\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 22 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 3.55123\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 23 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.587232\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 24 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.274145\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 25 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.203904\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 26 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.218849\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 27 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.155331\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 28 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.239423\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 29 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.224386\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 30 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.314496\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 31 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.306829\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 32 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.202183\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 33 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.197831\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 34 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.234608\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 35 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.209331\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 36 - plugin register wires hooks and tool\n  ---\n  duration_ms: 0.684176\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 37 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.391087\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 38 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.22183\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 39 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 33.892605\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 40 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.500067\n  type: 'test'\n  ...\n# Subtest: hosted capture posts stack add per message and returns accepted count\nok 41 - hosted capture posts stack add per message and returns accepted count\n  ---\n  duration_ms: 2.843888\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 42 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 1.22828\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 43 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 1.057671\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 44 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.841785\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 45 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.452624\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 46 - hosted search handles non-ok response\n  ---\n  duration_ms: 1.06906\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 47 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.529363\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 48 - hosted capture single-message payload path\n  ---\n  duration_ms: 0.8401\n  type: 'test'\n  ...\n# Subtest: hosted capture with >2 messages does not drop and reports accepted count\nok 49 - hosted capture with >2 messages does not drop and reports accepted count\n  ---\n  duration_ms: 2.363284\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 50 - hosted search returns normalized score values\n  ---\n  duration_ms: 1.11717\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 51 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 1.045431\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 52 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 1.094282\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 53 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 1.090227\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 54 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 9.919979\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 55 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.472549\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 56 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.33481\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 57 - mock client processStack path\n  ---\n  duration_ms: 0.320199\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 58 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 1.22065\n  type: 'test'\n  ...\n1..58\n# tests 58\n# suites 0\n# pass 58\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 491.780207"
+     },
+     {
+       "tier": 2,
+       "name": "gate:coverage",
+       "status": "PASS",
+-      "elapsed": 323,
++      "elapsed": 314,
+       "output": "coverage-check: global line 100.0% — PASS"
+     },
+     {
+       "tier": 2,
+       "name": "gate:changed-lines",
+       "status": "PASS",
+-      "elapsed": 357,
+-      "output": "changed-lines-coverage-check: 100.0% of 72 changed line(s) covered — PASS"
++      "elapsed": 333,
++      "output": "changed-lines-coverage-check: 100.0% of 130 changed line(s) covered — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:quality",
+       "status": "PASS",
+-      "elapsed": 348,
+-      "output": "quality-check: 7 critical module(s) verified — PASS"
++      "elapsed": 323,
++      "output": "quality-check: 2 critical module(s) verified — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:mutation-lite",
+       "status": "PASS",
+-      "elapsed": 322,
+-      "output": "mutation-lite-check: no applicable probes — PASS (informational)"
++      "elapsed": 2122,
++      "output": "mutation-lite-check: 4 probe(s) caught by tests — PASS"
+     },
+     {
+       "tier": 4,
+       "name": "gate:traceability",
+       "status": "PASS",
+-      "elapsed": 350,
++      "elapsed": 324,
+       "output": "traceability-check: 6 touched requirement(s) verified — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:diff-escalation",
+       "status": "PASS",
+-      "elapsed": 337,
+-      "output": "diff-aware-escalation: sensitive files touched: src/bonfires-client.ts, src/capture-ledger.ts, src/hooks.ts, src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced\ndiff-aware-escalation: all escalation requirements met — PASS"
++      "elapsed": 325,
++      "output": "diff-aware-escalation: sensitive files touched: src/bonfires-client.ts, src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced\ndiff-aware-escalation: all escalation requirements met — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:anti-gaming",
+       "status": "PASS",
+-      "elapsed": 337,
++      "elapsed": 329,
+       "output": "anti-gaming-check: 6 source file(s) scanned — PASS"
+     }
+   ],
+diff --git a/.ai/pre-push.json b/.ai/pre-push.json
+index 3546263..1e3405b 100644
+--- a/.ai/pre-push.json
++++ b/.ai/pre-push.json
+@@ -1,4 +1,20 @@
+ {
+-  "lint": { "enabled": false, "commands": [] },
+-  "test": { "enabled": false, "commands": [] }
++  "lint": {
++    "enabled": true,
++    "commands": [
++      { "name": "lint", "command": "npm run lint" }
++    ]
++  },
++  "test": {
++    "enabled": true,
++    "commands": [
++      { "name": "test", "command": "npm run test" }
++    ]
++  },
++  "state": {
++    "enabled": true,
++    "commands": [
++      { "name": "flanders done-state", "command": "tsx scripts/gates/pre-push-state-check.ts" }
++    ]
++  }
+ }
+diff --git a/.ai/spec/guidance/plugin/guidance-for-agent-end-capture.md b/.ai/spec/guidance/plugin/guidance-for-agent-end-capture.md
+index 766c232..6cb2dcf 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-agent-end-capture.md
++++ b/.ai/spec/guidance/plugin/guidance-for-agent-end-capture.md
+@@ -1,6 +1,8 @@
+-# Guidance: agent_end Capture
++# Guidance: agent_end Capture (Reviewer Quality Criteria)
+ 
+-- Encapsulate watermark logic behind `CaptureLedger` interface from spec.
+-- Record ranges (`startIndex`, `endIndex`) to simplify idempotency checks.
+-- Update ledger only after confirmed successful API call.
+-- Use `ctx.sessionKey`; if absent, skip capture and log (non-fatal).
++Reviewers should verify:
++- State-management quality: watermark updates only after successful capture.
++- Idempotency quality: no duplicate push for same message range.
++- Throttle quality: enforced per-session window behavior.
++- Degradation quality: missing `sessionKey` or unknown mapping remains non-fatal.
++- Boundary quality: capture logic remains behind ledger/client abstractions (low coupling).
+diff --git a/.ai/spec/guidance/plugin/guidance-for-before-agent-start.md b/.ai/spec/guidance/plugin/guidance-for-before-agent-start.md
+index b79b583..5b98855 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-before-agent-start.md
++++ b/.ai/spec/guidance/plugin/guidance-for-before-agent-start.md
+@@ -1,7 +1,7 @@
+-# Guidance: before_agent_start
++# Guidance: before_agent_start (Reviewer Quality Criteria)
+ 
+-- Import and use OpenClaw plugin SDK hook types directly to avoid payload-shape drift.
+-- Keep handler tiny: validate inputs, call client, format context, return.
+-- Enforce query truncation (500 chars), empty prompt short-circuit, and context cap (2000 chars).
+-- Keep prependContext format exactly aligned to spec fixture.
+-- Prefer hard timeout for Bonfires call and swallow/trace errors.
++Reviewers should verify:
++- Input handling quality: empty prompt short-circuit, 500-char truncation, and deterministic behavior under malformed input.
++- Output quality: `prependContext` formatting matches spec fixture and remains <=2000 chars.
++- Failure handling quality: retrieval faults are fail-open (no turn abort) with structured warning signal.
++- Contract quality: hook payload assumptions align with SDK types and spec contract.
+diff --git a/.ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md b/.ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md
+index ff37a7c..411fd32 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md
++++ b/.ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md
+@@ -1,5 +1,7 @@
+-# Guidance: bonfires_search Tool
++# Guidance: bonfires_search Tool (Reviewer Quality Criteria)
+ 
+-- Use strict TypeBox schema for parameters.
+-- Normalize result fields at client boundary.
+-- Emit clear error messages for retriable vs non-retriable failures.
++Reviewers should verify:
++- Input validation quality: schema enforcement for required query and bounded limit.
++- Normalization quality: tool outputs deterministic `{results:[{summary,source,score}]}` shape.
++- Error semantics quality: retriable vs non-retriable failures are distinguishable and non-crashing.
++- Security quality: no secret leakage in logs/errors.
+diff --git a/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md b/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
+index 256e07d..1630018 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
++++ b/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
+@@ -1,6 +1,7 @@
+-# Guidance: Config + Mapping
++# Guidance: Config + Mapping (Reviewer Quality Criteria)
+ 
+-- Centralize config parsing/defaulting in one module with explicit TypeScript interface.
+-- Fail fast on missing required startup config, but keep runtime hook errors non-fatal.
+-- Keep `lyle` naming explicit to avoid drift from generic `main` aliases.
+-- Resolve API key via env var indirection (`apiKeyEnv`) and never persist secret values.
++Reviewers should verify:
++- Config correctness quality: required fields and numeric bounds are validated.
++- Mapping quality: explicit `lyle` + `reviewer` support and safe unknown-agent behavior.
++- Secret hygiene quality: env indirection used; no secret persistence in repo artifacts.
++- Robustness quality: prototype/inherited key lookups do not bypass mapping controls.
+diff --git a/.ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md b/.ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md
+index c8cd664..b70edc7 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md
++++ b/.ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md
+@@ -1,5 +1,7 @@
+-# Guidance: Recovery + Session-end Flush
++# Guidance: Recovery + Session-end Flush (Reviewer Quality Criteria)
+ 
+-- Share one ledger implementation across primary and recovery flows.
+-- Recovery should be conservative: only push uncaptured ranges.
+-- Keep close detection deterministic (hook-first, inactivity fallback).
++Reviewers should verify:
++- Recovery correctness: only uncaptured ranges are backfilled.
++- Shared-state integrity: recovery and primary capture use one consistent ledger model.
++- Close-detection quality: session-end hook path and fallback policy are deterministic.
++- Duplication safety: overlapping observers do not re-push identical ranges.
+diff --git a/.ai/spec/guidance/quality/guidance-for-mvp-verification.md b/.ai/spec/guidance/quality/guidance-for-mvp-verification.md
+index 427ffd8..2587457 100644
+--- a/.ai/spec/guidance/quality/guidance-for-mvp-verification.md
++++ b/.ai/spec/guidance/quality/guidance-for-mvp-verification.md
+@@ -1,5 +1,7 @@
+-# Guidance: MVP Verification
++# Guidance: MVP Verification (Reviewer Quality Criteria)
+ 
+-- Prefer table-driven unit tests for hook state transitions.
+-- Add integration tests with mocked Bonfires HTTP server.
+-- Include at least one crash/restart simulation for recovery path.
++Reviewers should verify:
++- Verification matrix quality: each acceptance criterion maps to executable gate/check.
++- Coverage quality: tests include happy-path, negative-path, and edge-case assertions for touched critical modules.
++- Evidence quality: deterministic gate artifacts are present and current.
++- Anti-gaming quality: checks cannot pass via placeholder/no-op patterns.
+diff --git a/.ai/spec/spec/README.md b/.ai/spec/spec/README.md
+index 12aea13..b3fc9d7 100644
+--- a/.ai/spec/spec/README.md
++++ b/.ai/spec/spec/README.md
+@@ -8,3 +8,6 @@ Start here:
+ 1. `spec/plugin/requirements-index.md`
+ 2. Feature specs under `spec/plugin/`
+ 3. Matching guidance under `guidance/plugin/`
++
++## Post-MVP
++- `post-mvp/README.md`
+diff --git a/.ai/spec/spec/plugin/spec-for-bonfires-client-interface.md b/.ai/spec/spec/plugin/spec-for-bonfires-client-interface.md
+index f6620cb..ffaff75 100644
+--- a/.ai/spec/spec/plugin/spec-for-bonfires-client-interface.md
++++ b/.ai/spec/spec/plugin/spec-for-bonfires-client-interface.md
+@@ -1,22 +1,54 @@
+-# Spec: Bonfires Client Interface (Provisional)
++# Spec: Bonfires Client Interface (Wave 2 concrete contract)
+ 
+-Status: Provisional — update when Bonfires API docs are confirmed.
++Status: Concrete pre-implementation contract for hosted Bonfires API wiring.
++
++Base URL:
++- `https://tnt-v2.api.bonfires.ai/`
++
++Auth:
++- Preferred: `Authorization: Bearer <DELVE_API_KEY>`
++- Legacy fallback: `X-API-Key: <key>`
++
++Required env:
++- `DELVE_API_KEY`
++- `BONFIRE_ID`
+ 
+ ## Goal
+-Pin assumed request/response types so Wave 1 mocks and Wave 2 wiring share a stable boundary.
++Define exact request/response adapter behavior for Wave 2:
++1. Pre-turn retrieval via `/delve`
++2. Post-turn capture via `/agents/{agent_id}/stack/add`
++3. Periodic processing via `/agents/{agent_id}/stack/process`
++
++---
++
++## 1) Retrieval contract — POST /delve
+ 
+-## Search endpoint (provisional)
++Endpoint:
++- `POST /delve`
+ 
+ Request:
+ ```ts
+-interface SearchRequest {
+-  agentId: string;
+-  query: string;
+-  limit: number; // default: config.search.maxResults
++interface DelveRequest {
++  query: string;                 // required
++  bonfire_id: string;            // required
++  agent_id?: string;             // optional, recommended
++  num_results?: number;          // optional, default from plugin config
+ }
+ ```
+ 
+-Response:
++Canonical payload template:
++```json
++{
++  "query": "<current user prompt>",
++  "bonfire_id": "<BONFIRE_ID>",
++  "agent_id": "<BONFIRES_AGENT_ID>",
++  "num_results": 5
++}
++```
++
++Raw response may include `episodes`, `entities`, `edges`, `graph_id`, etc.
++
++Plugin-normalized response:
+ ```ts
+ interface SearchResponse {
+   results: Array<{
+@@ -27,30 +59,119 @@ interface SearchResponse {
+ }
+ ```
+ 
+-## Capture endpoint (provisional)
++Adapter mapping policy:
++- Prefer episode summaries/content for `summary`
++- Use stable endpoint-derived source references for `source`
++- Map confidence/relevance-like fields to `score`; if absent, use deterministic fallback ranking
+ 
+-Request:
++---
++
++## 2) Capture contract — POST /agents/{agent_id}/stack/add
++
++Endpoint:
++- `POST /agents/{agent_id}/stack/add`
++
++Single-message request:
++```ts
++interface StackAddSingleRequest {
++  message: {
++    text: string;
++    userId: string;
++    chatId: string;
++    timestamp: string; // ISO-8601
++  };
++}
++```
++
++Paired-turn request:
++```ts
++interface StackAddPairedRequest {
++  messages: Array<{
++    text: string;
++    userId: string;
++    chatId: string;
++    timestamp: string; // ISO-8601
++  }>;
++  is_paired: true;
++}
++```
++
++Plugin capture mapping:
++- Convert Wave payload `messages: Array<{role, content}>` into Bonfires stack message objects
++- `chatId` maps from OpenClaw `sessionKey`
++- `userId` maps by role (`user`/`assistant`)
++
++Response (raw):
+ ```ts
+-interface CaptureRequest {
+-  agentId: string;
+-  sessionKey: string;
+-  messages: Array<{ role: string; content: string }>;
++interface StackAddResponse {
++  success: boolean;
++  message_ids?: string[];
++  message_count?: number;
++  stack_count?: number;
+ }
+ ```
+ 
+-Response:
++Plugin-normalized capture response:
+ ```ts
+ interface CaptureResponse {
+-  accepted: number; // count of messages ingested
++  accepted: number; // derived from added messages count
++}
++```
++
++---
++
++## 3) Processing contract — POST /agents/{agent_id}/stack/process
++
++Endpoint:
++- `POST /agents/{agent_id}/stack/process`
++
++Purpose:
++- Convert queued stack messages into episodic memory records.
++
++Cadence policy:
++- Trigger every 15–20 minutes for active agents/sessions.
++
++Raw response:
++```ts
++interface StackProcessResponse {
++  success: boolean;
++  message_count?: number;
++  episode_id?: string | null;
++  warning?: boolean;
++  warning_message?: string | null;
++  time_remaining_seconds?: number;
++}
++```
++
++---
++
++## 4) Verification read contract — POST /knowledge_graph/agents/{agent_id}/episodes/search
++
++Endpoint:
++- `POST /knowledge_graph/agents/{agent_id}/episodes/search`
++
++Use for integration verification after capture/process:
++```json
++{
++  "limit": 20,
++  "after_time": "<ISO timestamp>"
+ }
+ ```
+ 
+-## Error categories
+-- Retriable: network errors, HTTP 429, 502, 503, 504
+-- Non-retriable: HTTP 401 (auth), 400 (bad request), 404 (agent not found)
+-- HTTP 500: log and treat as retriable with backoff
++---
++
++## Error policy
++- Retriable: network errors, HTTP 429, 502, 503, 504, transient 500
++- Non-retriable: HTTP 400, 401, 403, 404 (unless async-job registration grace applies)
++- 422: payload/schema issue; log details and fail operation (non-crash)
++
++## Hook behavior policy
++- All hook integrations are fail-open (never crash host flow)
++- Structured warning logs only; never log secrets
+ 
+-## Open
+-- Confirm search returns `{summary, source, score}` tuples vs episode objects.
+-- Confirm `stack/process` accepts `{role, content}[]` directly.
+-- Confirm multiple `agentId` values per account.
++## Wave 2 merge checklist
++1. `/delve` adapter outputs normalized `SearchResponse` reliably.
++2. `/stack/add` adapter handles single + paired payload modes.
++3. `/stack/process` heartbeat execution path exists and is idempotent-safe.
++4. End-to-end verify with `/episodes/search` for captured messages.
++5. Auth headers and error handling validated in integration tests.
+diff --git a/.ai/spec/spec/quality/traceability-map.json b/.ai/spec/spec/quality/traceability-map.json
+index ab7c59d..ad3a01e 100644
+--- a/.ai/spec/spec/quality/traceability-map.json
++++ b/.ai/spec/spec/quality/traceability-map.json
+@@ -1,5 +1,5 @@
+ {
+-  "version": 1,
++  "version": 2,
+   "requirements": [
+     {"id":"R1","spec":".ai/spec/spec/plugin/spec-for-before-agent-start.md","guidance":".ai/spec/guidance/plugin/guidance-for-before-agent-start.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+     {"id":"R2","spec":".ai/spec/spec/plugin/spec-for-bonfires-search-tool.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+@@ -7,5 +7,11 @@
+     {"id":"R4","spec":".ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md","guidance":".ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+     {"id":"R5","spec":".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md","guidance":".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
+     {"id":"R6","spec":".ai/spec/spec/plugin/spec-for-bonfires-client-interface.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]}
++  ],
++  "post_mvp_requirements": [
++    {"id":"PM1","spec":".ai/spec/spec/post-mvp/hosted-api-wiring.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-api-wiring.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
++    {"id":"PM2","spec":".ai/spec/spec/post-mvp/stack-processing-heartbeat.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-stack-processing-heartbeat.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
++    {"id":"PM3","spec":".ai/spec/spec/post-mvp/hosted-integration-verification.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-integration-verification.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
++    {"id":"PM4","spec":".ai/spec/spec/post-mvp/ingestion-cron-and-hash-ledger.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-ingestion-cron-and-hash-ledger.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]}
+   ]
+ }
+diff --git a/scripts/gates/mutation-lite-check.ts b/scripts/gates/mutation-lite-check.ts
+index d976396..62af7a7 100644
+--- a/scripts/gates/mutation-lite-check.ts
++++ b/scripts/gates/mutation-lite-check.ts
+@@ -1,43 +1,49 @@
+ /**
+  * G6 — Mutation-lite verification for critical paths.
+- * Introduces a targeted fault in a critical module, runs tests,
+- * and verifies the tests catch the fault (i.e., they fail).
+- * Reverts the mutation regardless of outcome.
+  */
+ import { execSync } from 'node:child_process';
+ import { readFileSync, writeFileSync } from 'node:fs';
+ 
+-// Each probe: { file, find, replace, description }
+ const PROBES = [
+   {
+-    file: 'src/config.js',
++    file: 'src/config.ts',
+     find: "if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');",
+     replace: "// mutation: validation removed",
+     description: 'Remove required-agents validation in parseConfig',
+   },
+   {
+-    file: 'src/hooks.js',
++    file: 'src/hooks.ts',
+     find: "const raw=String(event?.prompt ?? '').trim(); if(!raw) return;",
+     replace: "const raw='always_search';",
+     description: 'Remove empty-prompt guard in handleBeforeAgentStart',
+   },
++  {
++    file: 'src/bonfires-client.ts',
++    find: "if (!res.ok) throw new Error(`Bonfires ${path} failed: HTTP ${res.status}`);",
++    replace: "if (!res.ok) return body; // mutation: suppress error",
++    description: 'Suppress non-OK error handling in hosted fetchJson',
++  },
++  {
++    file: 'src/bonfires-client.ts',
++    find: "for (const m of req.messages) {",
++    replace: "for (const m of req.messages.slice(-1)) { // mutation: drop earlier messages",
++    description: 'Drop messages in hosted capture loop',
++  },
+ ];
+ 
+ function run() {
+-  const failures = [];
++  const failures: string[] = [];
+   let probesRun = 0;
+ 
+   for (const probe of PROBES) {
+-    let original;
++    let original: string;
+     try {
+       original = readFileSync(probe.file, 'utf8');
+     } catch {
+-      // File doesn't exist — skip this probe
+       continue;
+     }
+ 
+     if (!original.includes(probe.find)) {
+-      // Probe target not found — code may have changed; skip
+       console.log(`mutation-lite: skipping probe "${probe.description}" (target not found)`);
+       continue;
+     }
+@@ -47,21 +53,18 @@ function run() {
+     writeFileSync(probe.file, mutated);
+ 
+     try {
+-      // Run tests — we EXPECT them to fail
+-      execSync('node --test tests/*.test.mjs 2>&1', { encoding: 'utf8', timeout: 30000 });
+-      // If we get here, tests passed under mutation — that's a failure
++      execSync('node --import tsx --test tests/*.test.ts 2>&1', { encoding: 'utf8', timeout: 30000 });
+       failures.push(`Probe "${probe.description}": tests PASSED under mutation (should have failed)`);
+     } catch {
+-      // Tests failed under mutation — good
++      // expected failure under mutation
+     } finally {
+-      // Always revert
+       writeFileSync(probe.file, original);
+     }
+   }
+ 
+   if (probesRun === 0) {
+-    console.log('mutation-lite-check: no applicable probes — PASS (informational)');
+-    return;
++    console.error('mutation-lite-check FAIL: no applicable probes for current TS code paths');
++    process.exit(1);
+   }
+ 
+   if (failures.length) {
+diff --git a/scripts/spec-test.ts b/scripts/spec-test.ts
+index 1fdd8ca..b76cd46 100644
+--- a/scripts/spec-test.ts
++++ b/scripts/spec-test.ts
+@@ -1,6 +1,7 @@
+ import { readFileSync } from 'node:fs';
+ 
+ const idx = readFileSync('.ai/spec/spec/plugin/requirements-index.md','utf8');
++const postIdx = readFileSync('.ai/spec/spec/post-mvp/requirements-index.md','utf8');
+ const checklist = readFileSync('.ai/spec/spec/plugin/verification-checklist.md','utf8');
+ const trace = JSON.parse(readFileSync('.ai/spec/spec/quality/traceability-map.json','utf8'));
+ 
+@@ -17,10 +18,26 @@ if (!checklist.includes('Recovery trigger confirmed')) {
+ }
+ 
+ const reqIds = new Set((trace.requirements || []).map((r) => r.id));
+-for (const id of ['R1','R2','R3','R4','R5']) {
++for (const id of ['R1','R2','R3','R4','R5','R6']) {
+   if (!reqIds.has(id)) {
+     console.error(`Traceability map missing ${id}`);
+     process.exit(1);
+   }
+ }
++
++for (const id of ['PM1','PM2','PM3','PM4']) {
++  if (!postIdx.includes(`## ${id} —`) && !postIdx.includes(`## ${id} `)) {
++    console.error(`Missing post-MVP requirement section: ${id}`);
++    process.exit(1);
++  }
++}
++
++const pmReqIds = new Set((trace.post_mvp_requirements || []).map((r) => r.id));
++for (const id of ['PM1','PM2','PM3','PM4']) {
++  if (!pmReqIds.has(id)) {
++    console.error(`Traceability map missing ${id}`);
++    process.exit(1);
++  }
++}
++
+ console.log('spec-test OK');
+diff --git a/src/bonfires-client.ts b/src/bonfires-client.ts
+index f61f18f..3a853e5 100644
+--- a/src/bonfires-client.ts
++++ b/src/bonfires-client.ts
+@@ -1,4 +1,10 @@
+-export class MockBonfiresClient {
++export interface BonfiresClient {
++  search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
++  capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
++  processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
++}
++
++export class MockBonfiresClient implements BonfiresClient {
+   searchCalls: any[];
+   captureCalls: any[];
+   shouldThrowSearch: boolean;
+@@ -26,4 +32,114 @@ export class MockBonfiresClient {
+     this.captureCalls.push(req);
+     return { accepted: req.messages.length };
+   }
++
++  async processStack() {
++    return { success: true, message_count: 0 };
++  }
++}
++
++export class HostedBonfiresClient implements BonfiresClient {
++  constructor(private cfg: any, private logger?: { warn?: (msg: string) => void }) {}
++
++  private validateAgentId(agentId: string) {
++    if (!/^[A-Za-z0-9._:-]{1,128}$/.test(agentId)) throw new Error('Invalid agentId format');
++  }
++
++  private headers() {
++    const key = process.env[this.cfg.apiKeyEnv];
++    if (!key) throw new Error(`Missing API key env: ${this.cfg.apiKeyEnv}`);
++    return {
++      Authorization: `Bearer ${key}`,
++      'Content-Type': 'application/json',
++    };
++  }
++
++  private async fetchJson(path: string, init: any) {
++    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}${path}`;
++    const controller = new AbortController();
++    const timeoutMs = this.cfg.network?.timeoutMs ?? 12000;
++    const t = setTimeout(() => controller.abort(), timeoutMs);
++    try {
++      const res = await fetch(url, { ...init, signal: controller.signal });
++      let body: any = {};
++      try { body = await res.json(); } catch {}
++      if (!res.ok) throw new Error(`Bonfires ${path} failed: HTTP ${res.status}`);
++      return body;
++    } finally {
++      clearTimeout(t);
++    }
++  }
++
++  async search(req: { agentId: string; query: string; limit: number }) {
++    this.validateAgentId(req.agentId);
++    const body = await this.fetchJson('/delve', {
++      method: 'POST',
++      headers: this.headers(),
++      body: JSON.stringify({
++        query: req.query,
++        bonfire_id: this.cfg.bonfireId,
++        agent_id: req.agentId,
++        num_results: req.limit,
++      }),
++    });
++
++    const episodes = Array.isArray(body.episodes) ? body.episodes : [];
++    const entities = Array.isArray(body.entities) ? body.entities : [];
++
++    const fromEpisodes = episodes.map((e: any, i: number) => ({
++      summary: String(e.summary ?? e.content ?? e.name ?? 'Episode'),
++      source: `delve:episode:${i}`,
++      score: Math.max(0, 1 - i * 0.05),
++    }));
++    const fromEntities = entities.map((e: any, i: number) => ({
++      summary: String(e.summary ?? e.name ?? 'Entity'),
++      source: `delve:entity:${i}`,
++      score: Math.max(0, 0.8 - i * 0.05),
++    }));
++
++    return { results: [...fromEpisodes, ...fromEntities].slice(0, req.limit) };
++  }
++
++  async capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }) {
++    this.validateAgentId(req.agentId);
++    if (!req.messages.length) return { accepted: 0 };
++
++    let accepted = 0;
++    for (const m of req.messages) {
++      const body = {
++        message: {
++          text: m.content,
++          userId: m.role,
++          chatId: req.sessionKey,
++          timestamp: new Date().toISOString(),
++        },
++      };
++
++      await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
++        method: 'POST',
++        headers: this.headers(),
++        body: JSON.stringify(body),
++      });
++
++      accepted += 1;
++    }
++
++    return { accepted };
++  }
++
++  async processStack(req: { agentId: string }) {
++    this.validateAgentId(req.agentId);
++    const body = await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/process`, {
++      method: 'POST',
++      headers: this.headers(),
++    });
++    return { success: Boolean(body.success ?? true), message_count: body.message_count };
++  }
++}
++
++export function createBonfiresClient(cfg: any, logger?: { warn?: (msg: string) => void }): BonfiresClient {
++  const hasKey = Boolean(process.env[cfg.apiKeyEnv]);
++  if (hasKey && cfg.bonfireId) return new HostedBonfiresClient(cfg, logger);
++  logger?.warn?.(`Using MockBonfiresClient (missing env ${cfg.apiKeyEnv} or bonfireId)`);
++  return new MockBonfiresClient();
+ }
+diff --git a/src/config.ts b/src/config.ts
+index 9e756c6..e72e5fa 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -5,13 +5,22 @@ export function parseConfig(input) {
+   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
+   if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
+   const out = {
+-    baseUrl: String(cfg.baseUrl ?? 'https://api.bonfires.ai'),
+-    apiKeyEnv: String(cfg.apiKeyEnv ?? 'BONFIRES_API_KEY'),
++    baseUrl: String(cfg.baseUrl ?? 'https://tnt-v2.api.bonfires.ai/'),
++    apiKeyEnv: String(cfg.apiKeyEnv ?? 'DELVE_API_KEY'),
++    bonfireId: String(cfg.bonfireId ?? process.env.BONFIRE_ID ?? ''),
+     search: { maxResults },
+     capture: { throttleMinutes },
+     agents: cfg.agents ?? {},
++    network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
+   };
+   if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');
++  if (!Number.isFinite(out.network.timeoutMs) || out.network.timeoutMs < 1000) throw new Error('network.timeoutMs must be a finite number >= 1000');
++
++  let parsed: URL;
++  try { parsed = new URL(out.baseUrl); } catch { throw new Error('baseUrl must be a valid URL'); }
++  if (parsed.protocol !== 'https:') throw new Error('baseUrl must use https');
++  if (!parsed.hostname.endsWith('bonfires.ai')) throw new Error('baseUrl host must be within bonfires.ai');
++
+   return out;
+ }
+ export function resolveBonfiresAgentId(cfg, agentId) {
+diff --git a/src/index.ts b/src/index.ts
+index 89c34ba..d6e6e66 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,12 +1,12 @@
+ import { parseConfig } from './config.js';
+-import { MockBonfiresClient } from './bonfires-client.js';
++import { createBonfiresClient } from './bonfires-client.js';
+ import { InMemoryCaptureLedger } from './capture-ledger.js';
+ import { handleAgentEnd, handleBeforeAgentStart, handleSessionEnd } from './hooks.js';
+ import { bonfiresSearchTool } from './tools/bonfires-search.js';
+ 
+ export default function register(api){
+   const cfg=parseConfig(api.pluginConfig ?? {});
+-  const client=new MockBonfiresClient();
++  const client=createBonfiresClient(cfg, api.logger);
+   const logDir=api.resolvePath?.('.ai/log') ?? '.ai/log';
+   const ledgerPath=api.resolvePath?.('.ai/log/bonfires-ledger.json') ?? '.ai/log/bonfires-ledger.json';
+   const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);
+diff --git a/tests/wave1.test.ts b/tests/wave1.test.ts
+index ff9efad..f01ad7a 100644
+--- a/tests/wave1.test.ts
++++ b/tests/wave1.test.ts
+@@ -120,15 +120,22 @@ test('resolveBonfiresAgentId handles missing agentId and unknown key', async ()
+ 
+ test('parseConfig uses defaults for optional values', async () => {
+   const out = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
+-  assert.equal(out.baseUrl, 'https://api.bonfires.ai');
+-  assert.equal(out.apiKeyEnv, 'BONFIRES_API_KEY');
++  assert.equal(out.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
++  assert.equal(out.apiKeyEnv, 'DELVE_API_KEY');
+   assert.equal(out.search.maxResults, 5);
+   assert.equal(out.capture.throttleMinutes, 15);
++  assert.equal(out.network.timeoutMs, 12000);
+ });
+ 
+ test('parseConfig rejects non-finite numeric values', async () => {
+   assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: Infinity } }));
+   assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: NaN } }));
++  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, network: { timeoutMs: 0 } }));
++});
++
++test('parseConfig validates baseUrl host and protocol', async () => {
++  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
++  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evil.example.com/' }));
+ });
+ 
+ test('before_agent_start returns undefined when result set is empty', async () => {
+@@ -269,7 +276,7 @@ test('plugin register wires hooks and tool', async () => {
+   const events = [];
+   let toolDef = null;
+   const api = {
+-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
++    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
+     resolvePath: (p) => p,
+     logger: { warn: () => {} },
+     on: (name, fn) => events.push([name, fn]),
