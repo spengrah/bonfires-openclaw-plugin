@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
   "wave": "wave-3",
-  "next_action": "implement",
+  "next_action": "done",
   "last_reviewer_verdict": "CONDITIONAL_GO",
   "blockers": [],
-  "updated_at": "2026-03-02T15:46:02.097Z",
+  "updated_at": "2026-03-02T15:46:29.559Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
