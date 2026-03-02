@@ -30,4 +30,8 @@ export async function handleAgentEnd(event, ctx, deps){
   }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
 }
 
-export async function handleSessionEnd(event, ctx, deps){ try{ void event; void ctx; void deps; }catch(e){ deps.logger?.warn?.(`session_end error: ${e?.message ?? e}`);} }
+export async function handleSessionEnd(event, ctx, deps){
+  void event;
+  void ctx;
+  void deps;
+}

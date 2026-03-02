@@ -2,43 +2,52 @@
 
 Bonfires integration plugin for OpenClaw.
 
-## What this repo is for
-This project builds an OpenClaw memory plugin that:
-1. Retrieves relevant Bonfires context before agent turns.
-2. Exposes an explicit `bonfires_search` tool for on-demand retrieval.
-3. Captures episodic conversation slices after turns (`agent_end`) with per-session throttling.
-4. Supports recovery/catch-up planning and verification artifacts for later waves.
+## Overview
+`bonfires-openclaw-plugin` connects OpenClaw agents to Bonfires memory so agents can retrieve and persist useful context during conversations.
 
-Current status: **Wave 1 baseline implemented (mock client + hooks/tool + ledger + tests)**.
+The plugin is intended to improve continuity and recall by combining:
+1. **Pre-turn retrieval** of relevant memory context.
+2. **On-demand search** via an agent tool.
+3. **Post-turn capture** of episodic conversation slices.
 
-## Wave 1 scope (implemented)
-- Plugin skeleton modules under `src/`
-- Hook registration:
-  - `before_agent_start`
-  - `agent_end`
-  - `session_end` (stub for forward compatibility)
-- Tool registration:
-  - `bonfires_search(query, limit?)`
-- Config parsing with required Bonfires agent mappings:
-  - `lyle`
-  - `reviewer`
-- In-memory capture ledger with safe persisted-path scaffold
-- Deterministic test coverage for core Wave 1 behaviors and edge cases
+## Intent
+This plugin exists to make OpenClaw sessions more context-aware without requiring manual copy/paste memory workflows.
 
-## Repo structure
-- `src/` — plugin runtime code (Wave 1 uses mocked Bonfires client)
-- `tests/` — Node test suite + requirement mapping
-- `.ai/spec/` — feature specs, guidance docs, quality/traceability docs
-- `.ai/log/` — planning/review/readiness artifacts (tracked in git by design)
-- `scripts/` — deterministic spec/gate checks
+Design intent:
+- Keep retrieval deterministic and bounded.
+- Keep capture reliable and non-disruptive.
+- Degrade gracefully (fail-open) when memory systems are unavailable.
+- Preserve clear spec/guidance/verification artifacts in-repo.
 
-## Commands
+## Core features
+- Hook-based retrieval before agent turns (`before_agent_start`)
+- Hook-based episodic capture after turns (`agent_end`)
+- Session-end integration point (`session_end`)
+- Agent tool: `bonfires_search(query, limit?)`
+- Agent mapping support (e.g. `lyle`, `reviewer`)
+- Capture ledger for per-session throttling and incremental push behavior
+
+## How to work with this repo
+## Repository layout
+- `src/` — plugin code
+- `tests/` — automated tests
+- `.ai/spec/` — feature specs and implementation guidance
+- `.ai/log/` — planning/review/readiness artifacts
+- `scripts/` — local verification/gate scripts
+
+## Local commands
 ```bash
 npm run lint
 npm run test
 ```
 
+## Typical workflow
+1. Update specs/guidance under `.ai/spec/` when behavior changes.
+2. Implement changes in `src/`.
+3. Add/adjust tests in `tests/` and requirement mapping docs as needed.
+4. Run lint/tests locally.
+5. Record review artifacts under `.ai/log/review/`.
+
 ## Notes
-- This repo intentionally tracks `.ai/log/` artifacts as part of workflow provenance.
-- Real Bonfires hosted API wiring is a later wave (Wave 2+), after mock-first stabilization.
-- Recovery scheduler/catch-up execution is planned beyond Wave 1 implementation scope.
+- `.ai/log/` is intentionally tracked for workflow provenance.
+- Keep secrets out of repo and out of memory/log artifacts.
