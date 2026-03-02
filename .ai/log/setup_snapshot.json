@@ -1,0 +1,17 @@
+{
+  "project_slug": "bonfires-plugin",
+  "mode": "init-only",
+  "template": "projects/_template",
+  "created": [
+    "README.md",
+    "AGENTS.md",
+    ".gitignore",
+    ".ai/**",
+    ".claude/**",
+    ".git/"
+  ],
+  "updated": [
+    "README.md"
+  ],
+  "updated_at": "2026-03-01T19:17:11.464Z"
+}

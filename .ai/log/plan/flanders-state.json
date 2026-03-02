@@ -1,0 +1,37 @@
+{
+  "project_slug": "bonfires-plugin",
+  "wave": "wave-1",
+  "next_action": "implement-continue",
+  "last_reviewer_verdict": "CONDITIONAL_GO",
+  "blockers": [],
+  "updated_at": "2026-03-02T03:45:51.054Z",
+  "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
+  "spec_review_iteration": 1,
+  "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
+  "spec_review_run_id": "2aafdd21-0038-4738-90e7-38295785ec94",
+  "spec_review_summary_path": ".ai/log/plan/specrev-wave-1-20260301e-r1.md",
+  "implementation_session_key": "agent:claude:acp:e21a66d8-f6b3-46cf-ba81-70fd761bfde5",
+  "implementation_session_label": "impl:bonfires-plugin:wave-1:20260301d",
+  "implementation_run_id": "9aa7de17-2367-42ce-abb5-8934cd5dfe0d",
+  "implementation_started_at": "2026-03-01T23:03:54.151Z",
+  "implementation_mode": "local-claude-p",
+  "implementation_result": "success",
+  "implementation_completed_at": "2026-03-02T03:25:21.176Z",
+  "implementation_summary_path": ".ai/log/plan/wave-1-summary.json",
+  "review_lenses": [
+    "Correctness",
+    "Security/Attacker",
+    "Verification Quality"
+  ],
+  "review_order": [
+    "Correctness",
+    "Security/Attacker",
+    "Verification Quality"
+  ],
+  "review_artifacts": {
+    "correctness": ".ai/log/review/review-correctness-20260301k.md",
+    "security": ".ai/log/review/review-security-20260301k.md",
+    "verification_quality": ".ai/log/review/review-verification-quality-20260302a.md"
+  },
+  "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit."
+}

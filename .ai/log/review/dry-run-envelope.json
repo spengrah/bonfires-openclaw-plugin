@@ -1,0 +1,21 @@
+{
+  "tz_id": "tz:reviewer:bonfires-plugin",
+  "project_slug": "bonfires-plugin",
+  "review_lens": "architecture",
+  "delta": {
+    "git_diff": "diff --git a/.ai/log/plan/flanders-state.json b/.ai/log/plan/flanders-state.json\n+ dry-run validation artifact",
+    "artifacts": [
+      ".ai/log/readiness.json",
+      ".ai/log/plan/flanders-state.json"
+    ]
+  },
+  "focus_problems": [
+    "problem:architecture-boundary-coherence"
+  ],
+  "notes": "Milestone 4 dry-run envelope validation only",
+  "session_policy": {
+    "fresh_session_per_lens": true,
+    "sequence_index": 1,
+    "sequence_total": 1
+  }
+}

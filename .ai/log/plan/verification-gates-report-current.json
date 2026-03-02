@@ -1,0 +1,70 @@
+{
+  "wave": "current",
+  "timestamp": "2026-03-02T03:08:09.520Z",
+  "gates": [
+    {
+      "tier": 1,
+      "name": "lint",
+      "status": "PASS",
+      "elapsed": 182,
+      "output": "> bonfires-plugin@0.1.0 lint\n> node scripts/spec-lint.mjs\n\nspec-lint OK (21 markdown files checked)"
+    },
+    {
+      "tier": 2,
+      "name": "test:coverage",
+      "status": "PASS",
+      "elapsed": 468,
+      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --test tests/*.test.mjs\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 1.731027\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.225186\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.259705\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.668818\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.647466\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.239539\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 6\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 112.007889"
+    },
+    {
+      "tier": 2,
+      "name": "gate:coverage",
+      "status": "FAIL",
+      "elapsed": 33,
+      "output": "coverage-check FAIL:\n  - src/hooks.js: branch coverage 56.7% < 90%\n  - src/config.js: branch coverage 30.0% < 90%\n  - src/capture-ledger.js: branch coverage 66.7% < 90%\n  - src/tools/bonfires-search.js: branch coverage 70.0% < 90%"
+    },
+    {
+      "tier": 2,
+      "name": "gate:changed-lines",
+      "status": "PASS",
+      "elapsed": 56,
+      "output": "changed-lines-coverage-check: no changed source lines — PASS"
+    },
+    {
+      "tier": 3,
+      "name": "gate:quality",
+      "status": "PASS",
+      "elapsed": 42,
+      "output": "quality-check: no critical modules touched — PASS"
+    },
+    {
+      "tier": 3,
+      "name": "gate:mutation-lite",
+      "status": "FAIL",
+      "elapsed": 276,
+      "output": "mutation-lite-check FAIL:\n  - Probe \"Remove required-agents validation in parseConfig\": tests PASSED under mutation (should have failed)"
+    },
+    {
+      "tier": 4,
+      "name": "gate:traceability",
+      "status": "PASS",
+      "elapsed": 44,
+      "output": "traceability-check: no requirements touched — PASS"
+    },
+    {
+      "tier": 0,
+      "name": "gate:diff-escalation",
+      "status": "PASS",
+      "elapsed": 57,
+      "output": "diff-aware-escalation: no sensitive files touched — PASS (no escalation needed)"
+    },
+    {
+      "tier": 0,
+      "name": "gate:anti-gaming",
+      "status": "PASS",
+      "elapsed": 59,
+      "output": "anti-gaming-check: 14 source file(s) scanned — PASS"
+    }
+  ],
+  "verdict": "FAIL"
+}

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "missing": [],
+  "gates": {
+    "lint": [
+      "npm run lint"
+    ],
+    "test": [
+      "npm run test"
+    ],
+    "traceability": [
+      ".ai/spec/spec/quality/traceability-map.json"
+    ]
+  },
+  "updated_at": "2026-03-01T21:09:57.482Z",
+  "notes": [
+    "Verified SDK plugin hooks expose before_agent_start(event.prompt) and session_end via dist/plugin-sdk/plugins/types.d.ts",
+    "No plugin hook named onHeartbeatEvent found; recovery trigger should be implemented via scheduled heartbeat flow and/or cron tick."
+  ]
+}
