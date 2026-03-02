@@ -8,10 +8,11 @@
     {"id":"R5","spec":".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md","guidance":".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]},
     {"id":"R6","spec":".ai/spec/spec/plugin/spec-for-bonfires-client-interface.md","guidance":".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md","verification":[".ai/spec/spec/plugin/verification-checklist.md"]}
   ],
-  "post_mvp_requirements": [
-    {"id":"PM1","spec":".ai/spec/spec/post-mvp/hosted-api-wiring.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-api-wiring.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
-    {"id":"PM2","spec":".ai/spec/spec/post-mvp/stack-processing-heartbeat.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-stack-processing-heartbeat.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
-    {"id":"PM3","spec":".ai/spec/spec/post-mvp/hosted-integration-verification.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-hosted-integration-verification.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]},
-    {"id":"PM4","spec":".ai/spec/spec/post-mvp/ingestion-cron-and-hash-ledger.md","guidance":".ai/spec/guidance/post-mvp/guidance-for-ingestion-cron-and-hash-ledger.md","verification":[".ai/spec/spec/post-mvp/requirements-index.md"]}
+  "functionality_requirements": [
+    {"id":"PM1","spec":".ai/spec/spec/hosted-integration/hosted-api-wiring.md","guidance":".ai/spec/guidance/hosted-integration/guidance-for-hosted-api-wiring.md","verification":[".ai/spec/spec/functionality/requirements-index.md"]},
+    {"id":"PM2","spec":".ai/spec/spec/conversation-memory/stack-processing-heartbeat.md","guidance":".ai/spec/guidance/conversation-memory/guidance-for-stack-processing-heartbeat.md","verification":[".ai/spec/spec/functionality/requirements-index.md"]},
+    {"id":"PM3","spec":".ai/spec/spec/hosted-integration/hosted-integration-verification.md","guidance":".ai/spec/guidance/hosted-integration/guidance-for-hosted-integration-verification.md","verification":[".ai/spec/spec/functionality/requirements-index.md"]},
+    {"id":"PM4","spec":".ai/spec/spec/content-ingestion/ingestion-cron-and-hash-ledger.md","guidance":".ai/spec/guidance/content-ingestion/guidance-for-ingestion-cron-and-hash-ledger.md","verification":[".ai/spec/spec/functionality/requirements-index.md"]},
+    {"id":"PM5","spec":".ai/spec/spec/packaging-runtime/plugin-packaging-and-openclaw-integration.md","guidance":".ai/spec/guidance/packaging-runtime/guidance-for-plugin-packaging-and-openclaw-integration.md","verification":[".ai/spec/spec/functionality/requirements-index.md"]}
   ]
 }

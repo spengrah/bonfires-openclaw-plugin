@@ -9,5 +9,9 @@ Start here:
 2. Feature specs under `spec/plugin/`
 3. Matching guidance under `guidance/plugin/`
 
-## Post-MVP
-- `post-mvp/README.md`
+## Functionality domains
+- `conversation-memory/`
+- `hosted-integration/`
+- `content-ingestion/`
+- `packaging-runtime/`
+- `functionality/requirements-index.md`
