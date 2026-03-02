@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
-  "wave": "wave-3",
-  "next_action": "implement",
-  "last_reviewer_verdict": "CONDITIONAL_GO",
+  "wave": "wave-7",
+  "next_action": "done",
+  "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-02T15:51:04.189Z",
+  "updated_at": "2026-03-02T21:42:00Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -13,25 +13,27 @@
   "implementation_session_key": "agent:claude:acp:e21a66d8-f6b3-46cf-ba81-70fd761bfde5",
   "implementation_session_label": "impl:bonfires-plugin:wave-1:20260301d",
   "implementation_run_id": "9aa7de17-2367-42ce-abb5-8934cd5dfe0d",
-  "implementation_started_at": "2026-03-01T23:03:54.151Z",
-  "implementation_mode": "local-claude-p",
+  "implementation_started_at": "2026-03-02T20:20:00Z",
+  "implementation_mode": "claude-cli-local",
   "implementation_result": "success",
-  "implementation_completed_at": "2026-03-02T03:25:21.176Z",
-  "implementation_summary_path": ".ai/log/plan/wave-1-summary.json",
+  "implementation_completed_at": "2026-03-02T21:05:00Z",
+  "implementation_summary_path": ".ai/log/plan/wave-6-summary.json",
   "review_lenses": [
     "Correctness",
     "Security/Attacker",
-    "Verification Quality"
+    "Verification Quality",
+    "Ops/Runtime Reliability"
   ],
   "review_order": [
     "Correctness",
     "Security/Attacker",
-    "Verification Quality"
+    "Verification Quality",
+    "Ops/Runtime Reliability"
   ],
   "review_artifacts": {
-    "correctness": ".ai/log/review/review-correctness-20260302h.md",
-    "security": ".ai/log/review/review-security-20260302h.md",
-    "verification_quality": ".ai/log/review/review-verification-quality-20260302h.md"
+    "correctness": ".ai/log/review/review-correctness-20260302w6.md",
+    "security": ".ai/log/review/review-security-20260302w6.md",
+    "verification_quality": ".ai/log/review/review-verification-quality-20260302w6.md"
   },
   "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit.",
   "deferred_followups": [
@@ -50,6 +52,68 @@
     "preflight": ".ai/log/plan/wave-2-preflight.json"
   },
   "wave3_started_at": "2026-03-02T15:51:04.189Z",
-  "wave3_scope": ".ai/log/plan/wave-3-scope-20260302w3a.md",
-  "wave3_specrev": ".ai/log/plan/specrev-wave-3-20260302w3a-r1.md"
+  "wave3_scope": ".ai/log/plan/wave-3-plan-20260302w3b.md",
+  "wave3_specrev": ".ai/log/plan/specrev-wave-3-20260302w3b-r1.md",
+  "wave3_verification_matrix": ".ai/log/plan/verification-matrix-wave-3-20260302w3b.md",
+  "implementation_commit": "2f704f6",
+  "wave3_wrapup": {
+    "status": "done",
+    "commit": "5abc7f4",
+    "implementation_summary": ".ai/log/plan/wave-3-summary.json",
+    "reviewer_artifacts": {
+      "correctness": ".ai/log/review/review-correctness-20260302w3.md",
+      "security": ".ai/log/review/review-security-20260302w3.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260302w3.md"
+    },
+    "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave4_started_at": "2026-03-02T19:50:00Z",
+  "wave4_scope": ".ai/log/plan/wave-4-plan-20260302w4a.md",
+  "wave4_specrev": ".ai/log/plan/specrev-wave-4-20260302w4a-r1.md",
+  "wave4_verification_matrix": ".ai/log/plan/verification-matrix-wave-4-20260302w4a.md",
+  "wave4_wrapup": {
+    "status": "done",
+    "commit": "2fca367",
+    "implementation_summary": ".ai/log/plan/wave-4-summary.json",
+    "reviewer_artifacts": {
+      "correctness": ".ai/log/review/review-correctness-20260302w4.md",
+      "security": ".ai/log/review/review-security-20260302w4.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260302w4.md"
+    },
+    "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave5_started_at": "2026-03-02T20:05:00Z",
+  "wave5_scope": ".ai/log/plan/wave-5-plan-20260302w5a.md",
+  "wave5_specrev": ".ai/log/plan/specrev-wave-5-20260302w5a-r1.md",
+  "wave5_verification_matrix": ".ai/log/plan/verification-matrix-wave-5-20260302w5a.md",
+  "wave5_wrapup": {
+    "status": "done",
+    "commit": "120e7cd",
+    "implementation_summary": ".ai/log/plan/wave-5-summary.json",
+    "reviewer_artifacts": {
+      "correctness": ".ai/log/review/review-correctness-20260302w5.md",
+      "security": ".ai/log/review/review-security-20260302w5.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260302w5.md"
+    },
+    "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave6_started_at": "2026-03-02T20:20:00Z",
+  "wave6_scope": ".ai/log/plan/wave-6-plan-20260302w6a.md",
+  "wave6_specrev": ".ai/log/plan/specrev-wave-6-20260302w6a-r1.md",
+  "wave6_verification_matrix": ".ai/log/plan/verification-matrix-wave-6-20260302w6a.md",
+  "wave6_wrapup": {
+    "status": "done",
+    "commit": "2f704f6",
+    "implementation_summary": ".ai/log/plan/wave-6-summary.json",
+    "reviewer_artifacts": {
+      "correctness": ".ai/log/review/review-correctness-20260302w6.md",
+      "security": ".ai/log/review/review-security-20260302w6.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260302w6.md"
+    },
+    "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave7_started_at": "2026-03-02T21:42:00Z",
+  "wave7_scope": ".ai/log/plan/wave-7-plan-20260302w7a.md",
+  "wave7_specrev": ".ai/log/plan/specrev-wave-7-20260302w7a-r1.md",
+  "wave7_verification_matrix": ".ai/log/plan/verification-matrix-wave-7-20260302w7a.md"
 }
