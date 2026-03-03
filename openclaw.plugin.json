@@ -85,7 +85,7 @@
           },
           "rootDir": {
             "type": "string",
-            "description": "Root directory to scan for ingestion content."
+            "description": "Root directory for legacy ingestion scan. Deprecated: use profiles instead."
           },
           "ledgerPath": {
             "type": "string",
@@ -94,6 +94,46 @@
           "summaryPath": {
             "type": "string",
             "description": "Path for the ingestion run summary. Relative paths resolved by plugin."
+          },
+          "profiles": {
+            "type": "object",
+            "description": "Named ingestion target profiles. Each profile defines rootDir, includeGlobs, excludeGlobs, and extensions.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "rootDir": {
+                  "type": "string",
+                  "description": "Root directory for this profile's content scan."
+                },
+                "includeGlobs": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Glob patterns for files to include (relative to rootDir). Defaults to ['**/*']."
+                },
+                "excludeGlobs": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Glob patterns for files to exclude. Defaults to ['**/node_modules/**', '**/.git/**', '**/.openclaw/**']."
+                },
+                "extensions": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "File extensions to include. Defaults to ['.md']."
+                }
+              },
+              "required": ["rootDir"]
+            }
+          },
+          "agentProfiles": {
+            "type": "object",
+            "description": "Mapping of agent IDs to profile names for agent-specific ingestion targets.",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "defaultProfile": {
+            "type": "string",
+            "description": "Default profile name used when an agent has no explicit mapping in agentProfiles."
           }
         },
         "additionalProperties": false

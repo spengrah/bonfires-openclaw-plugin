@@ -21,3 +21,7 @@ This index is authoritative for functionality-organized post-core scope and trac
 ## PM5 — Plugin packaging + OpenClaw integration
 - Spec: `../packaging-runtime/plugin-packaging-and-openclaw-integration.md`
 - Guidance: `../../guidance/packaging-runtime/guidance-for-plugin-packaging-and-openclaw-integration.md`
+
+## PM6 — Ingestion target profiles + agent mapping
+- Spec: `../content-ingestion/ingestion-target-profiles-and-agent-mapping.md`
+- Guidance: `../../guidance/content-ingestion/guidance-for-ingestion-target-profiles-and-agent-mapping.md`

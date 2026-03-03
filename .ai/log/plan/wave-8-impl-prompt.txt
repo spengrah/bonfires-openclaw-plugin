@@ -1,0 +1,30 @@
+Implement Wave 8 for bonfires-plugin from current planning artifacts.
+
+Scope:
+1) Configurable ingestion target profiles:
+   - ingestion.profiles.<name> with rootDir/includeGlobs/excludeGlobs/extensions
+2) Agent->profile mapping:
+   - ingestion.agentProfiles
+   - ingestion.defaultProfile fallback
+   - explicit config error if no mapping and no default
+3) Backward compatibility:
+   - normalize legacy ingestion config into synthetic profile
+   - emit concise deprecation warning path
+4) Keep dedupe/hash-ledger semantics unchanged.
+5) Update summaries to include profile/agent dimensions.
+6) README updates with portable examples and multi-agent roots.
+
+Out of scope:
+- retrieval isolation behavior changes
+- unrelated feature work
+
+Validation required before completion:
+- npm run lint
+- npm run test
+- npm run gate:all
+
+Commit prefix: task:
+
+At end print:
+WAVE8_SUMMARY
+{"result":"success|partial|blocked","commit_shas":[],"changed_files":[],"gate_results":{"gate:all":"pass|fail"},"notes":[]}

@@ -79,11 +79,83 @@ export BONFIRE_ID="your-bonfire-id"
 | `stateDir` | string | `.bonfires-state` | | Directory for plugin runtime state files |
 | `ingestion.enabled` | boolean | `false` | | Enable periodic content ingestion |
 | `ingestion.everyMinutes` | number | `1440` | | Ingestion scan interval in minutes |
-| `ingestion.rootDir` | string | `process.cwd()` | | Root directory for ingestion scan |
+| `ingestion.rootDir` | string | `process.cwd()` | | Root directory for legacy ingestion scan (deprecated; use profiles) |
 | `ingestion.ledgerPath` | string | `<stateDir>/ingestion-hash-ledger.json` | | Path for ingestion hash ledger |
 | `ingestion.summaryPath` | string | `<stateDir>/ingestion-cron-summary-current.json` | | Path for ingestion run summary |
+| `ingestion.profiles.<name>.rootDir` | string | _(required)_ | | Root directory for this profile's content scan |
+| `ingestion.profiles.<name>.includeGlobs` | string[] | `["**/*"]` | | Glob patterns for files to include (relative to rootDir) |
+| `ingestion.profiles.<name>.excludeGlobs` | string[] | node_modules, .git, .openclaw | | Glob patterns for files to exclude |
+| `ingestion.profiles.<name>.extensions` | string[] | `[".md"]` | | File extensions to include |
+| `ingestion.agentProfiles` | object | `{}` | | Mapping of agent IDs to profile names |
+| `ingestion.defaultProfile` | string | | | Default profile when agent has no explicit mapping |
 
 **Precedence**: explicit config value > environment variable fallback > built-in default.
+
+**Profile resolution**: `agentProfiles[agentId]` > `defaultProfile` > config error.
+
+### Single-profile ingestion setup
+
+```json
+{
+  "plugins": {
+    "bonfires-plugin": {
+      "agents": { "my-agent": "bonfires-agent-id" },
+      "ingestion": {
+        "enabled": true,
+        "profiles": {
+          "docs": {
+            "rootDir": "./content",
+            "includeGlobs": ["**/*"],
+            "extensions": [".md"]
+          }
+        },
+        "defaultProfile": "docs"
+      }
+    }
+  }
+}
+```
+
+### Multi-profile multi-agent setup
+
+Two agents ingesting from different workspace roots:
+
+```json
+{
+  "plugins": {
+    "bonfires-plugin": {
+      "agents": {
+        "research-agent": "bf-agent-research",
+        "docs-agent": "bf-agent-docs"
+      },
+      "ingestion": {
+        "enabled": true,
+        "profiles": {
+          "research": {
+            "rootDir": "/home/user/research-notes",
+            "includeGlobs": ["papers/**/*", "notes/**/*"],
+            "extensions": [".md"]
+          },
+          "documentation": {
+            "rootDir": "/home/user/project-docs",
+            "includeGlobs": ["**/*"],
+            "excludeGlobs": ["**/drafts/**"],
+            "extensions": [".md", ".txt"]
+          }
+        },
+        "agentProfiles": {
+          "research-agent": "research",
+          "docs-agent": "documentation"
+        }
+      }
+    }
+  }
+}
+```
+
+### Legacy ingestion config (deprecated)
+
+Existing `ingestion.rootDir` configurations continue to work. The plugin normalizes legacy config into a synthetic profile and emits a deprecation warning. Migrate to `ingestion.profiles` for portable multi-agent setups.
 
 ## Intent
 This plugin exists to make OpenClaw sessions more context-aware without requiring manual copy/paste memory workflows.
@@ -104,6 +176,8 @@ Design intent:
 - Agent tool: `bonfires_search(query, limit?)`
 - Agent mapping support for arbitrary agent IDs (project-specific names)
 - Capture ledger for per-session throttling and incremental push behavior
+- Configurable ingestion target profiles with per-agent mapping and portable rootDir selection
+- Per-profile and per-agent ingestion summaries for operability
 
 ## Heartbeat subsystem note
 
@@ -181,6 +255,10 @@ npm run ingest:bonfires      # run ingestion scan + hash-ledger update once
 - Check plugin logs for `[heartbeat] process failed agent=...`.
 - Verify network connectivity to the Bonfires API (`baseUrl`).
 - The heartbeat retries on HTTP 429/5xx with backoff; persistent failures increment `consecutive_failures` in heartbeat state.
+
+**Ingestion profile not found for agent**
+- Error `No ingestion profile mapping for agent "<id>"` means the agent has no entry in `ingestion.agentProfiles` and no `ingestion.defaultProfile` is set.
+- Add a mapping in `agentProfiles` or set `defaultProfile` to a valid profile name.
 
 **State directory permissions**
 - Ensure the plugin process can read/write to the `stateDir` path.

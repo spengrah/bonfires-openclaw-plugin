@@ -7,7 +7,7 @@ import { startStackHeartbeat } from './heartbeat.js';
 import { startIngestionCron } from './ingestion.js';
 
 export default function register(api){
-  const cfg=parseConfig(api.pluginConfig ?? {});
+  const cfg=parseConfig(api.pluginConfig ?? {}, { logger: api.logger });
   const client=createBonfiresClient(cfg, api.logger);
   const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
   const stateDir=resolvePath(cfg.stateDir);
@@ -31,6 +31,10 @@ export default function register(api){
     recoverySource: recoveryFn ? () => recoveryFn() : undefined,
   });
 
+  // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
+  const profiles = cfg.ingestion.profiles;
+  const agentProfiles = cfg.ingestion.agentProfiles;
+
   const stopIngestion = startIngestionCron({
     enabled: cfg.ingestion.enabled,
     everyMinutes: cfg.ingestion.everyMinutes,
@@ -39,6 +43,8 @@ export default function register(api){
     summaryPath: resolvePath(cfg.ingestion.summaryPath),
     client,
     logger: api.logger,
+    profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
+    agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
   });
 
   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));

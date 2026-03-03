@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, extname, join, relative, resolve } from 'node:path';
+import type { IngestionProfile } from './config.js';
 
 type LedgerEntry = { hash: string; pushedAt: string };
 type Ledger = { version: number; entries: Record<string, LedgerEntry> };
@@ -12,13 +13,15 @@ type IngestItem = {
   hash: string;
 };
 
-type IngestionSummary = {
+export type IngestionSummary = {
   timestamp: string;
   scanned: number;
   ingested: number;
   skipped: number;
   errors: number;
   errorDetails: Array<{ file: string; error: string }>;
+  profiles?: Record<string, { scanned: number; ingested: number; skipped: number; errors: number }>;
+  agents?: Record<string, { profile: string }>;
 };
 
 function sha256(content: string) {
@@ -50,6 +53,10 @@ function saveLedger(path: string, ledger: Ledger) {
   writeFileSync(path, JSON.stringify(ledger, null, 2));
 }
 
+/**
+ * Legacy file collection: scans memory/, vault/, projects/ hardcoded dirs.
+ * Preserved for backward compatibility when no profiles are configured.
+ */
 function collectIngestionFiles(rootDir: string): IngestItem[] {
   const absRoot = resolve(rootDir);
   const candidates: string[] = [];
@@ -88,14 +95,113 @@ function collectIngestionFiles(rootDir: string): IngestItem[] {
   });
 }
 
+/**
+ * Match a relative path against a simple glob pattern.
+ * Supports **, *, and ? wildcards. Evaluated relative to profile rootDir.
+ */
+function globMatch(pattern: string, filePath: string): boolean {
+  // Convert glob to regex
+  let regex = '';
+  let i = 0;
+  while (i < pattern.length) {
+    const c = pattern[i];
+    if (c === '*' && pattern[i + 1] === '*') {
+      // ** matches any number of path segments
+      regex += '.*';
+      i += 2;
+      if (pattern[i] === '/') i++; // skip trailing slash after **
+    } else if (c === '*') {
+      regex += '[^/]*';
+      i++;
+    } else if (c === '?') {
+      regex += '[^/]';
+      i++;
+    } else if (c === '.') {
+      regex += '\\.';
+      i++;
+    } else {
+      regex += c;
+      i++;
+    }
+  }
+  return new RegExp(`^${regex}$`).test(filePath);
+}
+
+/**
+ * Profile-based file collection (PM6-R1).
+ * Scans rootDir, applies includeGlobs/excludeGlobs/extensions filters.
+ */
+function collectProfileFiles(profile: IngestionProfile, profileName: string): IngestItem[] {
+  const absRoot = resolve(profile.rootDir);
+  const allFiles: string[] = [];
+
+  try {
+    if (statSync(absRoot).isDirectory()) walk(absRoot, allFiles);
+  } catch {
+    return []; // rootDir doesn't exist or isn't accessible
+  }
+
+  const result: IngestItem[] = [];
+  const seen = new Set<string>();
+
+  for (const absPath of allFiles) {
+    const rel = relative(absRoot, absPath);
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+
+    // Extension filter (PM6-R4)
+    const ext = extname(absPath);
+    if (profile.extensions.length > 0 && !profile.extensions.includes(ext)) continue;
+
+    // Exclude glob filter
+    if (profile.excludeGlobs.some((g) => globMatch(g, rel))) continue;
+
+    // Include glob filter
+    if (!profile.includeGlobs.some((g) => globMatch(g, rel))) continue;
+
+    try {
+      const content = readFileSync(absPath, 'utf8');
+      result.push({
+        absPath,
+        relativePath: `${profileName}:${rel}`,
+        content,
+        hash: sha256(content),
+      });
+    } catch {
+      // Skip files that can't be read
+    }
+  }
+
+  return result;
+}
+
 export async function runIngestionOnce(opts: {
   rootDir: string;
   ledgerPath: string;
   summaryPath: string;
   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+  profiles?: Record<string, IngestionProfile>;
+  agentProfiles?: Record<string, string>;
 }) {
   const ledger = loadLedger(opts.ledgerPath);
-  const items = collectIngestionFiles(opts.rootDir);
+
+  const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
+  const hasProfiles = profileNames.length > 0;
+
+  // Collect items: profile-based or legacy
+  let items: IngestItem[];
+  const profileStats: Record<string, { scanned: number; ingested: number; skipped: number; errors: number }> = {};
+
+  if (hasProfiles) {
+    items = [];
+    for (const [name, profile] of Object.entries(opts.profiles!)) {
+      const profileItems = collectProfileFiles(profile, name);
+      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
+      items.push(...profileItems);
+    }
+  } else {
+    items = collectIngestionFiles(opts.rootDir);
+  }
 
   const summary: IngestionSummary = {
     timestamp: new Date().toISOString(),
@@ -106,10 +212,25 @@ export async function runIngestionOnce(opts: {
     errorDetails: [],
   };
 
+  // Add profile and agent dimensions when profiles are active (PM6-R5)
+  if (hasProfiles) {
+    summary.profiles = profileStats;
+    if (opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0) {
+      summary.agents = {};
+      for (const [agentId, profileName] of Object.entries(opts.agentProfiles)) {
+        summary.agents[agentId] = { profile: profileName };
+      }
+    }
+  }
+
   for (const item of items) {
     const existing = ledger.entries[item.relativePath];
     if (existing?.hash === item.hash) {
       summary.skipped += 1;
+      if (hasProfiles) {
+        const pName = item.relativePath.split(':')[0];
+        if (profileStats[pName]) profileStats[pName].skipped += 1;
+      }
       continue;
     }
 
@@ -123,9 +244,17 @@ export async function runIngestionOnce(opts: {
       });
       ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
       summary.ingested += 1;
+      if (hasProfiles) {
+        const pName = item.relativePath.split(':')[0];
+        if (profileStats[pName]) profileStats[pName].ingested += 1;
+      }
     } catch (e: any) {
       summary.errors += 1;
       summary.errorDetails.push({ file: item.relativePath, error: String(e?.message ?? e) });
+      if (hasProfiles) {
+        const pName = item.relativePath.split(':')[0];
+        if (profileStats[pName]) profileStats[pName].errors += 1;
+      }
     }
   }
 
@@ -144,6 +273,8 @@ export function startIngestionCron(opts: {
   summaryPath: string;
   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
   logger?: { warn?: (msg: string) => void };
+  profiles?: Record<string, IngestionProfile>;
+  agentProfiles?: Record<string, string>;
 }) {
   if (!opts.enabled) return () => {};
 
@@ -158,6 +289,8 @@ export function startIngestionCron(opts: {
         ledgerPath: opts.ledgerPath,
         summaryPath: opts.summaryPath,
         client: opts.client,
+        profiles: opts.profiles,
+        agentProfiles: opts.agentProfiles,
       });
     } catch (e: any) {
       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);

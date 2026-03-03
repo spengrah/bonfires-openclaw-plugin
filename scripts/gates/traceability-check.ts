@@ -20,6 +20,8 @@ const FILE_TO_REQS = {
   'src/bonfires-client.ts':     ['R6'],
   'src/index.js':               ['R1', 'R2', 'R3', 'R4', 'R5'],
   'src/index.ts':               ['R1', 'R2', 'R3', 'R4', 'R5'],
+  'src/ingestion.js':           ['R5'],
+  'src/ingestion.ts':           ['R5'],
 };
 
 function getChangedFiles() {
