@@ -154,6 +154,16 @@ test('wave7: config stateDir is configurable', () => {
   assert.equal(out.stateDir, '/tmp/my-state');
 });
 
+test('wave7: empty stateDir normalizes to .bonfires-state', () => {
+  const out = parseConfig({ agents: { a: 'b' }, stateDir: '' });
+  assert.equal(out.stateDir, '.bonfires-state');
+});
+
+test('wave7: whitespace stateDir normalizes to .bonfires-state', () => {
+  const out = parseConfig({ agents: { a: 'b' }, stateDir: '   ' });
+  assert.equal(out.stateDir, '.bonfires-state');
+});
+
 test('wave7: ingestion ledgerPath defaults use stateDir', () => {
   const out = parseConfig({ agents: { a: 'b' } });
   assert.ok(out.ingestion.ledgerPath.startsWith('.bonfires-state/'));

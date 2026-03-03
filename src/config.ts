@@ -13,7 +13,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
   const throttleMinutes = Number(cfg.capture?.throttleMinutes ?? 15);
   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
   if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
-  const stateDir = String(cfg.stateDir ?? '.bonfires-state');
+  const stateDir = String(cfg.stateDir ?? '.bonfires-state').trim() || '.bonfires-state';
 
   // Parse ingestion profiles (PM6-R1)
   const profiles: Record<string, IngestionProfile> = {};

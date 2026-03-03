@@ -140,7 +140,8 @@
       },
       "stateDir": {
         "type": "string",
-        "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Defaults to .bonfires-state/ within the plugin scope."
+        "minLength": 1,
+        "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Empty/whitespace values are normalized to .bonfires-state/."
       }
     },
     "required": ["agents"],
