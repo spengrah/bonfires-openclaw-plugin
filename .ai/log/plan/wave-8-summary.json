@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-03-03T16:28:00Z",
+  "result": "success",
+  "commit_shas": ["0ee3446"],
+  "changed_files": [
+    "README.md",
+    "openclaw.plugin.json",
+    "scripts/gates/traceability-check.ts",
+    "src/config.ts",
+    "src/index.ts",
+    "src/ingestion.ts",
+    "tests/wave8-profiles.test.ts",
+    ".ai/spec/spec/content-ingestion/ingestion-target-profiles-and-agent-mapping.md",
+    ".ai/spec/guidance/content-ingestion/guidance-for-ingestion-target-profiles-and-agent-mapping.md",
+    ".ai/spec/spec/functionality/requirements-index.md",
+    ".ai/spec/spec/quality/traceability-map.json"
+  ],
+  "gate_results": {
+    "gate:all": "pass"
+  },
+  "caveats": [
+    "wave-8 implementation commit includes planning artifacts under .ai/log/plan"
+  ],
+  "open_risks": [
+    "retrieval isolation remains intentionally out of scope and deferred"
+  ]
+}

@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
-  "wave": "wave-7",
+  "wave": "wave-8",
   "next_action": "done",
   "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-03T00:43:00Z",
+  "updated_at": "2026-03-03T16:58:04.607Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -13,11 +13,11 @@
   "implementation_session_key": "agent:claude:acp:e21a66d8-f6b3-46cf-ba81-70fd761bfde5",
   "implementation_session_label": "impl:bonfires-plugin:wave-1:20260301d",
   "implementation_run_id": "9aa7de17-2367-42ce-abb5-8934cd5dfe0d",
-  "implementation_started_at": "2026-03-02T23:20:00Z",
+  "implementation_started_at": "2026-03-03T16:23:00Z",
   "implementation_mode": "claude-cli-local",
   "implementation_result": "success",
-  "implementation_completed_at": "2026-03-03T00:27:36Z",
-  "implementation_summary_path": ".ai/log/plan/wave-7-summary.json",
+  "implementation_completed_at": "2026-03-03T16:35:15Z",
+  "implementation_summary_path": ".ai/log/plan/wave-8-summary.json",
   "review_lenses": [
     "Correctness",
     "Security/Attacker",
@@ -31,10 +31,10 @@
     "Ops/Runtime Reliability"
   ],
   "review_artifacts": {
-    "correctness": ".ai/log/review/review-correctness-20260303w7.md",
-    "security": ".ai/log/review/review-security-20260303w7.md",
-    "verification_quality": ".ai/log/review/review-verification-quality-20260303w7.md",
-    "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w7.md"
+    "correctness": ".ai/log/review/review-correctness-20260303w8.md",
+    "security": ".ai/log/review/review-security-20260303w8.md",
+    "verification_quality": ".ai/log/review/review-verification-quality-20260303w8.md",
+    "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8.md"
   },
   "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit.",
   "deferred_followups": [
@@ -56,7 +56,7 @@
   "wave3_scope": ".ai/log/plan/wave-3-plan-20260302w3b.md",
   "wave3_specrev": ".ai/log/plan/specrev-wave-3-20260302w3b-r1.md",
   "wave3_verification_matrix": ".ai/log/plan/verification-matrix-wave-3-20260302w3b.md",
-  "implementation_commit": "212d12f",
+  "implementation_commit": "0ee3446",
   "wave3_wrapup": {
     "status": "done",
     "commit": "5abc7f4",
@@ -126,6 +126,22 @@
       "security": ".ai/log/review/review-security-20260303w7.md",
       "verification_quality": ".ai/log/review/review-verification-quality-20260303w7.md",
       "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w7.md"
+    },
+    "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave8_started_at": "2026-03-03T04:26:31.187Z",
+  "wave8_scope": ".ai/log/plan/wave-8-plan-20260303w8a.md",
+  "wave8_specrev": ".ai/log/plan/specrev-wave-8-20260303w8a-r1.md",
+  "wave8_verification_matrix": ".ai/log/plan/verification-matrix-wave-8-20260303w8a.md",
+  "wave8_wrapup": {
+    "status": "done",
+    "commit": "0ee3446",
+    "implementation_summary": ".ai/log/plan/wave-8-summary.json",
+    "reviewer_artifacts": {
+      "correctness": ".ai/log/review/review-correctness-20260303w8.md",
+      "security": ".ai/log/review/review-security-20260303w8.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260303w8.md",
+      "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8.md"
     },
     "gate_report": ".ai/log/plan/verification-gates-report-current.json"
   }
