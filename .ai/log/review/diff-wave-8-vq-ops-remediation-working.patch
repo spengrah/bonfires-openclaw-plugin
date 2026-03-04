@@ -1,0 +1,72 @@
+diff --git a/scripts/gates/mutation-lite-check.ts b/scripts/gates/mutation-lite-check.ts
+index 7d53a2d..ba65ac0 100644
+--- a/scripts/gates/mutation-lite-check.ts
++++ b/scripts/gates/mutation-lite-check.ts
+@@ -29,6 +29,12 @@ const PROBES = [
+     replace: "for (const m of req.messages.slice(-1)) { // mutation: drop earlier messages",
+     description: 'Drop messages in hosted capture loop',
+   },
++  {
++    file: 'src/ingestion.ts',
++    find: "if (!hasProfiles && hasProfileSelectors) {\n    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');\n  }",
++    replace: "// mutation: removed explicit PM6-R2 selector/profile guard",
++    description: 'Remove PM6-R2 explicit failure when selectors exist without profiles',
++  },
+ ];
+ 
+ function run() {
+diff --git a/scripts/gates/quality-check.ts b/scripts/gates/quality-check.ts
+index cc3e4d7..ce6c7ca 100644
+--- a/scripts/gates/quality-check.ts
++++ b/scripts/gates/quality-check.ts
+@@ -18,6 +18,7 @@ const CRITICAL_MODULES = [
+   'src/capture-ledger.js', 'src/capture-ledger.ts',
+   'src/bonfires-client.js', 'src/bonfires-client.ts',
+   'src/index.js', 'src/index.ts',
++  'src/ingestion.js', 'src/ingestion.ts',
+   'src/tools/bonfires-search.js', 'src/tools/bonfires-search.ts',
+ ];
+ 
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 0f779d7..2314046 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -294,6 +294,11 @@ export async function runIngestionOnce(opts: {
+   return summary;
+ }
+ 
++function isDeterministicConfigError(message: string) {
++  return message.includes('no ingestion profiles are defined')
++    || message.includes('Configured ingestion profile');
++}
++
+ export function startIngestionCron(opts: {
+   enabled: boolean;
+   everyMinutes: number;
+@@ -326,7 +331,13 @@ export function startIngestionCron(opts: {
+         activeAgentId: opts.activeAgentId,
+       });
+     } catch (e: any) {
+-      opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
++      const message = String(e?.message ?? e);
++      opts.logger?.warn?.(`[ingestion] tick failed: ${message}`);
++      if (isDeterministicConfigError(message)) {
++        stopped = true;
++        opts.logger?.warn?.('[ingestion] scheduler disabled after non-retriable configuration error');
++        return;
++      }
+     }
+     if (stopped) return;
+     const t = setTimeout(tick, intervalMs);
+diff --git a/tests/wave8-profiles.test.ts b/tests/wave8-profiles.test.ts
+index f5811d6..95d1d69 100644
+--- a/tests/wave8-profiles.test.ts
++++ b/tests/wave8-profiles.test.ts
+@@ -632,6 +632,7 @@ test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ing
+     stop();
+ 
+     assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
++    assert.ok(loggerWarnings.some((m) => m.includes('scheduler disabled after non-retriable configuration error')));
+   } finally {
+     rmSync(rootDocs, { recursive: true, force: true });
+     rmSync(stateDir, { recursive: true, force: true });

@@ -632,6 +632,7 @@ test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ing
     stop();
 
     assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
+    assert.ok(loggerWarnings.some((m) => m.includes('scheduler disabled after non-retriable configuration error')));
   } finally {
     rmSync(rootDocs, { recursive: true, force: true });
     rmSync(stateDir, { recursive: true, force: true });

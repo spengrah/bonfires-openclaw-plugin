@@ -29,6 +29,12 @@ const PROBES = [
     replace: "for (const m of req.messages.slice(-1)) { // mutation: drop earlier messages",
     description: 'Drop messages in hosted capture loop',
   },
+  {
+    file: 'src/ingestion.ts',
+    find: "if (!hasProfiles && hasProfileSelectors) {\n    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');\n  }",
+    replace: "// mutation: removed explicit PM6-R2 selector/profile guard",
+    description: 'Remove PM6-R2 explicit failure when selectors exist without profiles',
+  },
 ];
 
 function run() {

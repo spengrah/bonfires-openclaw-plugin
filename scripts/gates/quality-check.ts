@@ -18,6 +18,7 @@ const CRITICAL_MODULES = [
   'src/capture-ledger.js', 'src/capture-ledger.ts',
   'src/bonfires-client.js', 'src/bonfires-client.ts',
   'src/index.js', 'src/index.ts',
+  'src/ingestion.js', 'src/ingestion.ts',
   'src/tools/bonfires-search.js', 'src/tools/bonfires-search.ts',
 ];
 

@@ -294,6 +294,11 @@ export async function runIngestionOnce(opts: {
   return summary;
 }
 
+function isDeterministicConfigError(message: string) {
+  return message.includes('no ingestion profiles are defined')
+    || message.includes('Configured ingestion profile');
+}
+
 export function startIngestionCron(opts: {
   enabled: boolean;
   everyMinutes: number;
@@ -326,7 +331,13 @@ export function startIngestionCron(opts: {
         activeAgentId: opts.activeAgentId,
       });
     } catch (e: any) {
-      opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
+      const message = String(e?.message ?? e);
+      opts.logger?.warn?.(`[ingestion] tick failed: ${message}`);
+      if (isDeterministicConfigError(message)) {
+        stopped = true;
+        opts.logger?.warn?.('[ingestion] scheduler disabled after non-retriable configuration error');
+        return;
+      }
     }
     if (stopped) return;
     const t = setTimeout(tick, intervalMs);
