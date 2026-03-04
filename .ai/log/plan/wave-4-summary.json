@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-03-02T19:58:00Z",
+  "result": "success",
+  "commit_shas": ["2fca367"],
+  "changed_files": ["scripts/gates/quality-check.ts"],
+  "gate_results": {"gate:all": "pass"},
+  "caveats": ["wave-4 planning/review artifacts are local working-tree logs"],
+  "open_risks": []
+}

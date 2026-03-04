@@ -1,0 +1,51 @@
+You are implementing Wave 3 for the bonfires-plugin project.
+
+DO:
+1) Implement exactly this wave scope:
+   a. Stack-processing heartbeat on fixed 20-minute base cadence with per-run jitter (0–120s) for mapped agents.
+   b. Recovery/catch-up flow for missed captures, sharing watermark ledger semantics with agent_end and overlap-safe dedupe behavior.
+   c. Hosted strict mode guard to prevent silent mock fallback in non-dev hosted contexts.
+   d. Retriable error policy (bounded retries/backoff) for hosted HTTP operations in this wave’s touched flows.
+2) Enforce these acceptance criteria in code + tests:
+   - Heartbeat processing executes on ~20m cadence (+ jitter) for mapped agents and records per-agent metadata.
+   - Recovery catches uncaptured transcript slices and does not duplicate already-pushed ranges.
+   - Overlap handling is deterministic (endIndex precedence + lastPushedIndex guard).
+   - Hosted strict mode throws/blocks when hosted prerequisites are missing in non-dev contexts and does not silently fall back to mock.
+   - Retriable hosted failures use bounded retry policy; non-retriable failures do not spin.
+3) Add/update tests with explicit scenario names for reviewer traceability (especially overlap precedence, endIndex guard, dedupe key).
+4) Keep plugin contracts stable unless strictly necessary; if changed, document minimally in existing docs.
+5) Run deterministic gates and leave repo green.
+
+EXPECT (must satisfy):
+- npm run gate:all => PASS
+- Any touched requirement mappings remain valid for gate:traceability.
+- If code changes are made, create one or more logical commits prefixed with: task:
+- Return a concise summary including: changed files, test/gate results, caveats/open risks.
+
+CONSTRAINTS:
+- Foreground hooks remain fail-open and non-blocking.
+- Recovery/heartbeat paths must be idempotent.
+- Do not add unrelated features, broad refactors, or optimize outside this wave.
+- Do not modify .ai/log history artifacts except writing outputs requested below.
+
+OUT OF SCOPE / DO NOT DO:
+- New product capabilities unrelated to reliability/catch-up.
+- Payment-gated endpoint support.
+- Broad platform scheduling framework beyond plugin-scoped heartbeat runner.
+
+Relevant spec snippets:
+- Stack heartbeat: fixed 20m cadence + 0–120s jitter; retriable failures: max 3 attempts, backoff 5s/15s, no retry on non-retriable 4xx except 429; metadata fields last_attempt_at/last_success_at/last_status/consecutive_failures.
+- Recovery: heartbeat scans persisted transcripts; shared watermark ledger with agent_end; dedupe_key sessionKey:startIndex-endIndex; overlap policy prefer larger endIndex and never push endIndex <= lastPushedIndex; session-end flush via session_end hook or inactivity fallback close_timeout_minutes=2*capture.throttleMinutes.
+- Hosted strict mode: in non-dev hosted contexts, strict mode takes precedence over mock fallback and missing prerequisites fail loudly.
+
+When complete, print a final section titled exactly:
+WAVE3_IMPLEMENTATION_SUMMARY
+with machine-readable JSON object containing:
+{
+  "result": "success|partial|blocked",
+  "commit_shas": [],
+  "changed_files": [],
+  "gate_results": {"gate:all":"pass|fail"},
+  "caveats": [],
+  "open_risks": []
+}

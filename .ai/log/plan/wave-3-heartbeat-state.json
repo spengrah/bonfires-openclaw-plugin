@@ -1,0 +1,14 @@
+{
+  "agents": {
+    "a1": {
+      "consecutive_failures": 2,
+      "last_attempt_at": "2026-03-02T15:55:06.418Z",
+      "last_status": "failed"
+    },
+    "a2": {
+      "consecutive_failures": 2,
+      "last_attempt_at": "2026-03-02T15:55:07.014Z",
+      "last_status": "failed"
+    }
+  }
+}

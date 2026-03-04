@@ -1,0 +1,722 @@
+commit f7b28b8bc056f70119481c6c66a17fb9dd9a1725
+Author: lyle <code@spengrah.xyz>
+Date:   Tue Mar 3 19:41:57 2026 -0600
+
+    fix: enforce PM6-R2 runtime profile resolution in ingestion path
+
+diff --git a/.ai/log/plan/verification-gates-report-current.json b/.ai/log/plan/verification-gates-report-current.json
+index c68cdbd..f785fe3 100644
+--- a/.ai/log/plan/verification-gates-report-current.json
++++ b/.ai/log/plan/verification-gates-report-current.json
+@@ -1,61 +1,61 @@
+ {
+   "wave": "current",
+-  "timestamp": "2026-03-03T16:57:12.595Z",
++  "timestamp": "2026-03-04T01:41:29.579Z",
+   "gates": [
+     {
+       "tier": 1,
+       "name": "lint",
+       "status": "PASS",
+-      "elapsed": 2655,
++      "elapsed": 2847,
+       "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (35 markdown files checked)"
+     },
+     {
+       "tier": 2,
+       "name": "test:coverage",
+       "status": "PASS",
+-      "elapsed": 2413,
+-      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.379824\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.262061\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.242247\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.684391\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.920564\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.24608\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.2883\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.38324\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.179732\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.281078\n  type: 'test'\n  ...\n# Subtest: parseConfig requires at least one mapped agent id\nok 11 - parseConfig requires at least one mapped agent id\n  ---\n  duration_ms: 0.471754\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.227359\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.195157\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.184917\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.200935\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.348723\n  type: 'test'\n  ...\n# Subtest: parseConfig ingestion defaults and mapped-agent validation\nok 17 - parseConfig ingestion defaults and mapped-agent validation\n  ---\n  duration_ms: 0.453033\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 18 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.342464\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 19 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.228174\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles missing results field from search response\nok 20 - before_agent_start handles missing results field from search response\n  ---\n  duration_ms: 0.341353\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 21 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.219804\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 22 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.286541\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 23 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.377203\n  type: 'test'\n  ...\n# Subtest: session_end flush captures uncaptured tail immediately when messages are present\nok 24 - session_end flush captures uncaptured tail immediately when messages are present\n  ---\n  duration_ms: 0.297392\n  type: 'test'\n  ...\n# Subtest: session_end flush respects endIndex <= lastPushedIndex guard\nok 25 - session_end flush respects endIndex <= lastPushedIndex guard\n  ---\n  duration_ms: 0.227618\n  type: 'test'\n  ...\n# Subtest: session_end flush skips when sessionKey is missing\nok 26 - session_end flush skips when sessionKey is missing\n  ---\n  duration_ms: 0.203897\n  type: 'test'\n  ...\n# Subtest: session_end flush skips unknown agent mapping\nok 27 - session_end flush skips unknown agent mapping\n  ---\n  duration_ms: 0.21247\n  type: 'test'\n  ...\n# Subtest: session_end flush catch path swallows capture errors\nok 28 - session_end flush catch path swallows capture errors\n  ---\n  duration_ms: 0.290745\n  type: 'test'\n  ...\n# Subtest: session_end flush no-messages branch returns without capture\nok 29 - session_end flush no-messages branch returns without capture\n  ---\n  duration_ms: 0.22597\n  type: 'test'\n  ...\n# Subtest: session_end flush sets lastPushedAt from Date.now when nowMs is absent\nok 30 - session_end flush sets lastPushedAt from Date.now when nowMs is absent\n  ---\n  duration_ms: 0.233063\n  type: 'test'\n  ...\n# Subtest: session_end catch path is safe with non-Error throw and missing logger\nok 31 - session_end catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.247154\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 32 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.666346\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 33 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.531862\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 34 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.315188\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 35 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 2.576962\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 36 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.415053\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 37 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.340612\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 38 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.185675\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 39 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.207471\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 40 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.305577\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path is safe when logger is missing and error is non-Error\nok 41 - handleAgentEnd catch path is safe when logger is missing and error is non-Error\n  ---\n  duration_ms: 0.223322\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 42 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.305244\n  type: 'test'\n  ...\n# Subtest: before_agent_start catch path is safe with non-Error throw and missing logger\nok 43 - before_agent_start catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.209434\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 44 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.204508\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 45 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.196286\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 46 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.226304\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 47 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.208193\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 48 - plugin register wires hooks and tool\n  ---\n  duration_ms: 2.033212\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 49 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.639079\n  type: 'test'\n  ...\n# Subtest: plugin register supports functional recovery source and enabled ingestion config\nok 50 - plugin register supports functional recovery source and enabled ingestion config\n  ---\n  duration_ms: 0.534528\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 51 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.238766\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 52 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 35.671768\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 53 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.523103\n  type: 'test'\n  ...\n# Subtest: hosted capture posts stack add per message and returns accepted count\nok 54 - hosted capture posts stack add per message and returns accepted count\n  ---\n  duration_ms: 3.264113\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 55 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 1.361635\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 56 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.966118\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 57 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.82768\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 58 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.399961\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 59 - hosted search handles non-ok response\n  ---\n  duration_ms: 1.531459\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 60 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.729241\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 61 - hosted capture single-message payload path\n  ---\n  duration_ms: 1.721209\n  type: 'test'\n  ...\n# Subtest: hosted capture with >2 messages does not drop and reports accepted count\nok 62 - hosted capture with >2 messages does not drop and reports accepted count\n  ---\n  duration_ms: 2.723566\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 63 - hosted search returns normalized score values\n  ---\n  duration_ms: 1.11248\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 64 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 1.073612\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 65 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 1.272028\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 66 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 1.36795\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 67 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 6.234259\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 68 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.525233\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 69 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.385147\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient strictHostedMode throws when hosted env missing\nok 70 - createBonfiresClient strictHostedMode throws when hosted env missing\n  ---\n  duration_ms: 0.522696\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 71 - mock client processStack path\n  ---\n  duration_ms: 0.574934\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 72 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 1.213754\n  type: 'test'\n  ...\n# Subtest: hosted ingestContent maps payload to ingest_content endpoint\nok 73 - hosted ingestContent maps payload to ingest_content endpoint\n  ---\n  duration_ms: 1.414725\n  type: 'test'\n  ...\n# Subtest: wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\nok 74 - wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\n  ---\n  duration_ms: 2.319327\n  type: 'test'\n  ...\n# Subtest: wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\nok 75 - wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\n  ---\n  duration_ms: 0.215119\n  type: 'test'\n  ...\n# Subtest: wave3: recovery skips sessions that are not ended and not inactive long enough\nok 76 - wave3: recovery skips sessions that are not ended and not inactive long enough\n  ---\n  duration_ms: 0.31378\n  type: 'test'\n  ...\n# Subtest: wave3: process stack retry policy retries retriable failures and stops on non-retriable\nok 77 - wave3: process stack retry policy retries retriable failures and stops on non-retriable\n  ---\n  duration_ms: 2.082635\n  type: 'test'\n  ...\n# Subtest: wave3: recovery range helper and retriable classifier behave deterministically\nok 78 - wave3: recovery range helper and retriable classifier behave deterministically\n  ---\n  duration_ms: 0.364574\n  type: 'test'\n  ...\n# Subtest: wave3: recovery capture failure is fail-open and logs warning\nok 79 - wave3: recovery capture failure is fail-open and logs warning\n  ---\n  duration_ms: 0.420757\n  type: 'test'\n  ...\n# Subtest: wave3: startStackHeartbeat runs first tick, persists state, and supports stop\nok 80 - wave3: startStackHeartbeat runs first tick, persists state, and supports stop\n  ---\n  duration_ms: 15.194897\n  type: 'test'\n  ...\n# [verify:hosted] PASS contract:/delve normalization\n# [verify:hosted] PASS contract:/stack/add mapping\n# [verify:hosted] PASS contract:/stack/process response handling\n# [verify:hosted] SKIP preflight:/healthz — live mode not requested\n# [verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested\n# [verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json\n# Subtest: wave5: redactEnvSummary never exposes raw key\nok 81 - wave5: redactEnvSummary never exposes raw key\n  ---\n  duration_ms: 1.231605\n  type: 'test'\n  ...\n# Subtest: wave5: verify:hosted fixture mode writes report with required probes\nok 82 - wave5: verify:hosted fixture mode writes report with required probes\n  ---\n  duration_ms: 41.261669\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips unchanged content and persists ledger across runs\nok 83 - wave6: ingestion skips unchanged content and persists ledger across runs\n  ---\n  duration_ms: 10.794214\n  type: 'test'\n  ...\n# Subtest: wave6: changed content ingests exactly once per new hash and emits summary\nok 84 - wave6: changed content ingests exactly once per new hash and emits summary\n  ---\n  duration_ms: 3.276556\n  type: 'test'\n  ...\n# Subtest: wave6: ingestContent error increments error count and records failure detail\nok 85 - wave6: ingestContent error increments error count and records failure detail\n  ---\n  duration_ms: 2.332494\n  type: 'test'\n  ...\n# Subtest: wave6: missing ingestContent on client throws and records error\nok 86 - wave6: missing ingestContent on client throws and records error\n  ---\n  duration_ms: 4.348465\n  type: 'test'\n  ...\n# Subtest: wave6: startIngestionCron skips scheduling when disabled\nok 87 - wave6: startIngestionCron skips scheduling when disabled\n  ---\n  duration_ms: 0.588193\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion scans vault and projects directories\nok 88 - wave6: ingestion scans vault and projects directories\n  ---\n  duration_ms: 5.91383\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips non-markdown files\nok 89 - wave6: ingestion skips non-markdown files\n  ---\n  duration_ms: 3.199875\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json exists and has required fields\nok 90 - wave7: openclaw.plugin.json exists and has required fields\n  ---\n  duration_ms: 1.758041\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema requires agents\nok 91 - wave7: openclaw.plugin.json configSchema requires agents\n  ---\n  duration_ms: 0.365\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema lists all config fields\nok 92 - wave7: openclaw.plugin.json configSchema lists all config fields\n  ---\n  duration_ms: 0.290504\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json nested objects set additionalProperties false\nok 93 - wave7: openclaw.plugin.json nested objects set additionalProperties false\n  ---\n  duration_ms: 0.257876\n  type: 'test'\n  ...\n# Subtest: wave7: package.json has openclaw.extensions.plugin\nok 94 - wave7: package.json has openclaw.extensions.plugin\n  ---\n  duration_ms: 0.237006\n  type: 'test'\n  ...\n# Subtest: wave7: config baseUrl falls back to env BONFIRES_BASE_URL\nok 95 - wave7: config baseUrl falls back to env BONFIRES_BASE_URL\n  ---\n  duration_ms: 0.781775\n  type: 'test'\n  ...\n# Subtest: wave7: config value takes precedence over BONFIRES_BASE_URL env\nok 96 - wave7: config value takes precedence over BONFIRES_BASE_URL env\n  ---\n  duration_ms: 0.282004\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\nok 97 - wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\n  ---\n  duration_ms: 0.212397\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv explicit value overrides env fallback\nok 98 - wave7: config apiKeyEnv explicit value overrides env fallback\n  ---\n  duration_ms: 0.89577\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId falls back to BONFIRE_ID env\nok 99 - wave7: config bonfireId falls back to BONFIRE_ID env\n  ---\n  duration_ms: 0.361871\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId explicit value overrides env\nok 100 - wave7: config bonfireId explicit value overrides env\n  ---\n  duration_ms: 0.249709\n  type: 'test'\n  ...\n# Subtest: wave7: config defaults when no env vars set\nok 101 - wave7: config defaults when no env vars set\n  ---\n  duration_ms: 0.232062\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir defaults to .bonfires-state\nok 102 - wave7: config stateDir defaults to .bonfires-state\n  ---\n  duration_ms: 0.223304\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir is configurable\nok 103 - wave7: config stateDir is configurable\n  ---\n  duration_ms: 0.215322\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion ledgerPath defaults use stateDir\nok 104 - wave7: ingestion ledgerPath defaults use stateDir\n  ---\n  duration_ms: 0.183657\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion paths use custom stateDir when overridden\nok 105 - wave7: ingestion paths use custom stateDir when overridden\n  ---\n  duration_ms: 0.17601\n  type: 'test'\n  ...\n# Subtest: wave7: explicit ingestion paths override stateDir-based defaults\nok 106 - wave7: explicit ingestion paths override stateDir-based defaults\n  ---\n  duration_ms: 0.232081\n  type: 'test'\n  ...\n# Subtest: wave7: register returns dispose handle that stops background loops\nok 107 - wave7: register returns dispose handle that stops background loops\n  ---\n  duration_ms: 3.890563\n  type: 'test'\n  ...\n# Subtest: wave7: register dispose is idempotent\nok 108 - wave7: register dispose is idempotent\n  ---\n  duration_ms: 1.325137\n  type: 'test'\n  ...\n# Subtest: wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\nok 109 - wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\n  ---\n  duration_ms: 3.285278\n  type: 'test'\n  ...\n# Subtest: wave8: profile name must be alphanumeric with hyphens/underscores\nok 110 - wave8: profile name must be alphanumeric with hyphens/underscores\n  ---\n  duration_ms: 0.610229\n  type: 'test'\n  ...\n# Subtest: wave8: profile without rootDir throws\nok 111 - wave8: profile without rootDir throws\n  ---\n  duration_ms: 0.205489\n  type: 'test'\n  ...\n# Subtest: wave8: empty includeGlobs array throws\nok 112 - wave8: empty includeGlobs array throws\n  ---\n  duration_ms: 0.198564\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion collects files matching globs and extensions\nok 113 - wave8: profile-based ingestion collects files matching globs and extensions\n  ---\n  duration_ms: 4.288265\n  type: 'test'\n  ...\n# Subtest: wave8: profile excludeGlobs filters out matching files\nok 114 - wave8: profile excludeGlobs filters out matching files\n  ---\n  duration_ms: 1.767096\n  type: 'test'\n  ...\n# Subtest: wave8: profile with custom extensions allows non-markdown files\nok 115 - wave8: profile with custom extensions allows non-markdown files\n  ---\n  duration_ms: 1.267936\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile returns mapped profile for agent\nok 116 - wave8: resolveIngestionProfile returns mapped profile for agent\n  ---\n  duration_ms: 0.421201\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile falls back to defaultProfile\nok 117 - wave8: resolveIngestionProfile falls back to defaultProfile\n  ---\n  duration_ms: 0.376925\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no mapping and no default\nok 118 - wave8: resolveIngestionProfile throws when no mapping and no default\n  ---\n  duration_ms: 0.246783\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no profiles configured\nok 119 - wave8: resolveIngestionProfile throws when no profiles configured\n  ---\n  duration_ms: 0.21173\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles referencing unknown profile throws at parse time\nok 120 - wave8: agentProfiles referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.195676\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile referencing unknown profile throws at parse time\nok 121 - wave8: defaultProfile referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.195546\n  type: 'test'\n  ...\n# Subtest: wave8: legacy rootDir normalizes into synthetic _legacy profile\nok 122 - wave8: legacy rootDir normalizes into synthetic _legacy profile\n  ---\n  duration_ms: 0.232284\n  type: 'test'\n  ...\n# Subtest: wave8: legacy config emits deprecation warning\nok 123 - wave8: legacy config emits deprecation warning\n  ---\n  duration_ms: 0.250136\n  type: 'test'\n  ...\n# Subtest: wave8: explicit profiles override legacy rootDir normalization\nok 124 - wave8: explicit profiles override legacy rootDir normalization\n  ---\n  duration_ms: 0.208193\n  type: 'test'\n  ...\n# Subtest: wave8: no profiles and no legacy rootDir produces empty profiles\nok 125 - wave8: no profiles and no legacy rootDir produces empty profiles\n  ---\n  duration_ms: 0.166825\n  type: 'test'\n  ...\n# Subtest: wave8: default excludes include node_modules, .git, .openclaw\nok 126 - wave8: default excludes include node_modules, .git, .openclaw\n  ---\n  duration_ms: 0.182879\n  type: 'test'\n  ...\n# Subtest: wave8: default extension is .md\nok 127 - wave8: default extension is .md\n  ---\n  duration_ms: 0.227284\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion preserves hash-ledger dedup semantics\nok 128 - wave8: profile-based ingestion preserves hash-ledger dedup semantics\n  ---\n  duration_ms: 7.060328\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes per-profile dimensions\nok 129 - wave8: summary includes per-profile dimensions\n  ---\n  duration_ms: 1.63725\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes agent dimensions\nok 130 - wave8: summary includes agent dimensions\n  ---\n  duration_ms: 1.09437\n  type: 'test'\n  ...\n# Subtest: wave8: error details include profile name in file path\nok 131 - wave8: error details include profile name in file path\n  ---\n  duration_ms: 1.286176\n  type: 'test'\n  ...\n# Subtest: wave8: legacy ingestion without profiles still works unchanged\nok 132 - wave8: legacy ingestion without profiles still works unchanged\n  ---\n  duration_ms: 1.71458\n  type: 'test'\n  ...\n# Subtest: wave8: two profiles with different roots ingest from both\nok 133 - wave8: two profiles with different roots ingest from both\n  ---\n  duration_ms: 1.593086\n  type: 'test'\n  ...\n# Subtest: wave8: profile with missing rootDir returns zero items gracefully\nok 134 - wave8: profile with missing rootDir returns zero items gracefully\n  ---\n  duration_ms: 0.794627\n  type: 'test'\n  ...\n# Subtest: wave8: register with profiles and agentProfiles wires ingestion cron\nok 135 - wave8: register with profiles and agentProfiles wires ingestion cron\n  ---\n  duration_ms: 1.82213\n  type: 'test'\n  ...\n1..135\n# tests 135\n# suites 0\n# pass 135\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1816.722196"
++      "elapsed": 3619,
++      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.696042\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.276984\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.262039\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.784118\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.672617\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.247373\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.229354\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.361263\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.179946\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.226909\n  type: 'test'\n  ...\n# Subtest: parseConfig requires at least one mapped agent id\nok 11 - parseConfig requires at least one mapped agent id\n  ---\n  duration_ms: 0.489393\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.261317\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.225428\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.195743\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.200391\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.417985\n  type: 'test'\n  ...\n# Subtest: parseConfig ingestion defaults and mapped-agent validation\nok 17 - parseConfig ingestion defaults and mapped-agent validation\n  ---\n  duration_ms: 0.472004\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 18 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.370041\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 19 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.23915\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles missing results field from search response\nok 20 - before_agent_start handles missing results field from search response\n  ---\n  duration_ms: 0.212817\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 21 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.187817\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 22 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.303651\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 23 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.316948\n  type: 'test'\n  ...\n# Subtest: session_end flush captures uncaptured tail immediately when messages are present\nok 24 - session_end flush captures uncaptured tail immediately when messages are present\n  ---\n  duration_ms: 1.651181\n  type: 'test'\n  ...\n# Subtest: session_end flush respects endIndex <= lastPushedIndex guard\nok 25 - session_end flush respects endIndex <= lastPushedIndex guard\n  ---\n  duration_ms: 0.584505\n  type: 'test'\n  ...\n# Subtest: session_end flush skips when sessionKey is missing\nok 26 - session_end flush skips when sessionKey is missing\n  ---\n  duration_ms: 0.326984\n  type: 'test'\n  ...\n# Subtest: session_end flush skips unknown agent mapping\nok 27 - session_end flush skips unknown agent mapping\n  ---\n  duration_ms: 0.223928\n  type: 'test'\n  ...\n# Subtest: session_end flush catch path swallows capture errors\nok 28 - session_end flush catch path swallows capture errors\n  ---\n  duration_ms: 0.320225\n  type: 'test'\n  ...\n# Subtest: session_end flush no-messages branch returns without capture\nok 29 - session_end flush no-messages branch returns without capture\n  ---\n  duration_ms: 0.246539\n  type: 'test'\n  ...\n# Subtest: session_end flush sets lastPushedAt from Date.now when nowMs is absent\nok 30 - session_end flush sets lastPushedAt from Date.now when nowMs is absent\n  ---\n  duration_ms: 0.258854\n  type: 'test'\n  ...\n# Subtest: session_end catch path is safe with non-Error throw and missing logger\nok 31 - session_end catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.386708\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 32 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 3.062193\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 33 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.551875\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 34 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.29604\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 35 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.21002\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 36 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.411226\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 37 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.461282\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 38 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.226965\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 39 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.245539\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 40 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 1.230604\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path is safe when logger is missing and error is non-Error\nok 41 - handleAgentEnd catch path is safe when logger is missing and error is non-Error\n  ---\n  duration_ms: 0.367133\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 42 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.392151\n  type: 'test'\n  ...\n# Subtest: before_agent_start catch path is safe with non-Error throw and missing logger\nok 43 - before_agent_start catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.285447\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 44 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.248947\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 45 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.229299\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 46 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.251651\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 47 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.225002\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 48 - plugin register wires hooks and tool\n  ---\n  duration_ms: 1.474198\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 49 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.783692\n  type: 'test'\n  ...\n# Subtest: plugin register supports functional recovery source and enabled ingestion config\nok 50 - plugin register supports functional recovery source and enabled ingestion config\n  ---\n  duration_ms: 0.634413\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 51 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.327985\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 52 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 38.497394\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 53 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.429189\n  type: 'test'\n  ...\n# Subtest: hosted capture posts stack add per message and returns accepted count\nok 54 - hosted capture posts stack add per message and returns accepted count\n  ---\n  duration_ms: 1.811109\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 55 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 0.894341\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 56 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.640858\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 57 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.609357\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 58 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.292651\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 59 - hosted search handles non-ok response\n  ---\n  duration_ms: 0.874193\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 60 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.246965\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 61 - hosted capture single-message payload path\n  ---\n  duration_ms: 0.74247\n  type: 'test'\n  ...\n# Subtest: hosted capture with >2 messages does not drop and reports accepted count\nok 62 - hosted capture with >2 messages does not drop and reports accepted count\n  ---\n  duration_ms: 1.747664\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 63 - hosted search returns normalized score values\n  ---\n  duration_ms: 0.71597\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 64 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 0.635116\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 65 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 3.101194\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 66 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 0.910138\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 67 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 1.59607\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 68 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.381818\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 69 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.243631\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient strictHostedMode throws when hosted env missing\nok 70 - createBonfiresClient strictHostedMode throws when hosted env missing\n  ---\n  duration_ms: 0.283521\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 71 - mock client processStack path\n  ---\n  duration_ms: 0.361836\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 72 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 0.73884\n  type: 'test'\n  ...\n# Subtest: hosted ingestContent maps payload to ingest_content endpoint\nok 73 - hosted ingestContent maps payload to ingest_content endpoint\n  ---\n  duration_ms: 0.818915\n  type: 'test'\n  ...\n# Subtest: wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\nok 74 - wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\n  ---\n  duration_ms: 2.535059\n  type: 'test'\n  ...\n# Subtest: wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\nok 75 - wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\n  ---\n  duration_ms: 0.249298\n  type: 'test'\n  ...\n# Subtest: wave3: recovery skips sessions that are not ended and not inactive long enough\nok 76 - wave3: recovery skips sessions that are not ended and not inactive long enough\n  ---\n  duration_ms: 0.359392\n  type: 'test'\n  ...\n# Subtest: wave3: process stack retry policy retries retriable failures and stops on non-retriable\nok 77 - wave3: process stack retry policy retries retriable failures and stops on non-retriable\n  ---\n  duration_ms: 4.54878\n  type: 'test'\n  ...\n# Subtest: wave3: recovery range helper and retriable classifier behave deterministically\nok 78 - wave3: recovery range helper and retriable classifier behave deterministically\n  ---\n  duration_ms: 0.454707\n  type: 'test'\n  ...\n# Subtest: wave3: recovery capture failure is fail-open and logs warning\nok 79 - wave3: recovery capture failure is fail-open and logs warning\n  ---\n  duration_ms: 0.456874\n  type: 'test'\n  ...\n# Subtest: wave3: startStackHeartbeat runs first tick, persists state, and supports stop\nok 80 - wave3: startStackHeartbeat runs first tick, persists state, and supports stop\n  ---\n  duration_ms: 15.583526\n  type: 'test'\n  ...\n# [verify:hosted] PASS contract:/delve normalization\n# [verify:hosted] PASS contract:/stack/add mapping\n# [verify:hosted] PASS contract:/stack/process response handling\n# [verify:hosted] SKIP preflight:/healthz — live mode not requested\n# [verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested\n# [verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json\n# Subtest: wave5: redactEnvSummary never exposes raw key\nok 81 - wave5: redactEnvSummary never exposes raw key\n  ---\n  duration_ms: 1.193658\n  type: 'test'\n  ...\n# Subtest: wave5: verify:hosted fixture mode writes report with required probes\nok 82 - wave5: verify:hosted fixture mode writes report with required probes\n  ---\n  duration_ms: 39.99524\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips unchanged content and persists ledger across runs\nok 83 - wave6: ingestion skips unchanged content and persists ledger across runs\n  ---\n  duration_ms: 10.532278\n  type: 'test'\n  ...\n# Subtest: wave6: changed content ingests exactly once per new hash and emits summary\nok 84 - wave6: changed content ingests exactly once per new hash and emits summary\n  ---\n  duration_ms: 2.77458\n  type: 'test'\n  ...\n# Subtest: wave6: ingestContent error increments error count and records failure detail\nok 85 - wave6: ingestContent error increments error count and records failure detail\n  ---\n  duration_ms: 2.084685\n  type: 'test'\n  ...\n# Subtest: wave6: missing ingestContent on client throws and records error\nok 86 - wave6: missing ingestContent on client throws and records error\n  ---\n  duration_ms: 1.742811\n  type: 'test'\n  ...\n# Subtest: wave6: startIngestionCron skips scheduling when disabled\nok 87 - wave6: startIngestionCron skips scheduling when disabled\n  ---\n  duration_ms: 0.340577\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion scans vault and projects directories\nok 88 - wave6: ingestion scans vault and projects directories\n  ---\n  duration_ms: 8.634965\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips non-markdown files\nok 89 - wave6: ingestion skips non-markdown files\n  ---\n  duration_ms: 2.14013\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json exists and has required fields\nok 90 - wave7: openclaw.plugin.json exists and has required fields\n  ---\n  duration_ms: 1.938036\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema requires agents\nok 91 - wave7: openclaw.plugin.json configSchema requires agents\n  ---\n  duration_ms: 0.415726\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema lists all config fields\nok 92 - wave7: openclaw.plugin.json configSchema lists all config fields\n  ---\n  duration_ms: 1.888053\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json nested objects set additionalProperties false\nok 93 - wave7: openclaw.plugin.json nested objects set additionalProperties false\n  ---\n  duration_ms: 0.720524\n  type: 'test'\n  ...\n# Subtest: wave7: package.json has openclaw.extensions.plugin\nok 94 - wave7: package.json has openclaw.extensions.plugin\n  ---\n  duration_ms: 0.387707\n  type: 'test'\n  ...\n# Subtest: wave7: config baseUrl falls back to env BONFIRES_BASE_URL\nok 95 - wave7: config baseUrl falls back to env BONFIRES_BASE_URL\n  ---\n  duration_ms: 0.943916\n  type: 'test'\n  ...\n# Subtest: wave7: config value takes precedence over BONFIRES_BASE_URL env\nok 96 - wave7: config value takes precedence over BONFIRES_BASE_URL env\n  ---\n  duration_ms: 0.294614\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\nok 97 - wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\n  ---\n  duration_ms: 0.233909\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv explicit value overrides env fallback\nok 98 - wave7: config apiKeyEnv explicit value overrides env fallback\n  ---\n  duration_ms: 0.23028\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId falls back to BONFIRE_ID env\nok 99 - wave7: config bonfireId falls back to BONFIRE_ID env\n  ---\n  duration_ms: 0.20152\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId explicit value overrides env\nok 100 - wave7: config bonfireId explicit value overrides env\n  ---\n  duration_ms: 0.221113\n  type: 'test'\n  ...\n# Subtest: wave7: config defaults when no env vars set\nok 101 - wave7: config defaults when no env vars set\n  ---\n  duration_ms: 0.272114\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir defaults to .bonfires-state\nok 102 - wave7: config stateDir defaults to .bonfires-state\n  ---\n  duration_ms: 0.177575\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir is configurable\nok 103 - wave7: config stateDir is configurable\n  ---\n  duration_ms: 0.191223\n  type: 'test'\n  ...\n# Subtest: wave7: empty stateDir normalizes to .bonfires-state\nok 104 - wave7: empty stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.173705\n  type: 'test'\n  ...\n# Subtest: wave7: whitespace stateDir normalizes to .bonfires-state\nok 105 - wave7: whitespace stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.168353\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion ledgerPath defaults use stateDir\nok 106 - wave7: ingestion ledgerPath defaults use stateDir\n  ---\n  duration_ms: 0.193057\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion paths use custom stateDir when overridden\nok 107 - wave7: ingestion paths use custom stateDir when overridden\n  ---\n  duration_ms: 0.209131\n  type: 'test'\n  ...\n# Subtest: wave7: explicit ingestion paths override stateDir-based defaults\nok 108 - wave7: explicit ingestion paths override stateDir-based defaults\n  ---\n  duration_ms: 0.378466\n  type: 'test'\n  ...\n# Subtest: wave7: register returns dispose handle that stops background loops\nok 109 - wave7: register returns dispose handle that stops background loops\n  ---\n  duration_ms: 3.101361\n  type: 'test'\n  ...\n# Subtest: wave7: register dispose is idempotent\nok 110 - wave7: register dispose is idempotent\n  ---\n  duration_ms: 1.263807\n  type: 'test'\n  ...\n# Subtest: wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\nok 111 - wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\n  ---\n  duration_ms: 3.380622\n  type: 'test'\n  ...\n# Subtest: wave8: profile name must be alphanumeric with hyphens/underscores\nok 112 - wave8: profile name must be alphanumeric with hyphens/underscores\n  ---\n  duration_ms: 0.638098\n  type: 'test'\n  ...\n# Subtest: wave8: profile without rootDir throws\nok 113 - wave8: profile without rootDir throws\n  ---\n  duration_ms: 0.220465\n  type: 'test'\n  ...\n# Subtest: wave8: empty includeGlobs array throws\nok 114 - wave8: empty includeGlobs array throws\n  ---\n  duration_ms: 0.199372\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion collects files matching globs and extensions\nok 115 - wave8: profile-based ingestion collects files matching globs and extensions\n  ---\n  duration_ms: 4.258593\n  type: 'test'\n  ...\n# Subtest: wave8: profile excludeGlobs filters out matching files\nok 116 - wave8: profile excludeGlobs filters out matching files\n  ---\n  duration_ms: 1.821887\n  type: 'test'\n  ...\n# Subtest: wave8: profile with custom extensions allows non-markdown files\nok 117 - wave8: profile with custom extensions allows non-markdown files\n  ---\n  duration_ms: 1.261307\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile returns mapped profile for agent\nok 118 - wave8: resolveIngestionProfile returns mapped profile for agent\n  ---\n  duration_ms: 0.427893\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile falls back to defaultProfile\nok 119 - wave8: resolveIngestionProfile falls back to defaultProfile\n  ---\n  duration_ms: 0.392152\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no mapping and no default\nok 120 - wave8: resolveIngestionProfile throws when no mapping and no default\n  ---\n  duration_ms: 0.263058\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no profiles configured\nok 121 - wave8: resolveIngestionProfile throws when no profiles configured\n  ---\n  duration_ms: 0.216039\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles referencing unknown profile throws at parse time\nok 122 - wave8: agentProfiles referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.203428\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile referencing unknown profile throws at parse time\nok 123 - wave8: defaultProfile referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.182835\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile without profiles throws explicit config error\nok 124 - wave8: defaultProfile without profiles throws explicit config error\n  ---\n  duration_ms: 0.177334\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles without profiles throws explicit config error\nok 125 - wave8: agentProfiles without profiles throws explicit config error\n  ---\n  duration_ms: 0.182335\n  type: 'test'\n  ...\n# Subtest: wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\nok 126 - wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\n  ---\n  duration_ms: 0.827508\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors resolve to defaultProfile at runtime\nok 127 - wave8: profile selectors resolve to defaultProfile at runtime\n  ---\n  duration_ms: 1.746016\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors prefer active agent mapping over default\nok 128 - wave8: profile selectors prefer active agent mapping over default\n  ---\n  duration_ms: 1.89472\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors throw when resolved profile is missing\nok 129 - wave8: profile selectors throw when resolved profile is missing\n  ---\n  duration_ms: 0.909749\n  type: 'test'\n  ...\n# Subtest: wave8: legacy rootDir normalizes into synthetic _legacy profile\nok 130 - wave8: legacy rootDir normalizes into synthetic _legacy profile\n  ---\n  duration_ms: 0.326688\n  type: 'test'\n  ...\n# Subtest: wave8: legacy config emits deprecation warning\nok 131 - wave8: legacy config emits deprecation warning\n  ---\n  duration_ms: 0.276521\n  type: 'test'\n  ...\n# Subtest: wave8: explicit profiles override legacy rootDir normalization\nok 132 - wave8: explicit profiles override legacy rootDir normalization\n  ---\n  duration_ms: 0.229724\n  type: 'test'\n  ...\n# Subtest: wave8: no profiles and no legacy rootDir produces empty profiles\nok 133 - wave8: no profiles and no legacy rootDir produces empty profiles\n  ---\n  duration_ms: 0.176798\n  type: 'test'\n  ...\n# Subtest: wave8: default excludes include node_modules, .git, .openclaw\nok 134 - wave8: default excludes include node_modules, .git, .openclaw\n  ---\n  duration_ms: 0.195224\n  type: 'test'\n  ...\n# Subtest: wave8: default extension is .md\nok 135 - wave8: default extension is .md\n  ---\n  duration_ms: 0.207335\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion preserves hash-ledger dedup semantics\nok 136 - wave8: profile-based ingestion preserves hash-ledger dedup semantics\n  ---\n  duration_ms: 6.528131\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes per-profile dimensions\nok 137 - wave8: summary includes per-profile dimensions\n  ---\n  duration_ms: 1.991388\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes agent dimensions\nok 138 - wave8: summary includes agent dimensions\n  ---\n  duration_ms: 2.793803\n  type: 'test'\n  ...\n# Subtest: wave8: error details include profile name in file path\nok 139 - wave8: error details include profile name in file path\n  ---\n  duration_ms: 1.395512\n  type: 'test'\n  ...\n# Subtest: wave8: legacy ingestion without profiles still works unchanged\nok 140 - wave8: legacy ingestion without profiles still works unchanged\n  ---\n  duration_ms: 1.612663\n  type: 'test'\n  ...\n# Subtest: wave8: two profiles with different roots ingest from both\nok 141 - wave8: two profiles with different roots ingest from both\n  ---\n  duration_ms: 1.556384\n  type: 'test'\n  ...\n# Subtest: wave8: profile with missing rootDir returns zero items gracefully\nok 142 - wave8: profile with missing rootDir returns zero items gracefully\n  ---\n  duration_ms: 0.801322\n  type: 'test'\n  ...\n# Subtest: wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\nok 143 - wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\n  ---\n  duration_ms: 1201.148276\n  type: 'test'\n  ...\n# Subtest: wave8: register with profiles and agentProfiles wires ingestion cron\nok 144 - wave8: register with profiles and agentProfiles wires ingestion cron\n  ---\n  duration_ms: 1.963239\n  type: 'test'\n  ...\n1..144\n# tests 144\n# suites 0\n# pass 144\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 3022.17375"
+     },
+     {
+       "tier": 2,
+       "name": "gate:coverage",
+       "status": "PASS",
+-      "elapsed": 310,
+-      "output": "coverage-check: global line 94.0% — PASS"
++      "elapsed": 317,
++      "output": "coverage-check: global line 95.6% — PASS"
+     },
+     {
+       "tier": 2,
+       "name": "gate:changed-lines",
+       "status": "PASS",
+-      "elapsed": 344,
+-      "output": "changed-lines-coverage-check: 96.8% of 248 changed line(s) covered — PASS"
++      "elapsed": 332,
++      "output": "changed-lines-coverage-check: 100.0% of 47 changed line(s) covered — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:quality",
+       "status": "PASS",
+-      "elapsed": 327,
++      "elapsed": 344,
+       "output": "[quality-check] module=src/config.ts\n  test_files=wave1.test.ts, wave5-hosted-verification.test.ts, wave7-packaging.test.ts, wave8-profiles.test.ts\n  checks happy=true negative=true edge=true\n[quality-check] module=src/index.ts\n  test_files=wave1.test.ts, wave7-packaging.test.ts, wave8-profiles.test.ts\n  checks happy=true negative=true edge=true\nquality-check: 2 critical module(s) verified — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:mutation-lite",
+       "status": "PASS",
+-      "elapsed": 4760,
++      "elapsed": 8538,
+       "output": "mutation-lite: skipping probe \"Suppress non-OK error handling in hosted fetchJson\" (target not found)\nmutation-lite-check: 3 probe(s) caught by tests — PASS"
+     },
+     {
+       "tier": 4,
+       "name": "gate:traceability",
+       "status": "PASS",
+-      "elapsed": 326,
++      "elapsed": 344,
+       "output": "traceability-check: 5 touched requirement(s) verified — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:diff-escalation",
+       "status": "PASS",
+-      "elapsed": 324,
++      "elapsed": 323,
+       "output": "diff-aware-escalation: sensitive files touched: src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced\ndiff-aware-escalation: all escalation requirements met — PASS"
+     },
+     {
+diff --git a/.ai/log/review/diff-wave-8-pm6-r2-remediation-working.patch b/.ai/log/review/diff-wave-8-pm6-r2-remediation-working.patch
+new file mode 100644
+index 0000000..b5403f6
+--- /dev/null
++++ b/.ai/log/review/diff-wave-8-pm6-r2-remediation-working.patch
+@@ -0,0 +1,316 @@
++diff --git a/src/config.ts b/src/config.ts
++index e5804dc..b43787c 100644
++--- a/src/config.ts
+++++ b/src/config.ts
++@@ -44,6 +44,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
++   }
++   const defaultProfile: string | undefined = typeof cfg.ingestion?.defaultProfile === 'string' ? cfg.ingestion.defaultProfile : undefined;
++ 
+++  // Prevent silent fallback to legacy hardcoded collector when profile selectors are provided
+++  // without any defined profiles (PM6-R2 explicit configuration failures).
+++  const hasProfileSelectors = Object.keys(agentProfiles).length > 0 || Boolean(defaultProfile);
+++  if (hasProfileSelectors && Object.keys(profiles).length === 0) {
+++    throw new Error('ingestion.agentProfiles/defaultProfile requires at least one ingestion.profiles entry');
+++  }
+++
++   // Validate agent profile references point to existing profiles
++   if (Object.keys(profiles).length > 0) {
++     for (const [agentId, profileName] of Object.entries(agentProfiles)) {
++diff --git a/src/index.ts b/src/index.ts
++index 66a0b7d..69d56c3 100644
++--- a/src/index.ts
+++++ b/src/index.ts
++@@ -34,6 +34,7 @@ export default function register(api){
++   // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
++   const profiles = cfg.ingestion.profiles;
++   const agentProfiles = cfg.ingestion.agentProfiles;
+++  const defaultProfile = cfg.ingestion.defaultProfile;
++ 
++   const stopIngestion = startIngestionCron({
++     enabled: cfg.ingestion.enabled,
++@@ -45,6 +46,7 @@ export default function register(api){
++     logger: api.logger,
++     profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
++     agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
+++    defaultProfile,
++   });
++ 
++   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
++diff --git a/src/ingestion.ts b/src/ingestion.ts
++index 25d95d8..0f779d7 100644
++--- a/src/ingestion.ts
+++++ b/src/ingestion.ts
++@@ -182,11 +182,19 @@ export async function runIngestionOnce(opts: {
++   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++   profiles?: Record<string, IngestionProfile>;
++   agentProfiles?: Record<string, string>;
+++  defaultProfile?: string;
+++  activeAgentId?: string;
++ }) {
++   const ledger = loadLedger(opts.ledgerPath);
++ 
++   const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
++   const hasProfiles = profileNames.length > 0;
+++  const hasProfileSelectors = Boolean(opts.defaultProfile) || Boolean(opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0);
+++  const requiresProfileResolution = Boolean(opts.defaultProfile) || Boolean(opts.activeAgentId);
+++
+++  if (!hasProfiles && hasProfileSelectors) {
+++    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');
+++  }
++ 
++   // Collect items: profile-based or legacy
++   let items: IngestItem[];
++@@ -194,10 +202,31 @@ export async function runIngestionOnce(opts: {
++ 
++   if (hasProfiles) {
++     items = [];
++-    for (const [name, profile] of Object.entries(opts.profiles!)) {
++-      const profileItems = collectProfileFiles(profile, name);
++-      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
++-      items.push(...profileItems);
+++
+++    // PM6-R2 runtime behavior: when explicit profile resolution inputs are present,
+++    // resolve a single active profile and fail explicitly when unresolved.
+++    if (requiresProfileResolution) {
+++      let selectedProfileName: string | undefined;
+++      if (opts.activeAgentId && opts.agentProfiles?.[opts.activeAgentId]) {
+++        selectedProfileName = opts.agentProfiles[opts.activeAgentId];
+++      } else if (opts.defaultProfile) {
+++        selectedProfileName = opts.defaultProfile;
+++      }
+++
+++      const selectedProfile = selectedProfileName ? opts.profiles![selectedProfileName] : undefined;
+++      if (!selectedProfile) {
+++        throw new Error(`Configured ingestion profile "${selectedProfileName}" was not found`);
+++      }
+++
+++      const selectedItems = collectProfileFiles(selectedProfile, selectedProfileName);
+++      profileStats[selectedProfileName] = { scanned: selectedItems.length, ingested: 0, skipped: 0, errors: 0 };
+++      items.push(...selectedItems);
+++    } else {
+++      for (const [name, profile] of Object.entries(opts.profiles!)) {
+++        const profileItems = collectProfileFiles(profile, name);
+++        profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
+++        items.push(...profileItems);
+++      }
++     }
++   } else {
++     items = collectIngestionFiles(opts.rootDir);
++@@ -275,6 +304,8 @@ export function startIngestionCron(opts: {
++   logger?: { warn?: (msg: string) => void };
++   profiles?: Record<string, IngestionProfile>;
++   agentProfiles?: Record<string, string>;
+++  defaultProfile?: string;
+++  activeAgentId?: string;
++ }) {
++   if (!opts.enabled) return () => {};
++ 
++@@ -291,6 +322,8 @@ export function startIngestionCron(opts: {
++         client: opts.client,
++         profiles: opts.profiles,
++         agentProfiles: opts.agentProfiles,
+++        defaultProfile: opts.defaultProfile,
+++        activeAgentId: opts.activeAgentId,
++       });
++     } catch (e: any) {
++       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
++diff --git a/tests/wave8-profiles.test.ts b/tests/wave8-profiles.test.ts
++index 18a5d01..f5811d6 100644
++--- a/tests/wave8-profiles.test.ts
+++++ b/tests/wave8-profiles.test.ts
++@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
++ import { join } from 'node:path';
++ import { tmpdir } from 'node:os';
++ import { parseConfig, resolveIngestionProfile } from '../src/config.js';
++-import { runIngestionOnce } from '../src/ingestion.js';
+++import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
++ import register from '../src/index.js';
++ 
++ function tmpDir() {
++@@ -209,6 +209,146 @@ test('wave8: defaultProfile referencing unknown profile throws at parse time', (
++   })), /references unknown profile/);
++ });
++ 
+++test('wave8: defaultProfile without profiles throws explicit config error', () => {
+++  assert.throws(() => parseConfig(baseCfg({
+++    ingestion: {
+++      defaultProfile: 'docs',
+++    },
+++  })), /requires at least one ingestion\.profiles entry/);
+++});
+++
+++test('wave8: agentProfiles without profiles throws explicit config error', () => {
+++  assert.throws(() => parseConfig(baseCfg({
+++    ingestion: {
+++      agentProfiles: { agentA: 'docs' },
+++    },
+++  })), /requires at least one ingestion\.profiles entry/);
+++});
+++
+++test('wave8: runIngestionOnce throws when profile selectors are set but profiles are missing', async () => {
+++  const dir = tmpDir();
+++  try {
+++    const ledgerPath = join(dir, 'ledger.json');
+++    const summaryPath = join(dir, 'summary.json');
+++    const client = { ingestContent: async () => ({ accepted: 1 }) };
+++
+++    await assert.rejects(
+++      () => runIngestionOnce({
+++        rootDir: dir,
+++        ledgerPath,
+++        summaryPath,
+++        client,
+++        defaultProfile: 'docs',
+++      }),
+++      /no ingestion profiles are defined/i,
+++    );
+++  } finally {
+++    rmSync(dir, { recursive: true, force: true });
+++  }
+++});
+++
+++test('wave8: profile selectors resolve to defaultProfile at runtime', async () => {
+++  const rootDocs = tmpDir();
+++  const rootSpecs = tmpDir();
+++  const stateDir = tmpDir();
+++  try {
+++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
+++
+++    const ledgerPath = join(stateDir, 'ledger.json');
+++    const summaryPath = join(stateDir, 'summary.json');
+++    const paths: string[] = [];
+++    const client = {
+++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
+++    };
+++
+++    const result = await runIngestionOnce({
+++      rootDir: rootDocs,
+++      ledgerPath,
+++      summaryPath,
+++      client,
+++      profiles: {
+++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++      },
+++      defaultProfile: 'docs',
+++      agentProfiles: { agentA: 'specs' },
+++    });
+++
+++    assert.equal(result.ingested, 1);
+++    assert.ok(paths.every((p) => p.startsWith('docs:')));
+++  } finally {
+++    rmSync(rootDocs, { recursive: true, force: true });
+++    rmSync(rootSpecs, { recursive: true, force: true });
+++    rmSync(stateDir, { recursive: true, force: true });
+++  }
+++});
+++
+++test('wave8: profile selectors prefer active agent mapping over default', async () => {
+++  const rootDocs = tmpDir();
+++  const rootSpecs = tmpDir();
+++  const stateDir = tmpDir();
+++  try {
+++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
+++
+++    const ledgerPath = join(stateDir, 'ledger.json');
+++    const summaryPath = join(stateDir, 'summary.json');
+++    const paths: string[] = [];
+++    const client = {
+++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
+++    };
+++
+++    const result = await runIngestionOnce({
+++      rootDir: rootDocs,
+++      ledgerPath,
+++      summaryPath,
+++      client,
+++      profiles: {
+++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++      },
+++      defaultProfile: 'docs',
+++      activeAgentId: 'agentA',
+++      agentProfiles: { agentA: 'specs' },
+++    });
+++
+++    assert.equal(result.ingested, 1);
+++    assert.ok(paths.every((p) => p.startsWith('specs:')));
+++  } finally {
+++    rmSync(rootDocs, { recursive: true, force: true });
+++    rmSync(rootSpecs, { recursive: true, force: true });
+++    rmSync(stateDir, { recursive: true, force: true });
+++  }
+++});
+++
+++test('wave8: profile selectors throw when resolved profile is missing', async () => {
+++  const dir = tmpDir();
+++  try {
+++    writeFileSync(join(dir, 'x.md'), 'x');
+++    const ledgerPath = join(dir, 'ledger.json');
+++    const summaryPath = join(dir, 'summary.json');
+++    const client = { ingestContent: async () => ({ accepted: 1 }) };
+++
+++    await assert.rejects(
+++      () => runIngestionOnce({
+++        rootDir: dir,
+++        ledgerPath,
+++        summaryPath,
+++        client,
+++        profiles: {
+++          docs: { rootDir: dir, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++        },
+++        activeAgentId: 'agentA',
+++        agentProfiles: { agentA: 'missing' },
+++      }),
+++      /was not found/i,
+++    );
+++  } finally {
+++    rmSync(dir, { recursive: true, force: true });
+++  }
+++});
+++
++ // --- PM6-R3: Backward compatibility migration ---
++ 
++ test('wave8: legacy rootDir normalizes into synthetic _legacy profile', () => {
++@@ -465,6 +605,39 @@ test('wave8: profile with missing rootDir returns zero items gracefully', async
++   }
++ });
++ 
+++test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick', async () => {
+++  const rootDocs = tmpDir();
+++  const stateDir = tmpDir();
+++  try {
+++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+++    const loggerWarnings: string[] = [];
+++
+++    const stop = startIngestionCron({
+++      enabled: true,
+++      everyMinutes: 1,
+++      rootDir: rootDocs,
+++      ledgerPath: join(stateDir, 'ledger.json'),
+++      summaryPath: join(stateDir, 'summary.json'),
+++      client: { ingestContent: async () => ({ accepted: 1 }) },
+++      profiles: {
+++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+++      },
+++      agentProfiles: { agentA: 'missing' },
+++      activeAgentId: 'agentA',
+++      defaultProfile: 'missing',
+++      logger: { warn: (m: string) => loggerWarnings.push(m) },
+++    });
+++
+++    await new Promise((r) => setTimeout(r, 1200));
+++    stop();
+++
+++    assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
+++  } finally {
+++    rmSync(rootDocs, { recursive: true, force: true });
+++    rmSync(stateDir, { recursive: true, force: true });
+++  }
+++});
+++
++ // --- Integration: register() with profiles wires through to ingestion cron ---
++ 
++ test('wave8: register with profiles and agentProfiles wires ingestion cron', () => {
+diff --git a/src/config.ts b/src/config.ts
+index e5804dc..b43787c 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -44,6 +44,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+   }
+   const defaultProfile: string | undefined = typeof cfg.ingestion?.defaultProfile === 'string' ? cfg.ingestion.defaultProfile : undefined;
+ 
++  // Prevent silent fallback to legacy hardcoded collector when profile selectors are provided
++  // without any defined profiles (PM6-R2 explicit configuration failures).
++  const hasProfileSelectors = Object.keys(agentProfiles).length > 0 || Boolean(defaultProfile);
++  if (hasProfileSelectors && Object.keys(profiles).length === 0) {
++    throw new Error('ingestion.agentProfiles/defaultProfile requires at least one ingestion.profiles entry');
++  }
++
+   // Validate agent profile references point to existing profiles
+   if (Object.keys(profiles).length > 0) {
+     for (const [agentId, profileName] of Object.entries(agentProfiles)) {
+diff --git a/src/index.ts b/src/index.ts
+index 66a0b7d..69d56c3 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -34,6 +34,7 @@ export default function register(api){
+   // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
+   const profiles = cfg.ingestion.profiles;
+   const agentProfiles = cfg.ingestion.agentProfiles;
++  const defaultProfile = cfg.ingestion.defaultProfile;
+ 
+   const stopIngestion = startIngestionCron({
+     enabled: cfg.ingestion.enabled,
+@@ -45,6 +46,7 @@ export default function register(api){
+     logger: api.logger,
+     profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
+     agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
++    defaultProfile,
+   });
+ 
+   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 25d95d8..0f779d7 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -182,11 +182,19 @@ export async function runIngestionOnce(opts: {
+   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
++  defaultProfile?: string;
++  activeAgentId?: string;
+ }) {
+   const ledger = loadLedger(opts.ledgerPath);
+ 
+   const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
+   const hasProfiles = profileNames.length > 0;
++  const hasProfileSelectors = Boolean(opts.defaultProfile) || Boolean(opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0);
++  const requiresProfileResolution = Boolean(opts.defaultProfile) || Boolean(opts.activeAgentId);
++
++  if (!hasProfiles && hasProfileSelectors) {
++    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');
++  }
+ 
+   // Collect items: profile-based or legacy
+   let items: IngestItem[];
+@@ -194,10 +202,31 @@ export async function runIngestionOnce(opts: {
+ 
+   if (hasProfiles) {
+     items = [];
+-    for (const [name, profile] of Object.entries(opts.profiles!)) {
+-      const profileItems = collectProfileFiles(profile, name);
+-      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
+-      items.push(...profileItems);
++
++    // PM6-R2 runtime behavior: when explicit profile resolution inputs are present,
++    // resolve a single active profile and fail explicitly when unresolved.
++    if (requiresProfileResolution) {
++      let selectedProfileName: string | undefined;
++      if (opts.activeAgentId && opts.agentProfiles?.[opts.activeAgentId]) {
++        selectedProfileName = opts.agentProfiles[opts.activeAgentId];
++      } else if (opts.defaultProfile) {
++        selectedProfileName = opts.defaultProfile;
++      }
++
++      const selectedProfile = selectedProfileName ? opts.profiles![selectedProfileName] : undefined;
++      if (!selectedProfile) {
++        throw new Error(`Configured ingestion profile "${selectedProfileName}" was not found`);
++      }
++
++      const selectedItems = collectProfileFiles(selectedProfile, selectedProfileName);
++      profileStats[selectedProfileName] = { scanned: selectedItems.length, ingested: 0, skipped: 0, errors: 0 };
++      items.push(...selectedItems);
++    } else {
++      for (const [name, profile] of Object.entries(opts.profiles!)) {
++        const profileItems = collectProfileFiles(profile, name);
++        profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
++        items.push(...profileItems);
++      }
+     }
+   } else {
+     items = collectIngestionFiles(opts.rootDir);
+@@ -275,6 +304,8 @@ export function startIngestionCron(opts: {
+   logger?: { warn?: (msg: string) => void };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
++  defaultProfile?: string;
++  activeAgentId?: string;
+ }) {
+   if (!opts.enabled) return () => {};
+ 
+@@ -291,6 +322,8 @@ export function startIngestionCron(opts: {
+         client: opts.client,
+         profiles: opts.profiles,
+         agentProfiles: opts.agentProfiles,
++        defaultProfile: opts.defaultProfile,
++        activeAgentId: opts.activeAgentId,
+       });
+     } catch (e: any) {
+       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
+diff --git a/tests/wave8-profiles.test.ts b/tests/wave8-profiles.test.ts
+index 18a5d01..f5811d6 100644
+--- a/tests/wave8-profiles.test.ts
++++ b/tests/wave8-profiles.test.ts
+@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
+ import { join } from 'node:path';
+ import { tmpdir } from 'node:os';
+ import { parseConfig, resolveIngestionProfile } from '../src/config.js';
+-import { runIngestionOnce } from '../src/ingestion.js';
++import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
+ import register from '../src/index.js';
+ 
+ function tmpDir() {
+@@ -209,6 +209,146 @@ test('wave8: defaultProfile referencing unknown profile throws at parse time', (
+   })), /references unknown profile/);
+ });
+ 
++test('wave8: defaultProfile without profiles throws explicit config error', () => {
++  assert.throws(() => parseConfig(baseCfg({
++    ingestion: {
++      defaultProfile: 'docs',
++    },
++  })), /requires at least one ingestion\.profiles entry/);
++});
++
++test('wave8: agentProfiles without profiles throws explicit config error', () => {
++  assert.throws(() => parseConfig(baseCfg({
++    ingestion: {
++      agentProfiles: { agentA: 'docs' },
++    },
++  })), /requires at least one ingestion\.profiles entry/);
++});
++
++test('wave8: runIngestionOnce throws when profile selectors are set but profiles are missing', async () => {
++  const dir = tmpDir();
++  try {
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++    const client = { ingestContent: async () => ({ accepted: 1 }) };
++
++    await assert.rejects(
++      () => runIngestionOnce({
++        rootDir: dir,
++        ledgerPath,
++        summaryPath,
++        client,
++        defaultProfile: 'docs',
++      }),
++      /no ingestion profiles are defined/i,
++    );
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors resolve to defaultProfile at runtime', async () => {
++  const rootDocs = tmpDir();
++  const rootSpecs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
++
++    const ledgerPath = join(stateDir, 'ledger.json');
++    const summaryPath = join(stateDir, 'summary.json');
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: rootDocs,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      defaultProfile: 'docs',
++      agentProfiles: { agentA: 'specs' },
++    });
++
++    assert.equal(result.ingested, 1);
++    assert.ok(paths.every((p) => p.startsWith('docs:')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(rootSpecs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors prefer active agent mapping over default', async () => {
++  const rootDocs = tmpDir();
++  const rootSpecs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
++
++    const ledgerPath = join(stateDir, 'ledger.json');
++    const summaryPath = join(stateDir, 'summary.json');
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: rootDocs,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      defaultProfile: 'docs',
++      activeAgentId: 'agentA',
++      agentProfiles: { agentA: 'specs' },
++    });
++
++    assert.equal(result.ingested, 1);
++    assert.ok(paths.every((p) => p.startsWith('specs:')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(rootSpecs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors throw when resolved profile is missing', async () => {
++  const dir = tmpDir();
++  try {
++    writeFileSync(join(dir, 'x.md'), 'x');
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++    const client = { ingestContent: async () => ({ accepted: 1 }) };
++
++    await assert.rejects(
++      () => runIngestionOnce({
++        rootDir: dir,
++        ledgerPath,
++        summaryPath,
++        client,
++        profiles: {
++          docs: { rootDir: dir, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        },
++        activeAgentId: 'agentA',
++        agentProfiles: { agentA: 'missing' },
++      }),
++      /was not found/i,
++    );
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
+ // --- PM6-R3: Backward compatibility migration ---
+ 
+ test('wave8: legacy rootDir normalizes into synthetic _legacy profile', () => {
+@@ -465,6 +605,39 @@ test('wave8: profile with missing rootDir returns zero items gracefully', async
+   }
+ });
+ 
++test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick', async () => {
++  const rootDocs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    const loggerWarnings: string[] = [];
++
++    const stop = startIngestionCron({
++      enabled: true,
++      everyMinutes: 1,
++      rootDir: rootDocs,
++      ledgerPath: join(stateDir, 'ledger.json'),
++      summaryPath: join(stateDir, 'summary.json'),
++      client: { ingestContent: async () => ({ accepted: 1 }) },
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      agentProfiles: { agentA: 'missing' },
++      activeAgentId: 'agentA',
++      defaultProfile: 'missing',
++      logger: { warn: (m: string) => loggerWarnings.push(m) },
++    });
++
++    await new Promise((r) => setTimeout(r, 1200));
++    stop();
++
++    assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
+ // --- Integration: register() with profiles wires through to ingestion cron ---
+ 
+ test('wave8: register with profiles and agentProfiles wires ingestion cron', () => {

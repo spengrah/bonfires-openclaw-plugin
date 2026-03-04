@@ -1,0 +1,255 @@
+commit 120e7cd267b7567f973cc1bbbe2cc85dee784ed4
+Author: lyle <code@spengrah.xyz>
+Date:   Mon Mar 2 13:58:39 2026 -0600
+
+    task: add hosted integration verification workflow and docs
+---
+ README.md                               |  10 ++
+ package.json                            |   1 +
+ scripts/hosted-integration-verify.ts    | 160 ++++++++++++++++++++++++++++++++
+ tests/wave5-hosted-verification.test.ts |  29 ++++++
+ 4 files changed, 200 insertions(+)
+
+diff --git a/README.md b/README.md
+index c69ed81..97aaf7c 100644
+--- a/README.md
++++ b/README.md
+@@ -23,6 +23,9 @@ Design intent:
+ - Hook-based retrieval before agent turns (`before_agent_start`)
+ - Hook-based episodic capture after turns (`agent_end`)
+ - Session-end integration point (`session_end`)
++- Stack-processing heartbeat runner (20-minute base cadence + jitter) with bounded retries
++- Recovery/catch-up flow sharing capture watermark semantics with overlap-safe dedupe guards
++- Hosted strict-mode guard to prevent silent mock fallback in non-dev hosted contexts
+ - Agent tool: `bonfires_search(query, limit?)`
+ - Agent mapping support (e.g. `lyle`, `reviewer`)
+ - Capture ledger for per-session throttling and incremental push behavior
+@@ -39,8 +42,15 @@ Design intent:
+ ```bash
+ npm run lint
+ npm run test
++npm run gate:all
++npm run verify:hosted        # fixture-mode contract verification + artifact
++npm run verify:hosted -- --live  # adds live preflight probes (requires env)
+ ```
+ 
++### Hosted verification output
++- Report path: `.ai/log/plan/hosted-integration-verification-current.json`
++- Report includes per-probe status and redacted config metadata (never prints API key values).
++
+ ## Typical workflow
+ 1. Update specs/guidance under `.ai/spec/` when behavior changes.
+ 2. Implement changes in `src/`.
+diff --git a/package.json b/package.json
+index 236d50d..7a4aabb 100644
+--- a/package.json
++++ b/package.json
+@@ -8,6 +8,7 @@
+     "test": "tsx scripts/spec-test.ts && node --import tsx --test tests/*.test.ts",
+     "test:coverage": "c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts",
+     "coverage": "npm run test:coverage",
++    "verify:hosted": "tsx scripts/hosted-integration-verify.ts",
+     "gate:traceability": "tsx scripts/gates/traceability-check.ts",
+     "gate:quality": "tsx scripts/gates/quality-check.ts",
+     "gate:coverage": "tsx scripts/gates/coverage-check.ts",
+diff --git a/scripts/hosted-integration-verify.ts b/scripts/hosted-integration-verify.ts
+new file mode 100644
+index 0000000..e2ea8c2
+--- /dev/null
++++ b/scripts/hosted-integration-verify.ts
+@@ -0,0 +1,160 @@
++import { mkdirSync, writeFileSync } from 'node:fs';
++import { dirname } from 'node:path';
++import { HostedBonfiresClient } from '../src/bonfires-client.js';
++
++export type ProbeResult = {
++  name: string;
++  status: 'PASS' | 'FAIL' | 'SKIP';
++  details?: string;
++  elapsedMs?: number;
++};
++
++export function redactEnvSummary(envName: string, value?: string) {
++  return { env: envName, present: Boolean(value), length: value ? value.length : 0 };
++}
++
++async function timed(name: string, fn: () => Promise<void>): Promise<ProbeResult> {
++  const start = Date.now();
++  try {
++    await fn();
++    return { name, status: 'PASS', elapsedMs: Date.now() - start };
++  } catch (e: any) {
++    return { name, status: 'FAIL', elapsedMs: Date.now() - start, details: String(e?.message ?? e) };
++  }
++}
++
++async function runFixtureContractProbes(baseCfg: any): Promise<ProbeResult[]> {
++  const probes: ProbeResult[] = [];
++  const oldFetch = globalThis.fetch;
++  const oldKey = process.env[baseCfg.apiKeyEnv];
++  process.env[baseCfg.apiKeyEnv] = 'fixture-key';
++
++  try {
++    probes.push(await timed('contract:/delve normalization', async () => {
++      globalThis.fetch = (async (_url: any) => new Response(JSON.stringify({
++        episodes: [{ summary: 'Episode A' }],
++        entities: [{ name: 'Entity A' }],
++      }), { status: 200, headers: { 'Content-Type': 'application/json' } })) as any;
++      const c = new HostedBonfiresClient(baseCfg);
++      const out = await c.search({ agentId: 'agent-1', query: 'q', limit: 3 });
++      if (!Array.isArray(out.results) || out.results.length < 2) throw new Error('normalized results missing');
++    }));
++
++    probes.push(await timed('contract:/stack/add mapping', async () => {
++      const bodies: any[] = [];
++      globalThis.fetch = (async (_url: any, init: any) => {
++        bodies.push(JSON.parse(String(init?.body ?? '{}')));
++        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
++      }) as any;
++      const c = new HostedBonfiresClient(baseCfg);
++      const out = await c.capture({
++        agentId: 'agent-1',
++        sessionKey: 's-1',
++        messages: [{ role: 'user', content: 'hi' }],
++      });
++      if (out.accepted !== 1) throw new Error('capture accepted mismatch');
++      const payload = bodies[0] ?? {};
++      if (!payload?.message?.text || payload?.message?.chatId !== 's-1') throw new Error('stack/add payload mapping mismatch');
++    }));
++
++    probes.push(await timed('contract:/stack/process response handling', async () => {
++      globalThis.fetch = (async () => new Response(JSON.stringify({ success: true, message_count: 2 }), { status: 200, headers: { 'Content-Type': 'application/json' } })) as any;
++      const c = new HostedBonfiresClient(baseCfg);
++      const out = await c.processStack!({ agentId: 'agent-1' });
++      if (!out.success || out.message_count !== 2) throw new Error('stack/process response mapping mismatch');
++    }));
++  } finally {
++    globalThis.fetch = oldFetch;
++    if (oldKey === undefined) delete process.env[baseCfg.apiKeyEnv]; else process.env[baseCfg.apiKeyEnv] = oldKey;
++  }
++
++  return probes;
++}
++
++async function runLivePreflight(baseCfg: any): Promise<ProbeResult[]> {
++  const probes: ProbeResult[] = [];
++  const apiKey = process.env[baseCfg.apiKeyEnv];
++  const bonfireId = baseCfg.bonfireId;
++
++  if (!apiKey || !bonfireId) {
++    return [
++      { name: 'preflight:/healthz', status: 'SKIP', details: 'missing api key or bonfire id' },
++      { name: 'preflight:/generate_summaries auth+bonfire', status: 'SKIP', details: 'missing api key or bonfire id' },
++    ];
++  }
++
++  const headers = {
++    Authorization: `Bearer ${apiKey}`,
++    'Content-Type': 'application/json',
++  };
++
++  const base = String(baseCfg.baseUrl).replace(/\/$/, '');
++
++  probes.push(await timed('preflight:/healthz', async () => {
++    const res = await fetch(`${base}/healthz`, { method: 'GET', headers });
++    if (!res.ok) throw new Error(`HTTP ${res.status}`);
++  }));
++
++  probes.push(await timed('preflight:/generate_summaries auth+bonfire', async () => {
++    const res = await fetch(`${base}/generate_summaries`, {
++      method: 'POST',
++      headers,
++      body: JSON.stringify({
++        bonfire_id: bonfireId,
++        messages: [{ role: 'user', content: 'preflight probe' }],
++      }),
++    });
++    if (!res.ok) throw new Error(`HTTP ${res.status}`);
++  }));
++
++  return probes;
++}
++
++function buildReport(mode: 'fixture' | 'live', cfg: any, probes: ProbeResult[]) {
++  const failed = probes.filter((p) => p.status === 'FAIL');
++  return {
++    timestamp: new Date().toISOString(),
++    mode,
++    verdict: failed.length ? 'FAIL' : 'PASS',
++    config: {
++      baseUrl: cfg.baseUrl,
++      apiKey: redactEnvSummary(cfg.apiKeyEnv, process.env[cfg.apiKeyEnv]),
++      bonfireIdPresent: Boolean(cfg.bonfireId),
++    },
++    probes,
++  };
++}
++
++export async function runHostedVerification(argv: string[] = process.argv.slice(2)) {
++  const mode: 'fixture' | 'live' = argv.includes('--live') ? 'live' : 'fixture';
++  const cfg = {
++    baseUrl: process.env.BONFIRES_BASE_URL ?? 'https://tnt-v2.api.bonfires.ai/',
++    apiKeyEnv: process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY',
++    bonfireId: process.env.BONFIRE_ID ?? '',
++    network: { timeoutMs: 12000, retryBackoffMs: [0, 0] },
++  };
++
++  const probes = [
++    ...(await runFixtureContractProbes(cfg)),
++    ...(mode === 'live' ? await runLivePreflight(cfg) : [
++      { name: 'preflight:/healthz', status: 'SKIP', details: 'live mode not requested' },
++      { name: 'preflight:/generate_summaries auth+bonfire', status: 'SKIP', details: 'live mode not requested' },
++    ] as ProbeResult[]),
++  ];
++
++  const report = buildReport(mode, cfg, probes);
++  const outPath = '.ai/log/plan/hosted-integration-verification-current.json';
++  mkdirSync(dirname(outPath), { recursive: true });
++  writeFileSync(outPath, JSON.stringify(report, null, 2));
++
++  for (const p of probes) {
++    console.log(`[verify:hosted] ${p.status} ${p.name}${p.details ? ` — ${p.details}` : ''}`);
++  }
++  console.log(`[verify:hosted] report: ${outPath}`);
++
++  if (report.verdict === 'FAIL') process.exit(1);
++}
++
++if (import.meta.url === `file://${process.argv[1]}`) {
++  runHostedVerification();
++}
+diff --git a/tests/wave5-hosted-verification.test.ts b/tests/wave5-hosted-verification.test.ts
+new file mode 100644
+index 0000000..4dd0f72
+--- /dev/null
++++ b/tests/wave5-hosted-verification.test.ts
+@@ -0,0 +1,29 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { redactEnvSummary, runHostedVerification } from '../scripts/hosted-integration-verify.js';
++import { readFileSync, rmSync } from 'node:fs';
++
++test('wave5: redactEnvSummary never exposes raw key', async () => {
++  const out = redactEnvSummary('DELVE_API_KEY', 'supersecretvalue');
++  assert.equal(out.env, 'DELVE_API_KEY');
++  assert.equal(out.present, true);
++  assert.equal(out.length, 16);
++  assert.equal((out as any).value, undefined);
++});
++
++test('wave5: verify:hosted fixture mode writes report with required probes', async () => {
++  await runHostedVerification([]);
++  const report = JSON.parse(readFileSync('.ai/log/plan/hosted-integration-verification-current.json', 'utf8'));
++  const probeNames = report.probes.map((p: any) => p.name);
++  assert.equal(report.mode, 'fixture');
++  assert.equal(probeNames.includes('contract:/delve normalization'), true);
++  assert.equal(probeNames.includes('contract:/stack/add mapping'), true);
++  assert.equal(probeNames.includes('contract:/stack/process response handling'), true);
++  assert.equal(probeNames.includes('preflight:/healthz'), true);
++  assert.equal(typeof report.config.apiKey.present, 'boolean');
++  assert.equal(report.config.apiKey.value, undefined);
++});
++
++test.after(() => {
++  rmSync('.ai/log/plan/hosted-integration-verification-current.json', { force: true });
++});

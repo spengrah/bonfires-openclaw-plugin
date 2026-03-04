@@ -1,0 +1,867 @@
+commit 5abc7f4202e3d10e2bb7b18604f4ad3cb705b419
+Author: lyle <code@spengrah.xyz>
+Date:   Mon Mar 2 13:37:05 2026 -0600
+
+    task: implement wave3 heartbeat recovery and hosted strict mode
+---
+ src/bonfires-client.ts        |  46 ++++++--
+ src/config.ts                 |   1 +
+ src/heartbeat.ts              | 244 ++++++++++++++++++++++++++++++++++++++
+ src/hooks.ts                  |  18 ++-
+ src/index.ts                  |  18 ++-
+ tests/wave1.test.ts           | 119 +++++++++++++++++++
+ tests/wave2-hosted.test.ts    |  10 +-
+ tests/wave3-heartbeat.test.ts | 265 ++++++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 706 insertions(+), 15 deletions(-)
+
+diff --git a/src/bonfires-client.ts b/src/bonfires-client.ts
+index 3a853e5..7c7ca2d 100644
+--- a/src/bonfires-client.ts
++++ b/src/bonfires-client.ts
+@@ -56,18 +56,42 @@ export class HostedBonfiresClient implements BonfiresClient {
+ 
+   private async fetchJson(path: string, init: any) {
+     const url = `${this.cfg.baseUrl.replace(/\/$/, '')}${path}`;
+-    const controller = new AbortController();
+     const timeoutMs = this.cfg.network?.timeoutMs ?? 12000;
+-    const t = setTimeout(() => controller.abort(), timeoutMs);
+-    try {
+-      const res = await fetch(url, { ...init, signal: controller.signal });
+-      let body: any = {};
+-      try { body = await res.json(); } catch {}
+-      if (!res.ok) throw new Error(`Bonfires ${path} failed: HTTP ${res.status}`);
+-      return body;
+-    } finally {
+-      clearTimeout(t);
++    const configuredBackoff = this.cfg.network?.retryBackoffMs;
++    const delays = Array.isArray(configuredBackoff)
++      && configuredBackoff.length >= 2
++      && Number.isFinite(Number(configuredBackoff[0]))
++      && Number.isFinite(Number(configuredBackoff[1]))
++      ? [0, Number(configuredBackoff[0]), Number(configuredBackoff[1])]
++      : [0, 5000, 15000];
++
++    let lastErr: any = null;
++    for (let i = 0; i < delays.length; i++) {
++      if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
++      const controller = new AbortController();
++      const t = setTimeout(() => controller.abort(), timeoutMs);
++      try {
++        const res = await fetch(url, { ...init, signal: controller.signal });
++        let body: any = {};
++        try { body = await res.json(); } catch {}
++        if (!res.ok) {
++          const retriable = res.status === 429 || (res.status >= 500 && res.status <= 599);
++          const err = new Error(`Bonfires ${path} failed: HTTP ${res.status}`);
++          if (!retriable || i === delays.length - 1) throw err;
++          lastErr = err;
++          continue;
++        }
++        return body;
++      } catch (e: any) {
++        lastErr = e;
++        const msg = String(e?.message ?? e);
++        const retriable = /HTTP (429|5\d\d)/.test(msg) || /abort|network|fetch/i.test(msg);
++        if (!retriable || i === delays.length - 1) throw e;
++      } finally {
++        clearTimeout(t);
++      }
+     }
++    throw lastErr ?? new Error(`Bonfires ${path} failed`);
+   }
+ 
+   async search(req: { agentId: string; query: string; limit: number }) {
+@@ -139,7 +163,9 @@ export class HostedBonfiresClient implements BonfiresClient {
+ 
+ export function createBonfiresClient(cfg: any, logger?: { warn?: (msg: string) => void }): BonfiresClient {
+   const hasKey = Boolean(process.env[cfg.apiKeyEnv]);
++  const strictHosted = Boolean(cfg.strictHostedMode);
+   if (hasKey && cfg.bonfireId) return new HostedBonfiresClient(cfg, logger);
++  if (strictHosted) throw new Error(`Hosted mode required but missing env ${cfg.apiKeyEnv} or bonfireId`);
+   logger?.warn?.(`Using MockBonfiresClient (missing env ${cfg.apiKeyEnv} or bonfireId)`);
+   return new MockBonfiresClient();
+ }
+diff --git a/src/config.ts b/src/config.ts
+index eba27b5..f09faf4 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -12,6 +12,7 @@ export function parseConfig(input) {
+     capture: { throttleMinutes },
+     agents: cfg.agents ?? {},
+     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
++    strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
+   };
+   if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');
+   if (!Number.isFinite(out.network.timeoutMs) || out.network.timeoutMs < 1000) throw new Error('network.timeoutMs must be a finite number >= 1000');
+diff --git a/src/heartbeat.ts b/src/heartbeat.ts
+new file mode 100644
+index 0000000..ab06915
+--- /dev/null
++++ b/src/heartbeat.ts
+@@ -0,0 +1,244 @@
++import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
++import { dirname } from 'node:path';
++import { resolveBonfiresAgentId } from './config.js';
++
++type AgentState = {
++  last_attempt_at?: string;
++  last_success_at?: string;
++  last_status?: string;
++  consecutive_failures?: number;
++};
++
++type HeartbeatState = {
++  agents: Record<string, AgentState>;
++  recovery?: Record<string, { last_dedupe_key?: string; last_recovered_at?: string }>;
++};
++
++type SessionMessage = { role: string; content: string };
++type RecoverySession = {
++  sessionKey: string;
++  agentId?: string;
++  messages?: SessionMessage[];
++  ended?: boolean;
++  lastActivityAtMs?: number;
++};
++
++function sleep(ms: number) {
++  return new Promise((r) => setTimeout(r, ms));
++}
++
++function loadState(path: string): HeartbeatState {
++  try {
++    const loaded = JSON.parse(readFileSync(path, 'utf8'));
++    return {
++      agents: loaded?.agents ?? {},
++      recovery: loaded?.recovery ?? {},
++    };
++  } catch {
++    return { agents: {}, recovery: {} };
++  }
++}
++
++function saveState(path: string, state: HeartbeatState) {
++  writeFileSync(path, JSON.stringify(state, null, 2));
++}
++
++export function makeDedupeKey(sessionKey: string, startIndex: number, endIndex: number) {
++  return `${sessionKey}:${startIndex}-${endIndex}`;
++}
++
++export function computeRecoveryRange(lastPushedIndex: number, totalMessages: number) {
++  const startIndex = Math.max(0, (Number.isFinite(lastPushedIndex) ? lastPushedIndex : -1) + 1);
++  const endIndex = totalMessages - 1;
++  if (endIndex <= lastPushedIndex) return null;
++  if (startIndex > endIndex) return null;
++  return { startIndex, endIndex };
++}
++
++export function inactivityCloseTimeoutMs(throttleMinutes: number) {
++  return Math.max(1, Number(throttleMinutes) || 1) * 2 * 60_000;
++}
++
++export function isRetriableErrorMessage(msg: string) {
++  return /HTTP (429|5\d\d)/.test(msg) || /abort|network|fetch|timeout/i.test(msg);
++}
++
++function getRetryDelaysMs(cfg: any) {
++  const custom = cfg?.network?.retryBackoffMs;
++  if (Array.isArray(custom) && custom.length >= 2) {
++    const first = Number(custom[0]);
++    const second = Number(custom[1]);
++    if (Number.isFinite(first) && first >= 0 && Number.isFinite(second) && second >= 0) {
++      return [0, first, second];
++    }
++  }
++  return [0, 5000, 15000];
++}
++
++export async function runProcessStackWithRetry(opts: {
++  agentId: string;
++  client: any;
++  cfg: any;
++  logger?: { warn?: (m: string) => void };
++  sleepFn?: (ms: number) => Promise<any>;
++}) {
++  const delays = getRetryDelaysMs(opts.cfg);
++  const sleepFn = opts.sleepFn ?? sleep;
++  let lastError: any = null;
++
++  for (let i = 0; i < delays.length; i++) {
++    if (delays[i] > 0) await sleepFn(delays[i]);
++    try {
++      await opts.client.processStack?.({ agentId: opts.agentId });
++      return { ok: true, attempts: i + 1, lastError: null };
++    } catch (e: any) {
++      lastError = e;
++      const msg = String(e?.message ?? e);
++      if (!isRetriableErrorMessage(msg) || i === delays.length - 1) {
++        opts.logger?.warn?.(`[heartbeat] process failed agent=${opts.agentId} err=${msg}`);
++        return { ok: false, attempts: i + 1, lastError: e };
++      }
++    }
++  }
++
++  return { ok: false, attempts: delays.length, lastError };
++}
++
++export async function runRecoveryTick(opts: {
++  cfg: any;
++  client: any;
++  ledger: { get: (k: string) => any; set: (k: string, v: any) => void };
++  sessions: RecoverySession[];
++  logger?: { warn?: (m: string) => void };
++  state?: HeartbeatState;
++  nowMs?: () => number;
++}) {
++  const nowMs = opts.nowMs ?? (() => Date.now());
++  const now = nowMs();
++  const closeTimeoutMs = inactivityCloseTimeoutMs(opts.cfg?.capture?.throttleMinutes ?? 15);
++
++  for (const session of opts.sessions ?? []) {
++    const sessionKey = session?.sessionKey;
++    if (!sessionKey) continue;
++
++    const bonfiresAgentId = resolveBonfiresAgentId(opts.cfg, session?.agentId);
++    if (!bonfiresAgentId) continue;
++
++    const msgs = Array.isArray(session.messages) ? session.messages : [];
++    if (!msgs.length) continue;
++
++    const inactiveLongEnough = typeof session.lastActivityAtMs === 'number'
++      ? (now - session.lastActivityAtMs) >= closeTimeoutMs
++      : true;
++    const eligibleForFlush = Boolean(session.ended) || inactiveLongEnough;
++    if (!eligibleForFlush) continue;
++
++    const latestBefore = opts.ledger.get(sessionKey) ?? {};
++    const range = computeRecoveryRange(Number(latestBefore.lastPushedIndex ?? -1), msgs.length);
++    if (!range) continue;
++
++    const dedupeKey = makeDedupeKey(sessionKey, range.startIndex, range.endIndex);
++    try {
++      await opts.client.capture({
++        agentId: bonfiresAgentId,
++        sessionKey,
++        messages: msgs.slice(range.startIndex, range.endIndex + 1),
++      });
++
++      const latestAfter = opts.ledger.get(sessionKey) ?? {};
++      const mergedLastPushedIndex = Math.max(Number(latestAfter.lastPushedIndex ?? -1), range.endIndex);
++      opts.ledger.set(sessionKey, {
++        ...latestAfter,
++        lastPushedAt: now,
++        lastPushedIndex: mergedLastPushedIndex,
++      });
++
++      if (opts.state) {
++        opts.state.recovery = opts.state.recovery ?? {};
++        opts.state.recovery[sessionKey] = {
++          last_dedupe_key: dedupeKey,
++          last_recovered_at: new Date(now).toISOString(),
++        };
++      }
++    } catch (e: any) {
++      opts.logger?.warn?.(`[heartbeat] recovery failed session=${sessionKey} err=${e?.message ?? e}`);
++    }
++  }
++}
++
++export function startStackHeartbeat(opts: {
++  cfg: any;
++  client: any;
++  ledger?: { get: (k: string) => any; set: (k: string, v: any) => void };
++  logger?: { warn?: (m: string) => void };
++  statePath: string;
++  recoverySource?: () => Promise<RecoverySession[]> | RecoverySession[];
++  nowMs?: () => number;
++  sleepFn?: (ms: number) => Promise<any>;
++}) {
++  const baseMs = 20 * 60 * 1000;
++  const jitterMaxMs = 120 * 1000;
++
++  mkdirSync(dirname(opts.statePath), { recursive: true });
++  const state: HeartbeatState = loadState(opts.statePath);
++
++  let stopped = false;
++
++  async function runAgent(agentId: string) {
++    const entry = state.agents[agentId] ?? { consecutive_failures: 0 };
++    entry.last_attempt_at = new Date((opts.nowMs ?? Date.now)()).toISOString();
++
++    const out = await runProcessStackWithRetry({
++      agentId,
++      client: opts.client,
++      cfg: opts.cfg,
++      logger: opts.logger,
++      sleepFn: opts.sleepFn,
++    });
++
++    if (out.ok) {
++      entry.last_success_at = new Date((opts.nowMs ?? Date.now)()).toISOString();
++      entry.last_status = 'success';
++      entry.consecutive_failures = 0;
++    } else {
++      entry.last_status = 'failed';
++      entry.consecutive_failures = (entry.consecutive_failures ?? 0) + 1;
++    }
++
++    state.agents[agentId] = entry;
++    saveState(opts.statePath, state);
++  }
++
++  async function runRecovery() {
++    if (!opts.recoverySource || !opts.ledger) return;
++    const sessions = await opts.recoverySource();
++    await runRecoveryTick({
++      cfg: opts.cfg,
++      client: opts.client,
++      ledger: opts.ledger,
++      sessions: Array.isArray(sessions) ? sessions : [],
++      logger: opts.logger,
++      state,
++      nowMs: opts.nowMs,
++    });
++    saveState(opts.statePath, state);
++  }
++
++  async function tick() {
++    if (stopped) return;
++
++    const mapped = Object.values(opts.cfg.agents || {}).filter((x: any) => typeof x === 'string') as string[];
++    for (const agentId of mapped) await runAgent(agentId);
++    await runRecovery();
++
++    if (stopped) return;
++    const jitter = Math.floor(Math.random() * jitterMaxMs);
++    const next = setTimeout(tick, baseMs + jitter);
++    (next as any).unref?.();
++  }
++
++  const first = setTimeout(tick, 2000);
++  (first as any).unref?.();
++
++  return () => { stopped = true; };
++}
+diff --git a/src/hooks.ts b/src/hooks.ts
+index 44d66fb..e1021fa 100644
+--- a/src/hooks.ts
++++ b/src/hooks.ts
+@@ -31,7 +31,19 @@ export async function handleAgentEnd(event, ctx, deps){
+ }
+ 
+ export async function handleSessionEnd(event, ctx, deps){
+-  void event;
+-  void ctx;
+-  void deps;
++  try{
++    const sessionKey=ctx?.sessionKey; if(!sessionKey) return;
++    const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId); if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
++    const msgs = Array.isArray(event?.messages) ? event.messages : [];
++    if(!msgs.length) return;
++
++    const mark=deps.ledger.get(sessionKey);
++    const start=mark ? mark.lastPushedIndex+1 : 0;
++    const endIndex=msgs.length-1;
++    if(endIndex <= (mark?.lastPushedIndex ?? -1)) return;
++
++    const slice=msgs.slice(start);
++    await deps.client.capture({agentId:agent, sessionKey, messages:slice});
++    deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:endIndex});
++  }catch(e){ deps.logger?.warn?.(`session_end error: ${e?.message ?? e}`); }
+ }
+diff --git a/src/index.ts b/src/index.ts
+index d6e6e66..c30c08e 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -3,6 +3,7 @@ import { createBonfiresClient } from './bonfires-client.js';
+ import { InMemoryCaptureLedger } from './capture-ledger.js';
+ import { handleAgentEnd, handleBeforeAgentStart, handleSessionEnd } from './hooks.js';
+ import { bonfiresSearchTool } from './tools/bonfires-search.js';
++import { startStackHeartbeat } from './heartbeat.js';
+ 
+ export default function register(api){
+   const cfg=parseConfig(api.pluginConfig ?? {});
+@@ -11,9 +12,24 @@ export default function register(api){
+   const ledgerPath=api.resolvePath?.('.ai/log/bonfires-ledger.json') ?? '.ai/log/bonfires-ledger.json';
+   const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);
+ 
++  const recoverySource =
++    api.getPersistedSessions
++    ?? api.getSessionTranscripts
++    ?? api.listSessionTranscripts
++    ?? api.recoverySource;
++
++  startStackHeartbeat({
++    cfg,
++    client,
++    ledger,
++    logger: api.logger,
++    statePath: api.resolvePath?.('.ai/log/plan/wave-3-heartbeat-state.json') ?? '.ai/log/plan/wave-3-heartbeat-state.json',
++    recoverySource: typeof recoverySource === 'function' ? () => recoverySource() : undefined,
++  });
++
+   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
+   api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
+-  api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{logger:api.logger}));
++  api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
+   api.registerTool({
+     name:'bonfires_search',
+     description:'Search Bonfires memories',
+diff --git a/tests/wave1.test.ts b/tests/wave1.test.ts
+index 5dd7da3..ef21aff 100644
+--- a/tests/wave1.test.ts
++++ b/tests/wave1.test.ts
+@@ -148,6 +148,13 @@ test('before_agent_start returns undefined when result set is empty', async () =
+   assert.equal(res, undefined);
+ });
+ 
++test('before_agent_start handles missing results field from search response', async () => {
++  const client = new MockBonfiresClient();
++  client.search = async () => ({} as any);
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  assert.equal(res, undefined);
++});
++
+ test('agent_end skips unknown agent mapping', async () => {
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+@@ -172,6 +179,103 @@ test('handleSessionEnd is safe no-op', async () => {
+   assert.ok(true);
+ });
+ 
++test('session_end flush captures uncaptured tail immediately when messages are present', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
++    { agentId: 'lyle', sessionKey: 's-session-end' },
++    { cfg, client, ledger, logger: { warn: () => {} }, nowMs: () => 42 },
++  );
++  assert.equal(client.captureCalls.length, 1);
++  assert.equal(client.captureCalls[0].messages.length, 2);
++  assert.equal(ledger.get('s-session-end').lastPushedIndex, 1);
++});
++
++test('session_end flush respects endIndex <= lastPushedIndex guard', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  ledger.set('s-session-end-guard', { lastPushedAt: 1, lastPushedIndex: 1 });
++
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
++    { agentId: 'lyle', sessionKey: 's-session-end-guard' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++
++  assert.equal(client.captureCalls.length, 0);
++});
++
++test('session_end flush skips when sessionKey is missing', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }] },
++    { agentId: 'lyle' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++  assert.equal(client.captureCalls.length, 0);
++});
++
++test('session_end flush skips unknown agent mapping', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }] },
++    { agentId: 'unknown-agent', sessionKey: 's-session-end-unknown' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++  assert.equal(client.captureCalls.length, 0);
++});
++
++test('session_end flush catch path swallows capture errors', async () => {
++  const client = new MockBonfiresClient();
++  client.capture = async () => { throw new Error('session-end-boom'); };
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }] },
++    { agentId: 'lyle', sessionKey: 's-session-end-catch' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++  assert.equal(ledger.get('s-session-end-catch'), undefined);
++});
++
++test('session_end flush no-messages branch returns without capture', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    {},
++    { agentId: 'lyle', sessionKey: 's-session-end-empty' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++  assert.equal(client.captureCalls.length, 0);
++});
++
++test('session_end flush sets lastPushedAt from Date.now when nowMs is absent', async () => {
++  const client = new MockBonfiresClient();
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }] },
++    { agentId: 'lyle', sessionKey: 's-session-end-now' },
++    { cfg, client, ledger, logger: { warn: () => {} } },
++  );
++  const mark = ledger.get('s-session-end-now');
++  assert.equal(typeof mark.lastPushedAt, 'number');
++  assert.equal(mark.lastPushedIndex, 0);
++});
++
++test('session_end catch path is safe with non-Error throw and missing logger', async () => {
++  const client = new MockBonfiresClient();
++  client.capture = async () => { throw 'session-end-string-failure'; };
++  const ledger = new InMemoryCaptureLedger();
++  await handleSessionEnd(
++    { messages: [{ role: 'user', content: 'm0' }] },
++    { agentId: 'lyle', sessionKey: 's-session-end-string-catch' },
++    { cfg, client, ledger },
++  );
++  assert.equal(ledger.get('s-session-end-string-catch'), undefined);
++});
++
+ test('capture ledger persists and reloads from disk', async () => {
+   const dir = mkdtempSync(join(tmpdir(), 'bonfires-ledger-'));
+   try {
+@@ -239,6 +343,14 @@ test('handleAgentEnd catch path swallows capture errors', async () => {
+   assert.equal(ledger.get('s-catch'), undefined);
+ });
+ 
++test('handleAgentEnd catch path is safe when logger is missing and error is non-Error', async () => {
++  const client = new MockBonfiresClient();
++  client.capture = async () => { throw 'string-failure'; };
++  const ledger = new InMemoryCaptureLedger();
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
++  assert.equal(ledger.get('s-catch-nolog'), undefined);
++});
++
+ test('before_agent_start handles undefined event and logger-present catch path', async () => {
+   const client = new MockBonfiresClient();
+   client.search = async () => { throw new Error('forced'); };
+@@ -250,6 +362,13 @@ test('before_agent_start handles undefined event and logger-present catch path',
+   assert.equal(warned, true);
+ });
+ 
++test('before_agent_start catch path is safe with non-Error throw and missing logger', async () => {
++  const client = new MockBonfiresClient();
++  client.search = async () => { throw 'forced-string'; };
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  assert.equal(res, undefined);
++});
++
+ test('agent_end handles unknown agent with missing agentId and logger', async () => {
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+diff --git a/tests/wave2-hosted.test.ts b/tests/wave2-hosted.test.ts
+index 5b2079c..bcce0df 100644
+--- a/tests/wave2-hosted.test.ts
++++ b/tests/wave2-hosted.test.ts
+@@ -8,6 +8,7 @@ const cfg = {
+   bonfireId: '507f1f77bcf86cd799439011',
+ };
+ const cfgWithTimeout = { ...cfg, network: { timeoutMs: 2500 } };
++const cfgNoRetry = { ...cfg, network: { timeoutMs: 2500, retryBackoffMs: [0, 0] } };
+ 
+ test('hosted search maps delve response to normalized results', async () => {
+   const oldKey = process.env.DELVE_API_KEY;
+@@ -250,7 +251,7 @@ test('hosted processStack handles non-json error body path', async () => {
+   const oldFetch = globalThis.fetch;
+   globalThis.fetch = (async () => new Response('oops', { status: 500, headers: { 'Content-Type': 'text/plain' } })) as any;
+   try {
+-    const c = new HostedBonfiresClient(cfg);
++    const c = new HostedBonfiresClient(cfgNoRetry);
+     await assert.rejects(async () => c.processStack!({ agentId: 'a1' }));
+   } finally {
+     globalThis.fetch = oldFetch;
+@@ -277,6 +278,13 @@ test('createBonfiresClient selects mock when env missing or bonfire missing', as
+   if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+ });
+ 
++test('createBonfiresClient strictHostedMode throws when hosted env missing', async () => {
++  const oldKey = process.env.DELVE_API_KEY;
++  delete process.env.DELVE_API_KEY;
++  assert.throws(() => createBonfiresClient({ ...cfg, strictHostedMode: true }));
++  if (oldKey !== undefined) process.env.DELVE_API_KEY = oldKey;
++});
++
+ test('mock client processStack path', async () => {
+   const c = new MockBonfiresClient();
+   const out = await c.processStack();
+diff --git a/tests/wave3-heartbeat.test.ts b/tests/wave3-heartbeat.test.ts
+new file mode 100644
+index 0000000..6ec9018
+--- /dev/null
++++ b/tests/wave3-heartbeat.test.ts
+@@ -0,0 +1,265 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++import {
++  computeRecoveryRange,
++  inactivityCloseTimeoutMs,
++  isRetriableErrorMessage,
++  makeDedupeKey,
++  runProcessStackWithRetry,
++  runRecoveryTick,
++  startStackHeartbeat,
++} from '../src/heartbeat.js';
++
++const cfg = {
++  agents: { lyle: 'agent-lyle', reviewer: 'agent-reviewer' },
++  capture: { throttleMinutes: 15 },
++  network: { retryBackoffMs: [0, 0] },
++};
++
++test('wave3: recovery overlap precedence uses endIndex guard and dedupe key identity', async () => {
++  const ledgerMap = new Map<string, any>();
++  ledgerMap.set('s-overlap', { lastPushedAt: 1, lastPushedIndex: 1 });
++
++  const captureCalls: any[] = [];
++  const client = {
++    capture: async (req: any) => {
++      captureCalls.push(req);
++      return { accepted: req.messages.length };
++    },
++  };
++
++  await runRecoveryTick({
++    cfg,
++    client,
++    ledger: {
++      get: (k: string) => ledgerMap.get(k),
++      set: (k: string, v: any) => { ledgerMap.set(k, v); },
++    },
++    sessions: [
++      {
++        sessionKey: 's-overlap',
++        agentId: 'lyle',
++        ended: true,
++        messages: [
++          { role: 'user', content: 'm0' },
++          { role: 'assistant', content: 'm1' },
++          { role: 'user', content: 'm2' },
++          { role: 'assistant', content: 'm3' },
++        ],
++      },
++    ],
++    state: { agents: {}, recovery: {} },
++    nowMs: () => 10_000,
++  });
++
++  assert.equal(captureCalls.length, 1);
++  assert.equal(captureCalls[0].messages.length, 2);
++  assert.equal(captureCalls[0].messages[0].content, 'm2');
++  assert.equal(ledgerMap.get('s-overlap').lastPushedIndex, 3);
++
++  // endIndex <= lastPushedIndex guard prevents duplicate re-push
++  await runRecoveryTick({
++    cfg,
++    client,
++    ledger: {
++      get: (k: string) => ledgerMap.get(k),
++      set: (k: string, v: any) => { ledgerMap.set(k, v); },
++    },
++    sessions: [
++      {
++        sessionKey: 's-overlap',
++        agentId: 'lyle',
++        ended: true,
++        messages: [
++          { role: 'user', content: 'm0' },
++          { role: 'assistant', content: 'm1' },
++          { role: 'user', content: 'm2' },
++          { role: 'assistant', content: 'm3' },
++        ],
++      },
++    ],
++    nowMs: () => 12_000,
++  });
++
++  assert.equal(captureCalls.length, 1);
++  assert.equal(makeDedupeKey('s-overlap', 2, 3), 's-overlap:2-3');
++});
++
++test('wave3: close-timeout formula is canonical 2 * capture.throttleMinutes', async () => {
++  assert.equal(inactivityCloseTimeoutMs(15), 30 * 60_000);
++  assert.equal(inactivityCloseTimeoutMs(5), 10 * 60_000);
++});
++
++test('wave3: recovery skips sessions that are not ended and not inactive long enough', async () => {
++  const ledgerMap = new Map<string, any>();
++  const client = {
++    capture: async () => ({ accepted: 1 }),
++  };
++  let called = false;
++  const wrappedClient = {
++    capture: async (...args: any[]) => {
++      called = true;
++      return (client.capture as any)(...args);
++    },
++  };
++
++  await runRecoveryTick({
++    cfg,
++    client: wrappedClient,
++    ledger: {
++      get: (k: string) => ledgerMap.get(k),
++      set: (k: string, v: any) => { ledgerMap.set(k, v); },
++    },
++    sessions: [
++      {
++        sessionKey: 's-active',
++        agentId: 'lyle',
++        lastActivityAtMs: 100_000,
++        messages: [{ role: 'user', content: 'recent' }],
++      },
++    ],
++    nowMs: () => 100_000 + (5 * 60_000),
++  });
++
++  assert.equal(called, false);
++});
++
++test('wave3: process stack retry policy retries retriable failures and stops on non-retriable', async () => {
++  const delays: number[] = [];
++  let calls = 0;
++
++  const retriableThenSuccess = {
++    processStack: async () => {
++      calls += 1;
++      if (calls < 3) throw new Error('Bonfires /stack/process failed: HTTP 500');
++      return { success: true };
++    },
++  };
++
++  const retryCfg = { ...cfg, network: { retryBackoffMs: [1, 2] } };
++
++  const ok = await runProcessStackWithRetry({
++    agentId: 'agent-lyle',
++    client: retriableThenSuccess,
++    cfg: retryCfg,
++    sleepFn: async (ms: number) => { delays.push(ms); },
++  });
++
++  assert.equal(ok.ok, true);
++  assert.equal(calls, 3);
++  assert.deepEqual(delays, [1, 2]);
++
++  calls = 0;
++  delays.length = 0;
++  const nonRetriable = {
++    processStack: async () => {
++      calls += 1;
++      throw new Error('Bonfires /stack/process failed: HTTP 400');
++    },
++  };
++
++  const fail = await runProcessStackWithRetry({
++    agentId: 'agent-lyle',
++    client: nonRetriable,
++    cfg: retryCfg,
++    sleepFn: async (ms: number) => { delays.push(ms); },
++  });
++
++  assert.equal(fail.ok, false);
++  assert.equal(calls, 1);
++  assert.deepEqual(delays, []);
++});
++
++test('wave3: recovery range helper and retriable classifier behave deterministically', async () => {
++  assert.deepEqual(computeRecoveryRange(-1, 3), { startIndex: 0, endIndex: 2 });
++  assert.deepEqual(computeRecoveryRange(1, 4), { startIndex: 2, endIndex: 3 });
++  assert.equal(computeRecoveryRange(3, 4), null);
++  assert.equal(isRetriableErrorMessage('HTTP 429'), true);
++  assert.equal(isRetriableErrorMessage('HTTP 503'), true);
++  assert.equal(isRetriableErrorMessage('HTTP 400'), false);
++});
++
++test('wave3: recovery capture failure is fail-open and logs warning', async () => {
++  let warned = false;
++  const ledgerMap = new Map<string, any>();
++  await runRecoveryTick({
++    cfg,
++    client: {
++      capture: async () => { throw new Error('capture-fail'); },
++    },
++    ledger: {
++      get: (k: string) => ledgerMap.get(k),
++      set: (k: string, v: any) => { ledgerMap.set(k, v); },
++    },
++    sessions: [{ sessionKey: 's-recovery-fail', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'x' }] }],
++    logger: { warn: () => { warned = true; } },
++    nowMs: () => 123,
++  });
++
++  assert.equal(warned, true);
++  assert.equal(ledgerMap.get('s-recovery-fail'), undefined);
++});
++
++test('wave3: startStackHeartbeat runs first tick, persists state, and supports stop', async () => {
++  const dir = mkdtempSync(join(tmpdir(), 'bonfires-heartbeat-'));
++  const statePath = join(dir, 'hb-state.json');
++  const ledgerMap = new Map<string, any>();
++  const processCalls: string[] = [];
++  const captureCalls: any[] = [];
++
++  const oldSetTimeout = globalThis.setTimeout;
++  const oldRandom = Math.random;
++  let firstTickScheduled = false;
++
++  (globalThis as any).setTimeout = ((fn: any, ms: number) => {
++    const handle = { unref: () => {} };
++    if (!firstTickScheduled && ms === 2000) {
++      firstTickScheduled = true;
++      Promise.resolve().then(() => fn());
++    }
++    return handle;
++  }) as any;
++  Math.random = () => 0;
++
++  try {
++    const stop = startStackHeartbeat({
++      cfg,
++      client: {
++        processStack: async ({ agentId }: any) => {
++          processCalls.push(agentId);
++          return { success: true };
++        },
++        capture: async (req: any) => {
++          captureCalls.push(req);
++          return { accepted: req.messages.length };
++        },
++      },
++      ledger: {
++        get: (k: string) => ledgerMap.get(k),
++        set: (k: string, v: any) => { ledgerMap.set(k, v); },
++      },
++      recoverySource: () => ([
++        { sessionKey: 's-heartbeat', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'm0' }] },
++      ]),
++      statePath,
++      nowMs: () => 10_000,
++      sleepFn: async () => {},
++    });
++
++    await new Promise((r) => oldSetTimeout(r, 0));
++    stop();
++
++    const state = JSON.parse(readFileSync(statePath, 'utf8'));
++    assert.equal(processCalls.length >= 2, true); // mapped agents (lyle + reviewer)
++    assert.equal(captureCalls.length, 1);
++    assert.equal(state.agents['agent-lyle'].last_status, 'success');
++    assert.equal(typeof state.recovery['s-heartbeat'].last_dedupe_key, 'string');
++  } finally {
++    (globalThis as any).setTimeout = oldSetTimeout;
++    Math.random = oldRandom;
++    rmSync(dir, { recursive: true, force: true });
++  }
++});

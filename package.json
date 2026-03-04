@@ -22,6 +22,7 @@
     "gate:mutation-lite": "tsx scripts/gates/mutation-lite-check.ts",
     "gate:diff-escalation": "tsx scripts/gates/diff-aware-escalation-check.ts",
     "gate:anti-gaming": "tsx scripts/gates/anti-gaming-check.ts",
+    "gate:review-provenance": "tsx scripts/gates/review-provenance-check.ts .ai/log/review",
     "gate:all": "tsx scripts/gates/gate-all.ts"
   },
   "devDependencies": {

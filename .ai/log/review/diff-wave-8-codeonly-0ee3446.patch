@@ -1,0 +1,464 @@
+commit 0ee34467fed4cc2b170c0564e85d85870d93f586
+Author: lyle <code@spengrah.xyz>
+Date:   Tue Mar 3 10:34:37 2026 -0600
+
+    task: add configurable ingestion profiles, agent mapping, and legacy migration (wave 8)
+    
+    Replace hardcoded ingestion directory assumptions with configurable
+    profile-based target selection (PM6-R1), agent-to-profile mapping with
+    defaultProfile fallback (PM6-R2), backward-compatible legacy config
+    normalization with deprecation warnings (PM6-R3), safety defaults for
+    excludes and extensions (PM6-R4), and per-profile/per-agent summary
+    dimensions (PM6-R5). Includes 27 new tests, updated README with
+    single-profile and multi-agent examples, and updated traceability map.
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/openclaw.plugin.json b/openclaw.plugin.json
+index f369d1a..9915dde 100644
+--- a/openclaw.plugin.json
++++ b/openclaw.plugin.json
+@@ -85,7 +85,7 @@
+           },
+           "rootDir": {
+             "type": "string",
+-            "description": "Root directory to scan for ingestion content."
++            "description": "Root directory for legacy ingestion scan. Deprecated: use profiles instead."
+           },
+           "ledgerPath": {
+             "type": "string",
+@@ -94,6 +94,46 @@
+           "summaryPath": {
+             "type": "string",
+             "description": "Path for the ingestion run summary. Relative paths resolved by plugin."
++          },
++          "profiles": {
++            "type": "object",
++            "description": "Named ingestion target profiles. Each profile defines rootDir, includeGlobs, excludeGlobs, and extensions.",
++            "additionalProperties": {
++              "type": "object",
++              "properties": {
++                "rootDir": {
++                  "type": "string",
++                  "description": "Root directory for this profile's content scan."
++                },
++                "includeGlobs": {
++                  "type": "array",
++                  "items": { "type": "string" },
++                  "description": "Glob patterns for files to include (relative to rootDir). Defaults to ['**/*']."
++                },
++                "excludeGlobs": {
++                  "type": "array",
++                  "items": { "type": "string" },
++                  "description": "Glob patterns for files to exclude. Defaults to ['**/node_modules/**', '**/.git/**', '**/.openclaw/**']."
++                },
++                "extensions": {
++                  "type": "array",
++                  "items": { "type": "string" },
++                  "description": "File extensions to include. Defaults to ['.md']."
++                }
++              },
++              "required": ["rootDir"]
++            }
++          },
++          "agentProfiles": {
++            "type": "object",
++            "description": "Mapping of agent IDs to profile names for agent-specific ingestion targets.",
++            "additionalProperties": {
++              "type": "string"
++            }
++          },
++          "defaultProfile": {
++            "type": "string",
++            "description": "Default profile name used when an agent has no explicit mapping in agentProfiles."
+           }
+         },
+         "additionalProperties": false
+diff --git a/src/config.ts b/src/config.ts
+index 1cfe670..7d76bf9 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -1,4 +1,13 @@
+-export function parseConfig(input) {
++export type IngestionProfile = {
++  rootDir: string;
++  includeGlobs: string[];
++  excludeGlobs: string[];
++  extensions: string[];
++};
++
++const DEFAULT_EXCLUDE_GLOBS = ['**/node_modules/**', '**/.git/**', '**/.openclaw/**'];
++
++export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => void } }) {
+   const cfg = input ?? {};
+   const maxResults = Number(cfg.search?.maxResults ?? 5);
+   const throttleMinutes = Number(cfg.capture?.throttleMinutes ?? 15);
+@@ -6,6 +15,61 @@ export function parseConfig(input) {
+   if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
+   const stateDir = String(cfg.stateDir ?? '.bonfires-state');
+ 
++  // Parse ingestion profiles (PM6-R1)
++  const profiles: Record<string, IngestionProfile> = {};
++  let deprecationWarnings: string[] = [];
++
++  if (cfg.ingestion?.profiles && typeof cfg.ingestion.profiles === 'object') {
++    for (const [name, raw] of Object.entries(cfg.ingestion.profiles)) {
++      if (!name || typeof name !== 'string') throw new Error('ingestion.profiles keys must be non-empty strings');
++      if (!/^[a-zA-Z0-9_-]+$/.test(name)) throw new Error(`ingestion.profiles key "${name}" must be alphanumeric with hyphens/underscores only`);
++      const p = raw as any;
++      if (!p || typeof p !== 'object') throw new Error(`ingestion.profiles.${name} must be an object`);
++      if (!p.rootDir || typeof p.rootDir !== 'string') throw new Error(`ingestion.profiles.${name}.rootDir is required and must be a string`);
++      const includeGlobs = Array.isArray(p.includeGlobs) ? p.includeGlobs.filter((g: any) => typeof g === 'string') : ['**/*'];
++      if (includeGlobs.length === 0) throw new Error(`ingestion.profiles.${name}.includeGlobs must include at least one glob`);
++      const excludeGlobs = Array.isArray(p.excludeGlobs) ? p.excludeGlobs.filter((g: any) => typeof g === 'string') : [...DEFAULT_EXCLUDE_GLOBS];
++      const extensions = Array.isArray(p.extensions) ? p.extensions.filter((e: any) => typeof e === 'string') : ['.md'];
++      profiles[name] = { rootDir: p.rootDir, includeGlobs, excludeGlobs, extensions };
++    }
++  }
++
++  // Agent-to-profile mapping (PM6-R2)
++  const agentProfiles: Record<string, string> = {};
++  if (cfg.ingestion?.agentProfiles && typeof cfg.ingestion.agentProfiles === 'object') {
++    for (const [agentId, profileName] of Object.entries(cfg.ingestion.agentProfiles)) {
++      if (typeof profileName !== 'string') throw new Error(`ingestion.agentProfiles.${agentId} must be a string profile name`);
++      agentProfiles[agentId] = profileName;
++    }
++  }
++  const defaultProfile: string | undefined = typeof cfg.ingestion?.defaultProfile === 'string' ? cfg.ingestion.defaultProfile : undefined;
++
++  // Validate agent profile references point to existing profiles
++  if (Object.keys(profiles).length > 0) {
++    for (const [agentId, profileName] of Object.entries(agentProfiles)) {
++      if (!profiles[profileName]) throw new Error(`ingestion.agentProfiles.${agentId} references unknown profile "${profileName}"`);
++    }
++    if (defaultProfile && !profiles[defaultProfile]) throw new Error(`ingestion.defaultProfile references unknown profile "${defaultProfile}"`);
++  }
++
++  // Legacy backward compatibility (PM6-R3):
++  // If no profiles defined but legacy ingestion.rootDir is present, synthesize a profile
++  const hasLegacyRootDir = cfg.ingestion?.rootDir !== undefined;
++  const hasNewProfiles = Object.keys(profiles).length > 0;
++
++  if (hasLegacyRootDir && !hasNewProfiles) {
++    const legacyRoot = String(cfg.ingestion.rootDir);
++    profiles['_legacy'] = {
++      rootDir: legacyRoot,
++      includeGlobs: ['**/*'],
++      excludeGlobs: [...DEFAULT_EXCLUDE_GLOBS],
++      extensions: ['.md'],
++    };
++    deprecationWarnings.push(
++      `ingestion.rootDir is deprecated; migrate to ingestion.profiles for portable config`
++    );
++  }
++
+   const out = {
+     baseUrl: String(cfg.baseUrl ?? process.env.BONFIRES_BASE_URL ?? 'https://tnt-v2.api.bonfires.ai/'),
+     apiKeyEnv: String(cfg.apiKeyEnv ?? process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY'),
+@@ -22,6 +86,10 @@ export function parseConfig(input) {
+       rootDir: String(cfg.ingestion?.rootDir ?? process.cwd()),
+       ledgerPath: String(cfg.ingestion?.ledgerPath ?? `${stateDir}/ingestion-hash-ledger.json`),
+       summaryPath: String(cfg.ingestion?.summaryPath ?? `${stateDir}/ingestion-cron-summary-current.json`),
++      profiles,
++      agentProfiles,
++      defaultProfile,
++      deprecationWarnings,
+     },
+   };
+   const mappedAgents = Object.entries(out.agents).filter(([, v]) => typeof v === 'string');
+@@ -35,8 +103,44 @@ export function parseConfig(input) {
+   const h = parsed.hostname;
+   if (!(h === 'bonfires.ai' || h.endsWith('.bonfires.ai'))) throw new Error('baseUrl host must be bonfires.ai or a subdomain');
+ 
++  // Emit deprecation warnings (PM6-R3)
++  if (opts?.logger && deprecationWarnings.length > 0) {
++    for (const w of deprecationWarnings) opts.logger.warn?.(w);
++  }
++
+   return out;
+ }
++
++/**
++ * Resolve ingestion profile for an agent (PM6-R2).
++ * Precedence: agentProfiles[agentId] -> defaultProfile -> config error.
++ */
++export function resolveIngestionProfile(cfg: ReturnType<typeof parseConfig>, agentId: string): IngestionProfile {
++  const profiles = cfg.ingestion.profiles;
++  const profileNames = Object.keys(profiles);
++
++  // If no profiles configured, nothing to resolve
++  if (profileNames.length === 0) {
++    throw new Error(`No ingestion profiles configured; cannot resolve profile for agent "${agentId}"`);
++  }
++
++  // Check agent-specific mapping
++  const agentMapping = cfg.ingestion.agentProfiles[agentId];
++  if (agentMapping && profiles[agentMapping]) {
++    return profiles[agentMapping];
++  }
++
++  // Fall back to default profile
++  if (cfg.ingestion.defaultProfile && profiles[cfg.ingestion.defaultProfile]) {
++    return profiles[cfg.ingestion.defaultProfile];
++  }
++
++  // Explicit config error (PM6-R2 requirement 3)
++  throw new Error(
++    `No ingestion profile mapping for agent "${agentId}" and no defaultProfile configured`
++  );
++}
++
+ export function resolveBonfiresAgentId(cfg, agentId) {
+   if (!agentId) return null;
+   if (!Object.hasOwn(cfg.agents, agentId)) return null;
+diff --git a/src/index.ts b/src/index.ts
+index ff82602..66a0b7d 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -7,7 +7,7 @@ import { startStackHeartbeat } from './heartbeat.js';
+ import { startIngestionCron } from './ingestion.js';
+ 
+ export default function register(api){
+-  const cfg=parseConfig(api.pluginConfig ?? {});
++  const cfg=parseConfig(api.pluginConfig ?? {}, { logger: api.logger });
+   const client=createBonfiresClient(cfg, api.logger);
+   const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
+   const stateDir=resolvePath(cfg.stateDir);
+@@ -31,6 +31,10 @@ export default function register(api){
+     recoverySource: recoveryFn ? () => recoveryFn() : undefined,
+   });
+ 
++  // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
++  const profiles = cfg.ingestion.profiles;
++  const agentProfiles = cfg.ingestion.agentProfiles;
++
+   const stopIngestion = startIngestionCron({
+     enabled: cfg.ingestion.enabled,
+     everyMinutes: cfg.ingestion.everyMinutes,
+@@ -39,6 +43,8 @@ export default function register(api){
+     summaryPath: resolvePath(cfg.ingestion.summaryPath),
+     client,
+     logger: api.logger,
++    profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
++    agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
+   });
+ 
+   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 2f1efae..25d95d8 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -1,6 +1,7 @@
+ import { createHash } from 'node:crypto';
+ import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+-import { dirname, join, relative, resolve } from 'node:path';
++import { dirname, extname, join, relative, resolve } from 'node:path';
++import type { IngestionProfile } from './config.js';
+ 
+ type LedgerEntry = { hash: string; pushedAt: string };
+ type Ledger = { version: number; entries: Record<string, LedgerEntry> };
+@@ -12,13 +13,15 @@ type IngestItem = {
+   hash: string;
+ };
+ 
+-type IngestionSummary = {
++export type IngestionSummary = {
+   timestamp: string;
+   scanned: number;
+   ingested: number;
+   skipped: number;
+   errors: number;
+   errorDetails: Array<{ file: string; error: string }>;
++  profiles?: Record<string, { scanned: number; ingested: number; skipped: number; errors: number }>;
++  agents?: Record<string, { profile: string }>;
+ };
+ 
+ function sha256(content: string) {
+@@ -50,6 +53,10 @@ function saveLedger(path: string, ledger: Ledger) {
+   writeFileSync(path, JSON.stringify(ledger, null, 2));
+ }
+ 
++/**
++ * Legacy file collection: scans memory/, vault/, projects/ hardcoded dirs.
++ * Preserved for backward compatibility when no profiles are configured.
++ */
+ function collectIngestionFiles(rootDir: string): IngestItem[] {
+   const absRoot = resolve(rootDir);
+   const candidates: string[] = [];
+@@ -88,14 +95,113 @@ function collectIngestionFiles(rootDir: string): IngestItem[] {
+   });
+ }
+ 
++/**
++ * Match a relative path against a simple glob pattern.
++ * Supports **, *, and ? wildcards. Evaluated relative to profile rootDir.
++ */
++function globMatch(pattern: string, filePath: string): boolean {
++  // Convert glob to regex
++  let regex = '';
++  let i = 0;
++  while (i < pattern.length) {
++    const c = pattern[i];
++    if (c === '*' && pattern[i + 1] === '*') {
++      // ** matches any number of path segments
++      regex += '.*';
++      i += 2;
++      if (pattern[i] === '/') i++; // skip trailing slash after **
++    } else if (c === '*') {
++      regex += '[^/]*';
++      i++;
++    } else if (c === '?') {
++      regex += '[^/]';
++      i++;
++    } else if (c === '.') {
++      regex += '\\.';
++      i++;
++    } else {
++      regex += c;
++      i++;
++    }
++  }
++  return new RegExp(`^${regex}$`).test(filePath);
++}
++
++/**
++ * Profile-based file collection (PM6-R1).
++ * Scans rootDir, applies includeGlobs/excludeGlobs/extensions filters.
++ */
++function collectProfileFiles(profile: IngestionProfile, profileName: string): IngestItem[] {
++  const absRoot = resolve(profile.rootDir);
++  const allFiles: string[] = [];
++
++  try {
++    if (statSync(absRoot).isDirectory()) walk(absRoot, allFiles);
++  } catch {
++    return []; // rootDir doesn't exist or isn't accessible
++  }
++
++  const result: IngestItem[] = [];
++  const seen = new Set<string>();
++
++  for (const absPath of allFiles) {
++    const rel = relative(absRoot, absPath);
++    if (seen.has(rel)) continue;
++    seen.add(rel);
++
++    // Extension filter (PM6-R4)
++    const ext = extname(absPath);
++    if (profile.extensions.length > 0 && !profile.extensions.includes(ext)) continue;
++
++    // Exclude glob filter
++    if (profile.excludeGlobs.some((g) => globMatch(g, rel))) continue;
++
++    // Include glob filter
++    if (!profile.includeGlobs.some((g) => globMatch(g, rel))) continue;
++
++    try {
++      const content = readFileSync(absPath, 'utf8');
++      result.push({
++        absPath,
++        relativePath: `${profileName}:${rel}`,
++        content,
++        hash: sha256(content),
++      });
++    } catch {
++      // Skip files that can't be read
++    }
++  }
++
++  return result;
++}
++
+ export async function runIngestionOnce(opts: {
+   rootDir: string;
+   ledgerPath: string;
+   summaryPath: string;
+   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++  profiles?: Record<string, IngestionProfile>;
++  agentProfiles?: Record<string, string>;
+ }) {
+   const ledger = loadLedger(opts.ledgerPath);
+-  const items = collectIngestionFiles(opts.rootDir);
++
++  const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
++  const hasProfiles = profileNames.length > 0;
++
++  // Collect items: profile-based or legacy
++  let items: IngestItem[];
++  const profileStats: Record<string, { scanned: number; ingested: number; skipped: number; errors: number }> = {};
++
++  if (hasProfiles) {
++    items = [];
++    for (const [name, profile] of Object.entries(opts.profiles!)) {
++      const profileItems = collectProfileFiles(profile, name);
++      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
++      items.push(...profileItems);
++    }
++  } else {
++    items = collectIngestionFiles(opts.rootDir);
++  }
+ 
+   const summary: IngestionSummary = {
+     timestamp: new Date().toISOString(),
+@@ -106,10 +212,25 @@ export async function runIngestionOnce(opts: {
+     errorDetails: [],
+   };
+ 
++  // Add profile and agent dimensions when profiles are active (PM6-R5)
++  if (hasProfiles) {
++    summary.profiles = profileStats;
++    if (opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0) {
++      summary.agents = {};
++      for (const [agentId, profileName] of Object.entries(opts.agentProfiles)) {
++        summary.agents[agentId] = { profile: profileName };
++      }
++    }
++  }
++
+   for (const item of items) {
+     const existing = ledger.entries[item.relativePath];
+     if (existing?.hash === item.hash) {
+       summary.skipped += 1;
++      if (hasProfiles) {
++        const pName = item.relativePath.split(':')[0];
++        if (profileStats[pName]) profileStats[pName].skipped += 1;
++      }
+       continue;
+     }
+ 
+@@ -123,9 +244,17 @@ export async function runIngestionOnce(opts: {
+       });
+       ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
+       summary.ingested += 1;
++      if (hasProfiles) {
++        const pName = item.relativePath.split(':')[0];
++        if (profileStats[pName]) profileStats[pName].ingested += 1;
++      }
+     } catch (e: any) {
+       summary.errors += 1;
+       summary.errorDetails.push({ file: item.relativePath, error: String(e?.message ?? e) });
++      if (hasProfiles) {
++        const pName = item.relativePath.split(':')[0];
++        if (profileStats[pName]) profileStats[pName].errors += 1;
++      }
+     }
+   }
+ 
+@@ -144,6 +273,8 @@ export function startIngestionCron(opts: {
+   summaryPath: string;
+   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+   logger?: { warn?: (msg: string) => void };
++  profiles?: Record<string, IngestionProfile>;
++  agentProfiles?: Record<string, string>;
+ }) {
+   if (!opts.enabled) return () => {};
+ 
+@@ -158,6 +289,8 @@ export function startIngestionCron(opts: {
+         ledgerPath: opts.ledgerPath,
+         summaryPath: opts.summaryPath,
+         client: opts.client,
++        profiles: opts.profiles,
++        agentProfiles: opts.agentProfiles,
+       });
+     } catch (e: any) {
+       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);

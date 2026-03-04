@@ -4,7 +4,7 @@
   "next_action": "done",
   "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-03T16:58:04.607Z",
+  "updated_at": "2026-03-04T04:01:12.730Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -33,8 +33,8 @@
   "review_artifacts": {
     "correctness": ".ai/log/review/review-correctness-20260303w8.md",
     "security": ".ai/log/review/review-security-20260303w8.md",
-    "verification_quality": ".ai/log/review/review-verification-quality-20260303w8.md",
-    "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8.md"
+    "verification_quality": ".ai/log/review/review-verification-quality-20260303w8-rerun3.md",
+    "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8-rerun3.md"
   },
   "review_exception_note": "Spencer explicitly requested immediate review rerun before task commit.",
   "deferred_followups": [
@@ -135,13 +135,13 @@
   "wave8_verification_matrix": ".ai/log/plan/verification-matrix-wave-8-20260303w8a.md",
   "wave8_wrapup": {
     "status": "done",
-    "commit": "0ee3446",
+    "commit": "b58989f",
     "implementation_summary": ".ai/log/plan/wave-8-summary.json",
     "reviewer_artifacts": {
-      "correctness": ".ai/log/review/review-correctness-20260303w8.md",
-      "security": ".ai/log/review/review-security-20260303w8.md",
-      "verification_quality": ".ai/log/review/review-verification-quality-20260303w8.md",
-      "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8.md"
+      "correctness": ".ai/log/review/review-correctness-20260303w8-rerun2.md",
+      "security": ".ai/log/review/review-security-20260303w8-rerun2.md",
+      "verification_quality": ".ai/log/review/review-verification-quality-20260303w8-rerun3.md",
+      "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8-rerun3.md"
     },
     "gate_report": ".ai/log/plan/verification-gates-report-current.json"
   }

@@ -1,12 +1,12 @@
 Pre-implementation spec review for Wave 3.
 
 Use these sources:
-- .ai/spec/spec/post-mvp/stack-processing-heartbeat.md
-- .ai/spec/guidance/post-mvp/guidance-for-stack-processing-heartbeat.md
+- .ai/spec/spec/conversation-memory/stack-processing-heartbeat.md
+- .ai/spec/guidance/conversation-memory/guidance-for-stack-processing-heartbeat.md
 - .ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md
 - .ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md
-- .ai/spec/spec/post-mvp/hosted-api-wiring.md
-- .ai/spec/guidance/post-mvp/guidance-for-hosted-api-wiring.md
+- .ai/spec/spec/hosted-integration/hosted-api-wiring.md
+- .ai/spec/guidance/hosted-integration/guidance-for-hosted-api-wiring.md
 
 Check for ambiguity, missing acceptance criteria, and verification gaps.
 Required output sections:

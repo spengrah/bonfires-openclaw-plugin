@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-02T20:12:00Z",
+  "result": "success",
+  "commit_shas": ["120e7cd"],
+  "changed_files": [
+    "README.md",
+    "package.json",
+    "scripts/hosted-integration-verify.ts",
+    "tests/wave5-hosted-verification.test.ts"
+  ],
+  "gate_results": {"gate:all": "pass", "verify:hosted": "pass"},
+  "caveats": [
+    "live preflight probes are opt-in via --live and require hosted credentials"
+  ],
+  "open_risks": []
+}

@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-03-02T21:10:00Z",
+  "result": "success",
+  "commit_shas": ["2f704f6"],
+  "changed_files": [
+    ".ai/log/plan/specrev-wave-6-20260302w6a-r1.md",
+    ".ai/log/plan/verification-gates-report-current.json",
+    ".ai/log/plan/verification-matrix-wave-6-20260302w6a.md",
+    ".ai/log/plan/wave-6-plan-20260302w6a.md",
+    ".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md",
+    ".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md",
+    ".ai/spec/spec/plugin/verification-checklist.md",
+    "README.md",
+    "package.json",
+    "scripts/gates/mutation-lite-check.ts",
+    "scripts/ingest-to-bonfires.ts",
+    "src/bonfires-client.ts",
+    "src/config.ts",
+    "src/index.ts",
+    "src/ingestion.ts",
+    "tests/wave1.test.ts",
+    "tests/wave2-hosted.test.ts",
+    "tests/wave3-heartbeat.test.ts",
+    "tests/wave6-ingestion.test.ts"
+  ],
+  "gate_results": {"gate:all": "pass"},
+  "caveats": [
+    "ingestion run artifacts are generated at runtime and remain environment-dependent in content counts"
+  ],
+  "open_risks": []
+}

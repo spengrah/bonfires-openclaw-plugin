@@ -1,0 +1,1369 @@
+commit 2f704f618d719724057e66b45e2197948779f691
+Author: lyle <code@spengrah.xyz>
+Date:   Mon Mar 2 15:03:59 2026 -0600
+
+    task: remove hard-coded agent and expand wave6 ingestion tests
+    
+    Replace hard-coded `agents: { default: 'default' }` in the ingest CLI
+    with env-driven loadAgentsFromEnv() reading BONFIRES_AGENTS or
+    BONFIRES_AGENT_ID. Add five new test cases covering ingestContent error
+    path, missing ingestContent throw, cron disabled branch, vault/projects
+    directory scanning, and non-markdown file filtering. gate:all PASS.
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+---
+ .ai/log/plan/specrev-wave-6-20260302w6a-r1.md      |  17 ++
+ .../plan/verification-gates-report-current.json    |  32 ++--
+ .../plan/verification-matrix-wave-6-20260302w6a.md |  10 +
+ .ai/log/plan/wave-6-plan-20260302w6a.md            |  17 ++
+ ...guidance-for-plugin-config-and-agent-mapping.md |   2 +-
+ .../spec-for-plugin-config-and-agent-mapping.md    |   4 +-
+ .ai/spec/spec/plugin/verification-checklist.md     |   2 +-
+ README.md                                          |   8 +-
+ package.json                                       |   1 +
+ scripts/gates/mutation-lite-check.ts               |   2 +-
+ scripts/ingest-to-bonfires.ts                      |  46 +++++
+ src/bonfires-client.ts                             |  20 ++
+ src/config.ts                                      |  11 +-
+ src/index.ts                                       |  32 +++-
+ src/ingestion.ts                                   | 173 +++++++++++++++++
+ tests/wave1.test.ts                                | 140 ++++++++------
+ tests/wave2-hosted.test.ts                         |  25 +++
+ tests/wave3-heartbeat.test.ts                      |  20 +-
+ tests/wave6-ingestion.test.ts                      | 204 +++++++++++++++++++++
+ 19 files changed, 668 insertions(+), 98 deletions(-)
+
+diff --git a/.ai/log/plan/specrev-wave-6-20260302w6a-r1.md b/.ai/log/plan/specrev-wave-6-20260302w6a-r1.md
+new file mode 100644
+index 0000000..336fd33
+--- /dev/null
++++ b/.ai/log/plan/specrev-wave-6-20260302w6a-r1.md
+@@ -0,0 +1,17 @@
++# Spec Review Summary — Wave 6 (20260302w6a-r1)
++
++## Verdict
++GO
++
++## Blocking findings
++- None.
++
++## Non-blocking findings
++1. Ingestion source scope can expand later via adapter abstraction; current default path set is acceptable.
++2. Live ingest endpoint semantics may evolve; keep request payload contract covered by tests.
++
++## Required remediations
++- Ensure summary and ledger artifacts remain secret-safe and filesystem-local.
++
++## Diff/spec acknowledgement
++Reviewed wave-6 plan + verification matrix for PM4 ingestion and de-personalization scope.
+diff --git a/.ai/log/plan/verification-gates-report-current.json b/.ai/log/plan/verification-gates-report-current.json
+index 44da162..f714fdf 100644
+--- a/.ai/log/plan/verification-gates-report-current.json
++++ b/.ai/log/plan/verification-gates-report-current.json
+@@ -1,69 +1,69 @@
+ {
+   "wave": "current",
+-  "timestamp": "2026-03-02T07:26:48.760Z",
++  "timestamp": "2026-03-02T21:03:28.485Z",
+   "gates": [
+     {
+       "tier": 1,
+       "name": "lint",
+       "status": "PASS",
+-      "elapsed": 2260,
++      "elapsed": 2587,
+       "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (32 markdown files checked)"
+     },
+     {
+       "tier": 2,
+       "name": "test:coverage",
+       "status": "PASS",
+-      "elapsed": 965,
+-      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.458718\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.29715\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.292891\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 0.935153\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.826301\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.287872\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.297446\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 2.637276\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.389392\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.274187\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects missing agent mappings\nok 11 - parseConfig rejects missing agent mappings\n  ---\n  duration_ms: 0.331409\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.250779\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.252891\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.203482\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.193445\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.289909\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 17 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.553003\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 18 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.283372\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 19 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.225039\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 20 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.274835\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 21 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.208039\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 22 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.734386\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 23 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.623337\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 24 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.297187\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 25 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.238483\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 26 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.280039\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 27 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.169723\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 28 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.182242\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 29 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.223779\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 30 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.307206\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 31 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.347039\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 32 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.214038\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 33 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.202075\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 34 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.246205\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 35 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.216409\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 36 - plugin register wires hooks and tool\n  ---\n  duration_ms: 0.76569\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 37 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.416558\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 38 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.23528\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 39 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 34.209889\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 40 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.448947\n  type: 'test'\n  ...\n# Subtest: hosted capture posts stack add per message and returns accepted count\nok 41 - hosted capture posts stack add per message and returns accepted count\n  ---\n  duration_ms: 1.932512\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 42 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 0.862654\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 43 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.857024\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 44 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.928265\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 45 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.392688\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 46 - hosted search handles non-ok response\n  ---\n  duration_ms: 0.932672\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 47 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.33952\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 48 - hosted capture single-message payload path\n  ---\n  duration_ms: 1.068062\n  type: 'test'\n  ...\n# Subtest: hosted capture with >2 messages does not drop and reports accepted count\nok 49 - hosted capture with >2 messages does not drop and reports accepted count\n  ---\n  duration_ms: 2.684183\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 50 - hosted search returns normalized score values\n  ---\n  duration_ms: 1.185137\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 51 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 1.046043\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 52 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 1.07284\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 53 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 0.915969\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 54 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 0.967488\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 55 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 4.507804\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 56 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.448058\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 57 - mock client processStack path\n  ---\n  duration_ms: 0.341261\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 58 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 0.955802\n  type: 'test'\n  ...\n1..58\n# tests 58\n# suites 0\n# pass 58\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 489.355706"
++      "elapsed": 1900,
++      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 2.631394\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.281517\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.237406\n  type: 'test'\n  ...\n# Subtest: agent_end throttles per session\nok 4 - agent_end throttles per session\n  ---\n  duration_ms: 1.147976\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 5 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 1.095939\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 6 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.296165\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 7 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.250165\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 8 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.368331\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 9 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.201684\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 10 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.226314\n  type: 'test'\n  ...\n# Subtest: parseConfig requires at least one mapped agent id\nok 11 - parseConfig requires at least one mapped agent id\n  ---\n  duration_ms: 0.490423\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 12 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.226758\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 13 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.180091\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 14 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.178702\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 15 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.181481\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 16 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.339257\n  type: 'test'\n  ...\n# Subtest: parseConfig ingestion defaults and mapped-agent validation\nok 17 - parseConfig ingestion defaults and mapped-agent validation\n  ---\n  duration_ms: 0.453201\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 18 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.35448\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 19 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.250962\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles missing results field from search response\nok 20 - before_agent_start handles missing results field from search response\n  ---\n  duration_ms: 0.212666\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 21 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.212184\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 22 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.26498\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 23 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.330962\n  type: 'test'\n  ...\n# Subtest: session_end flush captures uncaptured tail immediately when messages are present\nok 24 - session_end flush captures uncaptured tail immediately when messages are present\n  ---\n  duration_ms: 0.275036\n  type: 'test'\n  ...\n# Subtest: session_end flush respects endIndex <= lastPushedIndex guard\nok 25 - session_end flush respects endIndex <= lastPushedIndex guard\n  ---\n  duration_ms: 0.224333\n  type: 'test'\n  ...\n# Subtest: session_end flush skips when sessionKey is missing\nok 26 - session_end flush skips when sessionKey is missing\n  ---\n  duration_ms: 0.194184\n  type: 'test'\n  ...\n# Subtest: session_end flush skips unknown agent mapping\nok 27 - session_end flush skips unknown agent mapping\n  ---\n  duration_ms: 0.200981\n  type: 'test'\n  ...\n# Subtest: session_end flush catch path swallows capture errors\nok 28 - session_end flush catch path swallows capture errors\n  ---\n  duration_ms: 0.291573\n  type: 'test'\n  ...\n# Subtest: session_end flush no-messages branch returns without capture\nok 29 - session_end flush no-messages branch returns without capture\n  ---\n  duration_ms: 0.223018\n  type: 'test'\n  ...\n# Subtest: session_end flush sets lastPushedAt from Date.now when nowMs is absent\nok 30 - session_end flush sets lastPushedAt from Date.now when nowMs is absent\n  ---\n  duration_ms: 0.233277\n  type: 'test'\n  ...\n# Subtest: session_end catch path is safe with non-Error throw and missing logger\nok 31 - session_end catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.251387\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 32 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.664283\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 33 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.536239\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 34 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 1.734066\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 35 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.282851\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 36 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.272795\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 37 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.333313\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 38 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.182128\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 39 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.209239\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 40 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.28998\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path is safe when logger is missing and error is non-Error\nok 41 - handleAgentEnd catch path is safe when logger is missing and error is non-Error\n  ---\n  duration_ms: 0.22348\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 42 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.301202\n  type: 'test'\n  ...\n# Subtest: before_agent_start catch path is safe with non-Error throw and missing logger\nok 43 - before_agent_start catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.214628\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 44 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.242721\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 45 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.231128\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 46 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.245072\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 47 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.21635\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 48 - plugin register wires hooks and tool\n  ---\n  duration_ms: 1.37816\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 49 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.744107\n  type: 'test'\n  ...\n# Subtest: plugin register supports functional recovery source and enabled ingestion config\nok 50 - plugin register supports functional recovery source and enabled ingestion config\n  ---\n  duration_ms: 0.627811\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 51 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.265943\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 52 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 35.199881\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 53 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.502034\n  type: 'test'\n  ...\n# Subtest: hosted capture posts stack add per message and returns accepted count\nok 54 - hosted capture posts stack add per message and returns accepted count\n  ---\n  duration_ms: 1.956379\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 55 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 1.174716\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 56 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.727052\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 57 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.590442\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 58 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.292183\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 59 - hosted search handles non-ok response\n  ---\n  duration_ms: 0.920033\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 60 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.237962\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 61 - hosted capture single-message payload path\n  ---\n  duration_ms: 0.781922\n  type: 'test'\n  ...\n# Subtest: hosted capture with >2 messages does not drop and reports accepted count\nok 62 - hosted capture with >2 messages does not drop and reports accepted count\n  ---\n  duration_ms: 1.85525\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 63 - hosted search returns normalized score values\n  ---\n  duration_ms: 0.923995\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 64 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 0.789607\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 65 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 3.643167\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 66 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 1.213031\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 67 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 2.106138\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 68 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.403461\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 69 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.325609\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient strictHostedMode throws when hosted env missing\nok 70 - createBonfiresClient strictHostedMode throws when hosted env missing\n  ---\n  duration_ms: 0.483794\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 71 - mock client processStack path\n  ---\n  duration_ms: 0.467257\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 72 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 0.97431\n  type: 'test'\n  ...\n# Subtest: hosted ingestContent maps payload to ingest_content endpoint\nok 73 - hosted ingestContent maps payload to ingest_content endpoint\n  ---\n  duration_ms: 1.422493\n  type: 'test'\n  ...\n# Subtest: wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\nok 74 - wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\n  ---\n  duration_ms: 2.314026\n  type: 'test'\n  ...\n# Subtest: wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\nok 75 - wave3: close-timeout formula is canonical 2 * capture.throttleMinutes\n  ---\n  duration_ms: 0.249258\n  type: 'test'\n  ...\n# Subtest: wave3: recovery skips sessions that are not ended and not inactive long enough\nok 76 - wave3: recovery skips sessions that are not ended and not inactive long enough\n  ---\n  duration_ms: 0.323295\n  type: 'test'\n  ...\n# Subtest: wave3: process stack retry policy retries retriable failures and stops on non-retriable\nok 77 - wave3: process stack retry policy retries retriable failures and stops on non-retriable\n  ---\n  duration_ms: 1.967027\n  type: 'test'\n  ...\n# Subtest: wave3: recovery range helper and retriable classifier behave deterministically\nok 78 - wave3: recovery range helper and retriable classifier behave deterministically\n  ---\n  duration_ms: 0.342054\n  type: 'test'\n  ...\n# Subtest: wave3: recovery capture failure is fail-open and logs warning\nok 79 - wave3: recovery capture failure is fail-open and logs warning\n  ---\n  duration_ms: 0.404943\n  type: 'test'\n  ...\n# Subtest: wave3: startStackHeartbeat runs first tick, persists state, and supports stop\nok 80 - wave3: startStackHeartbeat runs first tick, persists state, and supports stop\n  ---\n  duration_ms: 10.931261\n  type: 'test'\n  ...\n# [verify:hosted] PASS contract:/delve normalization\n# [verify:hosted] PASS contract:/stack/add mapping\n# [verify:hosted] PASS contract:/stack/process response handling\n# [verify:hosted] SKIP preflight:/healthz — live mode not requested\n# [verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested\n# [verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json\n# Subtest: wave5: redactEnvSummary never exposes raw key\nok 81 - wave5: redactEnvSummary never exposes raw key\n  ---\n  duration_ms: 1.261549\n  type: 'test'\n  ...\n# Subtest: wave5: verify:hosted fixture mode writes report with required probes\nok 82 - wave5: verify:hosted fixture mode writes report with required probes\n  ---\n  duration_ms: 38.046275\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips unchanged content and persists ledger across runs\nok 83 - wave6: ingestion skips unchanged content and persists ledger across runs\n  ---\n  duration_ms: 9.523156\n  type: 'test'\n  ...\n# Subtest: wave6: changed content ingests exactly once per new hash and emits summary\nok 84 - wave6: changed content ingests exactly once per new hash and emits summary\n  ---\n  duration_ms: 2.467858\n  type: 'test'\n  ...\n# Subtest: wave6: ingestContent error increments error count and records failure detail\nok 85 - wave6: ingestContent error increments error count and records failure detail\n  ---\n  duration_ms: 1.86549\n  type: 'test'\n  ...\n# Subtest: wave6: missing ingestContent on client throws and records error\nok 86 - wave6: missing ingestContent on client throws and records error\n  ---\n  duration_ms: 1.607658\n  type: 'test'\n  ...\n# Subtest: wave6: startIngestionCron skips scheduling when disabled\nok 87 - wave6: startIngestionCron skips scheduling when disabled\n  ---\n  duration_ms: 0.367609\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion scans vault and projects directories\nok 88 - wave6: ingestion scans vault and projects directories\n  ---\n  duration_ms: 3.036393\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips non-markdown files\nok 89 - wave6: ingestion skips non-markdown files\n  ---\n  duration_ms: 1.996731\n  type: 'test'\n  ...\n1..89\n# tests 89\n# suites 0\n# pass 89\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1332.176783"
+     },
+     {
+       "tier": 2,
+       "name": "gate:coverage",
+       "status": "PASS",
+-      "elapsed": 330,
+-      "output": "coverage-check: global line 100.0% — PASS"
++      "elapsed": 317,
++      "output": "coverage-check: global line 93.3% — PASS"
+     },
+     {
+       "tier": 2,
+       "name": "gate:changed-lines",
+       "status": "PASS",
+-      "elapsed": 332,
+-      "output": "changed-lines-coverage-check: 100.0% of 131 changed line(s) covered — PASS"
++      "elapsed": 335,
++      "output": "changed-lines-coverage-check: 92.5% of 226 changed line(s) covered — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:quality",
+       "status": "PASS",
+-      "elapsed": 324,
+-      "output": "quality-check: 3 critical module(s) verified — PASS"
++      "elapsed": 329,
++      "output": "[quality-check] module=src/bonfires-client.ts\n  test_files=wave1.test.ts, wave2-hosted.test.ts, wave6-ingestion.test.ts\n  checks happy=true negative=true edge=true\n[quality-check] module=src/config.ts\n  test_files=wave1.test.ts, wave5-hosted-verification.test.ts\n  checks happy=true negative=true edge=true\n[quality-check] module=src/index.ts\n  test_files=wave1.test.ts\n  checks happy=true negative=true edge=true\nquality-check: 3 critical module(s) verified — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:mutation-lite",
+       "status": "PASS",
+-      "elapsed": 2080,
+-      "output": "mutation-lite-check: 4 probe(s) caught by tests — PASS"
++      "elapsed": 3652,
++      "output": "mutation-lite: skipping probe \"Suppress non-OK error handling in hosted fetchJson\" (target not found)\nmutation-lite-check: 3 probe(s) caught by tests — PASS"
+     },
+     {
+       "tier": 4,
+       "name": "gate:traceability",
+       "status": "PASS",
+-      "elapsed": 323,
++      "elapsed": 322,
+       "output": "traceability-check: 6 touched requirement(s) verified — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:diff-escalation",
+       "status": "PASS",
+-      "elapsed": 322,
++      "elapsed": 331,
+       "output": "diff-aware-escalation: sensitive files touched: src/bonfires-client.ts, src/index.ts\n  → Escalation active: Tier 3 + Tier 4 mandatory, critical branch threshold enforced\ndiff-aware-escalation: all escalation requirements met — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:anti-gaming",
+       "status": "PASS",
+-      "elapsed": 324,
+-      "output": "anti-gaming-check: 6 source file(s) scanned — PASS"
++      "elapsed": 327,
++      "output": "anti-gaming-check: 8 source file(s) scanned — PASS"
+     }
+   ],
+   "verdict": "PASS"
+diff --git a/.ai/log/plan/verification-matrix-wave-6-20260302w6a.md b/.ai/log/plan/verification-matrix-wave-6-20260302w6a.md
+new file mode 100644
+index 0000000..09c30bd
+--- /dev/null
++++ b/.ai/log/plan/verification-matrix-wave-6-20260302w6a.md
+@@ -0,0 +1,10 @@
++# Verification Matrix — Wave 6 (20260302w6a)
++
++| Requirement | Command | Pass threshold | Artifact |
++|---|---|---|---|
++| Idempotent hash-dedupe ingestion | `npm run test` | `wave6` ingestion tests pass | `tests/wave6-ingestion.test.ts` |
++| Persisted ledger restart safety | `npm run test` | second run skips unchanged content | `src/ingestion.ts` + tests |
++| Summary artifact shape | `npm run test` + `npm run ingest:bonfires` | summary file exists with counters | `.ai/log/plan/ingestion-cron-summary-current.json` |
++| Ingest endpoint wiring | `npm run test` | hosted ingest payload mapping test passes | `tests/wave2-hosted.test.ts` |
++| Generic agent mapping (no personal name requirement) | `npm run test` | config/mapping tests pass with generic IDs | `src/config.ts`, `tests/wave1.test.ts`, spec/guidance docs |
++| Full deterministic suite | `npm run gate:all` | PASS | `scripts/gates/gate-all.ts` |
+diff --git a/.ai/log/plan/wave-6-plan-20260302w6a.md b/.ai/log/plan/wave-6-plan-20260302w6a.md
+new file mode 100644
+index 0000000..a94016b
+--- /dev/null
++++ b/.ai/log/plan/wave-6-plan-20260302w6a.md
+@@ -0,0 +1,17 @@
++# Wave 6 Plan (20260302w6a)
++
++## Scope (in)
++1. Implement PM4 ingestion cron/hash-ledger flow (scan, hash-dedupe, persisted ledger, summary artifact).
++2. Add ingest endpoint client wiring (`/ingest_content`) and CLI runner (`ingest:bonfires`).
++3. Remove hard-coded personal agent-name assumptions from config/spec/docs/tests to support general multi-user adoption.
++
++## Non-goals (out)
++1. No changes to retrieval/capture business logic semantics.
++2. No live scheduler daemon beyond plugin timer hook + CLI run-once command.
++
++## Acceptance criteria
++1. Ingestion run computes hashes and ingests only new/changed content; unchanged content is skipped.
++2. Ledger persistence prevents duplicate re-ingest after restart.
++3. Summary artifact records scanned/ingested/skipped/errors.
++4. Plugin/docs/specs no longer require specific personal agent names.
++5. `npm run gate:all` passes.
+diff --git a/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md b/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
+index 1630018..8e5f784 100644
+--- a/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
++++ b/.ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md
+@@ -2,6 +2,6 @@
+ 
+ Reviewers should verify:
+ - Config correctness quality: required fields and numeric bounds are validated.
+-- Mapping quality: explicit `lyle` + `reviewer` support and safe unknown-agent behavior.
++- Mapping quality: generic multi-agent support and safe unknown-agent behavior.
+ - Secret hygiene quality: env indirection used; no secret persistence in repo artifacts.
+ - Robustness quality: prototype/inherited key lookups do not bypass mapping controls.
+diff --git a/.ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md b/.ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md
+index bb2a1cf..0e3ce01 100644
+--- a/.ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md
++++ b/.ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md
+@@ -13,11 +13,11 @@ interface BonfiresPluginConfig {
+   apiKeyEnv: string;                  // env var name, e.g. BONFIRES_API_KEY
+   search: { maxResults: number };     // default: 5
+   capture: { throttleMinutes: number }; // default: 15
+-  agents: Record<string, string>;     // { lyle: "...", reviewer: "..." }
++  agents: Record<string, string>;     // { "agent_primary": "...", "agent_secondary": "..." }
+ }
+ ```
+ 
+-2. Agents map includes `lyle` and `reviewer` Bonfires IDs.
++2. Agents map includes at least one configured Bonfires agent ID mapping.
+ 3. Unknown `ctx.agentId` handling: log a warning and skip the Bonfires call for that invocation. Do not fall back to a default agent ID. Non-fatal — the turn or tool call proceeds without Bonfires involvement.
+ 4. Secrets are loaded from env; not hardcoded in spec/runtime config files.
+ 
+diff --git a/.ai/spec/spec/plugin/verification-checklist.md b/.ai/spec/spec/plugin/verification-checklist.md
+index 78dd012..76128bd 100644
+--- a/.ai/spec/spec/plugin/verification-checklist.md
++++ b/.ai/spec/spec/plugin/verification-checklist.md
+@@ -22,7 +22,7 @@
+ - [ ] **R4** recovery backfills missed ranges and avoids duplicates
+ - [ ] **R4** session-end flush works (hook-first, inactivity fallback)
+ 
+-- [ ] **R5** mapping resolves `lyle` and `reviewer`
++- [ ] **R5** mapping resolves configured agent IDs and safely handles unknown IDs
+ - [ ] **R5** unknown agent mapping is non-fatal skip path
+ - [ ] **R5** config rejects invalid numeric bounds
+ - [ ] **R5** API key comes from env indirection (not checked into repo)
+diff --git a/README.md b/README.md
+index 97aaf7c..e7a7af9 100644
+--- a/README.md
++++ b/README.md
+@@ -27,7 +27,7 @@ Design intent:
+ - Recovery/catch-up flow sharing capture watermark semantics with overlap-safe dedupe guards
+ - Hosted strict-mode guard to prevent silent mock fallback in non-dev hosted contexts
+ - Agent tool: `bonfires_search(query, limit?)`
+-- Agent mapping support (e.g. `lyle`, `reviewer`)
++- Agent mapping support for arbitrary agent IDs (project-specific names)
+ - Capture ledger for per-session throttling and incremental push behavior
+ 
+ ## How to work with this repo
+@@ -45,12 +45,18 @@ npm run test
+ npm run gate:all
+ npm run verify:hosted        # fixture-mode contract verification + artifact
+ npm run verify:hosted -- --live  # adds live preflight probes (requires env)
++npm run ingest:bonfires      # run ingestion scan + hash-ledger update once
+ ```
+ 
+ ### Hosted verification output
+ - Report path: `.ai/log/plan/hosted-integration-verification-current.json`
+ - Report includes per-probe status and redacted config metadata (never prints API key values).
+ 
++### Ingestion cron output
++- Ledger path (default): `.ai/log/plan/ingestion-hash-ledger.json`
++- Run summary path (default): `.ai/log/plan/ingestion-cron-summary-current.json`
++- Ingestion is idempotent by content hash (`sha256:*`) and restart-safe via persisted ledger.
++
+ ## Typical workflow
+ 1. Update specs/guidance under `.ai/spec/` when behavior changes.
+ 2. Implement changes in `src/`.
+diff --git a/package.json b/package.json
+index 7a4aabb..3a1c76c 100644
+--- a/package.json
++++ b/package.json
+@@ -9,6 +9,7 @@
+     "test:coverage": "c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts",
+     "coverage": "npm run test:coverage",
+     "verify:hosted": "tsx scripts/hosted-integration-verify.ts",
++    "ingest:bonfires": "tsx scripts/ingest-to-bonfires.ts",
+     "gate:traceability": "tsx scripts/gates/traceability-check.ts",
+     "gate:quality": "tsx scripts/gates/quality-check.ts",
+     "gate:coverage": "tsx scripts/gates/coverage-check.ts",
+diff --git a/scripts/gates/mutation-lite-check.ts b/scripts/gates/mutation-lite-check.ts
+index 62af7a7..7d53a2d 100644
+--- a/scripts/gates/mutation-lite-check.ts
++++ b/scripts/gates/mutation-lite-check.ts
+@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
+ const PROBES = [
+   {
+     file: 'src/config.ts',
+-    find: "if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');",
++    find: "if (!mappedAgents.length) throw new Error('agents must include at least one string mapping');",
+     replace: "// mutation: validation removed",
+     description: 'Remove required-agents validation in parseConfig',
+   },
+diff --git a/scripts/ingest-to-bonfires.ts b/scripts/ingest-to-bonfires.ts
+new file mode 100644
+index 0000000..a26ad6b
+--- /dev/null
++++ b/scripts/ingest-to-bonfires.ts
+@@ -0,0 +1,46 @@
++import { createBonfiresClient } from '../src/bonfires-client.js';
++import { parseConfig } from '../src/config.js';
++import { runIngestionOnce } from '../src/ingestion.js';
++
++function loadAgentsFromEnv(): Record<string, string> {
++  const raw = process.env.BONFIRES_AGENTS;
++  if (raw) return JSON.parse(raw);
++  const id = process.env.BONFIRES_AGENT_ID;
++  if (id) return { ingest: id };
++  throw new Error('Set BONFIRES_AGENTS (JSON map) or BONFIRES_AGENT_ID env var');
++}
++
++export async function runIngestionCli() {
++  const cfg = parseConfig({
++    baseUrl: process.env.BONFIRES_BASE_URL,
++    apiKeyEnv: process.env.BONFIRES_API_KEY_ENV,
++    bonfireId: process.env.BONFIRE_ID,
++    agents: loadAgentsFromEnv(),
++    ingestion: {
++      enabled: true,
++      everyMinutes: Number(process.env.BONFIRES_INGEST_EVERY_MINUTES ?? 1440),
++      rootDir: process.env.BONFIRES_INGEST_ROOT_DIR ?? process.cwd(),
++      ledgerPath: process.env.BONFIRES_INGEST_LEDGER_PATH ?? '.ai/log/plan/ingestion-hash-ledger.json',
++      summaryPath: process.env.BONFIRES_INGEST_SUMMARY_PATH ?? '.ai/log/plan/ingestion-cron-summary-current.json',
++    },
++  });
++
++  const client = createBonfiresClient({
++    ...cfg,
++    strictHostedMode: false,
++  });
++
++  const summary = await runIngestionOnce({
++    rootDir: cfg.ingestion.rootDir,
++    ledgerPath: cfg.ingestion.ledgerPath,
++    summaryPath: cfg.ingestion.summaryPath,
++    client,
++  });
++
++  console.log(`[ingest] scanned=${summary.scanned} ingested=${summary.ingested} skipped=${summary.skipped} errors=${summary.errors}`);
++  if (summary.errors > 0) process.exit(1);
++}
++
++if (import.meta.url === `file://${process.argv[1]}`) {
++  runIngestionCli();
++}
+diff --git a/src/bonfires-client.ts b/src/bonfires-client.ts
+index 7c7ca2d..110880f 100644
+--- a/src/bonfires-client.ts
++++ b/src/bonfires-client.ts
+@@ -2,6 +2,7 @@ export interface BonfiresClient {
+   search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
+   capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
+   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
++  ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
+ }
+ 
+ export class MockBonfiresClient implements BonfiresClient {
+@@ -36,6 +37,10 @@ export class MockBonfiresClient implements BonfiresClient {
+   async processStack() {
+     return { success: true, message_count: 0 };
+   }
++
++  async ingestContent(_req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
++    return { accepted: 1 };
++  }
+ }
+ 
+ export class HostedBonfiresClient implements BonfiresClient {
+@@ -159,6 +164,21 @@ export class HostedBonfiresClient implements BonfiresClient {
+     });
+     return { success: Boolean(body.success ?? true), message_count: body.message_count };
+   }
++
++  async ingestContent(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
++    const body = await this.fetchJson('/ingest_content', {
++      method: 'POST',
++      headers: this.headers(),
++      body: JSON.stringify({
++        bonfire_id: this.cfg.bonfireId,
++        source_path: req.sourcePath,
++        content: req.content,
++        content_hash: req.contentHash,
++        metadata: req.metadata ?? {},
++      }),
++    });
++    return { accepted: Number(body.accepted ?? 1) };
++  }
+ }
+ 
+ export function createBonfiresClient(cfg: any, logger?: { warn?: (msg: string) => void }): BonfiresClient {
+diff --git a/src/config.ts b/src/config.ts
+index f09faf4..2bb4c57 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -13,9 +13,18 @@ export function parseConfig(input) {
+     agents: cfg.agents ?? {},
+     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
+     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
++    ingestion: {
++      enabled: Boolean(cfg.ingestion?.enabled ?? false),
++      everyMinutes: Number(cfg.ingestion?.everyMinutes ?? 1440),
++      rootDir: String(cfg.ingestion?.rootDir ?? process.cwd()),
++      ledgerPath: String(cfg.ingestion?.ledgerPath ?? '.ai/log/plan/ingestion-hash-ledger.json'),
++      summaryPath: String(cfg.ingestion?.summaryPath ?? '.ai/log/plan/ingestion-cron-summary-current.json'),
++    },
+   };
+-  if (!out.agents.lyle || !out.agents.reviewer) throw new Error('agents.lyle and agents.reviewer are required');
++  const mappedAgents = Object.entries(out.agents).filter(([, v]) => typeof v === 'string');
++  if (!mappedAgents.length) throw new Error('agents must include at least one string mapping');
+   if (!Number.isFinite(out.network.timeoutMs) || out.network.timeoutMs < 1000) throw new Error('network.timeoutMs must be a finite number >= 1000');
++  if (!Number.isFinite(out.ingestion.everyMinutes) || out.ingestion.everyMinutes < 1) throw new Error('ingestion.everyMinutes must be a finite number >= 1');
+ 
+   let parsed: URL;
+   try { parsed = new URL(out.baseUrl); } catch { throw new Error('baseUrl must be a valid URL'); }
+diff --git a/src/index.ts b/src/index.ts
+index c30c08e..3397eb5 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -4,27 +4,41 @@ import { InMemoryCaptureLedger } from './capture-ledger.js';
+ import { handleAgentEnd, handleBeforeAgentStart, handleSessionEnd } from './hooks.js';
+ import { bonfiresSearchTool } from './tools/bonfires-search.js';
+ import { startStackHeartbeat } from './heartbeat.js';
++import { startIngestionCron } from './ingestion.js';
+ 
+ export default function register(api){
+   const cfg=parseConfig(api.pluginConfig ?? {});
+   const client=createBonfiresClient(cfg, api.logger);
+-  const logDir=api.resolvePath?.('.ai/log') ?? '.ai/log';
+-  const ledgerPath=api.resolvePath?.('.ai/log/bonfires-ledger.json') ?? '.ai/log/bonfires-ledger.json';
++  const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
++  const logDir=resolvePath('.ai/log');
++  const ledgerPath=resolvePath('.ai/log/bonfires-ledger.json');
+   const ledger=new InMemoryCaptureLedger(ledgerPath, logDir);
+ 
+-  const recoverySource =
+-    api.getPersistedSessions
+-    ?? api.getSessionTranscripts
+-    ?? api.listSessionTranscripts
+-    ?? api.recoverySource;
++  const recoveryCandidates = [
++    api.getPersistedSessions,
++    api.getSessionTranscripts,
++    api.listSessionTranscripts,
++    api.recoverySource,
++  ];
++  const recoveryFn = recoveryCandidates.find((fn) => typeof fn === 'function');
+ 
+   startStackHeartbeat({
+     cfg,
+     client,
+     ledger,
+     logger: api.logger,
+-    statePath: api.resolvePath?.('.ai/log/plan/wave-3-heartbeat-state.json') ?? '.ai/log/plan/wave-3-heartbeat-state.json',
+-    recoverySource: typeof recoverySource === 'function' ? () => recoverySource() : undefined,
++    statePath: resolvePath('.ai/log/plan/wave-3-heartbeat-state.json'),
++    recoverySource: recoveryFn ? () => recoveryFn() : undefined,
++  });
++
++  startIngestionCron({
++    enabled: cfg.ingestion.enabled,
++    everyMinutes: cfg.ingestion.everyMinutes,
++    rootDir: cfg.ingestion.rootDir,
++    ledgerPath: resolvePath(cfg.ingestion.ledgerPath),
++    summaryPath: resolvePath(cfg.ingestion.summaryPath),
++    client,
++    logger: api.logger,
+   });
+ 
+   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+new file mode 100644
+index 0000000..2f1efae
+--- /dev/null
++++ b/src/ingestion.ts
+@@ -0,0 +1,173 @@
++import { createHash } from 'node:crypto';
++import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
++import { dirname, join, relative, resolve } from 'node:path';
++
++type LedgerEntry = { hash: string; pushedAt: string };
++type Ledger = { version: number; entries: Record<string, LedgerEntry> };
++
++type IngestItem = {
++  relativePath: string;
++  absPath: string;
++  content: string;
++  hash: string;
++};
++
++type IngestionSummary = {
++  timestamp: string;
++  scanned: number;
++  ingested: number;
++  skipped: number;
++  errors: number;
++  errorDetails: Array<{ file: string; error: string }>;
++};
++
++function sha256(content: string) {
++  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
++}
++
++function walk(dir: string, out: string[]) {
++  for (const entry of readdirSync(dir, { withFileTypes: true })) {
++    const p = join(dir, entry.name);
++    if (entry.isDirectory()) walk(p, out);
++    else out.push(p);
++  }
++}
++
++function isMarkdown(path: string) {
++  return path.endsWith('.md');
++}
++
++function loadLedger(path: string): Ledger {
++  try {
++    return JSON.parse(readFileSync(path, 'utf8'));
++  } catch {
++    return { version: 1, entries: {} };
++  }
++}
++
++function saveLedger(path: string, ledger: Ledger) {
++  mkdirSync(dirname(path), { recursive: true });
++  writeFileSync(path, JSON.stringify(ledger, null, 2));
++}
++
++function collectIngestionFiles(rootDir: string): IngestItem[] {
++  const absRoot = resolve(rootDir);
++  const candidates: string[] = [];
++
++  const memoryDir = join(absRoot, 'memory');
++  const vaultDir = join(absRoot, 'vault');
++  const projectsDir = join(absRoot, 'projects');
++
++  for (const dir of [memoryDir, vaultDir]) {
++    try { if (statSync(dir).isDirectory()) walk(dir, candidates); } catch {}
++  }
++
++  try {
++    for (const project of readdirSync(projectsDir, { withFileTypes: true })) {
++      if (!project.isDirectory()) continue;
++      const pdir = join(projectsDir, project.name);
++      const readme = join(pdir, 'README.md');
++      try { if (statSync(readme).isFile()) candidates.push(readme); } catch {}
++      const aiSpec = join(pdir, '.ai', 'spec');
++      try { if (statSync(aiSpec).isDirectory()) walk(aiSpec, candidates); } catch {}
++    }
++  } catch {}
++
++  const dedup = [...new Set(candidates)]
++    .filter((p) => isMarkdown(p))
++    .filter((p) => !p.includes('/node_modules/'));
++
++  return dedup.map((absPath) => {
++    const content = readFileSync(absPath, 'utf8');
++    return {
++      absPath,
++      relativePath: relative(absRoot, absPath),
++      content,
++      hash: sha256(content),
++    };
++  });
++}
++
++export async function runIngestionOnce(opts: {
++  rootDir: string;
++  ledgerPath: string;
++  summaryPath: string;
++  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++}) {
++  const ledger = loadLedger(opts.ledgerPath);
++  const items = collectIngestionFiles(opts.rootDir);
++
++  const summary: IngestionSummary = {
++    timestamp: new Date().toISOString(),
++    scanned: items.length,
++    ingested: 0,
++    skipped: 0,
++    errors: 0,
++    errorDetails: [],
++  };
++
++  for (const item of items) {
++    const existing = ledger.entries[item.relativePath];
++    if (existing?.hash === item.hash) {
++      summary.skipped += 1;
++      continue;
++    }
++
++    try {
++      if (!opts.client.ingestContent) throw new Error('ingestContent is not available on client');
++      await opts.client.ingestContent({
++        sourcePath: item.relativePath,
++        content: item.content,
++        contentHash: item.hash,
++        metadata: { source: 'ingestion-cron' },
++      });
++      ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
++      summary.ingested += 1;
++    } catch (e: any) {
++      summary.errors += 1;
++      summary.errorDetails.push({ file: item.relativePath, error: String(e?.message ?? e) });
++    }
++  }
++
++  saveLedger(opts.ledgerPath, ledger);
++  mkdirSync(dirname(opts.summaryPath), { recursive: true });
++  writeFileSync(opts.summaryPath, JSON.stringify(summary, null, 2));
++
++  return summary;
++}
++
++export function startIngestionCron(opts: {
++  enabled: boolean;
++  everyMinutes: number;
++  rootDir: string;
++  ledgerPath: string;
++  summaryPath: string;
++  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++  logger?: { warn?: (msg: string) => void };
++}) {
++  if (!opts.enabled) return () => {};
++
++  let stopped = false;
++  const intervalMs = Math.max(1, opts.everyMinutes) * 60_000;
++
++  async function tick() {
++    if (stopped) return;
++    try {
++      await runIngestionOnce({
++        rootDir: opts.rootDir,
++        ledgerPath: opts.ledgerPath,
++        summaryPath: opts.summaryPath,
++        client: opts.client,
++      });
++    } catch (e: any) {
++      opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
++    }
++    if (stopped) return;
++    const t = setTimeout(tick, intervalMs);
++    (t as any).unref?.();
++  }
++
++  const first = setTimeout(tick, 1000);
++  (first as any).unref?.();
++  return () => { stopped = true; };
++}
+diff --git a/tests/wave1.test.ts b/tests/wave1.test.ts
+index ef21aff..bb2d4e8 100644
+--- a/tests/wave1.test.ts
++++ b/tests/wave1.test.ts
+@@ -10,18 +10,18 @@ import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src
+ import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
+ import register from '../src/index.js';
+ 
+-const cfg = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
++const cfg = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
+ 
+ test('before_agent_start calls search and returns prependContext', async () => {
+   const client = new MockBonfiresClient();
+-  const res = await handleBeforeAgentStart({ prompt: 'hello world' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'hello world' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.length, 1);
+   assert.ok(res?.prependContext?.includes('Bonfires context'));
+ });
+ 
+ test('before_agent_start skips empty prompt', async () => {
+   const client = new MockBonfiresClient();
+-  const res = await handleBeforeAgentStart({ prompt: '   ' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: '   ' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.length, 0);
+   assert.equal(res, undefined);
+ });
+@@ -29,7 +29,7 @@ test('before_agent_start skips empty prompt', async () => {
+ test('before_agent_start fail-open on search error', async () => {
+   const client = new MockBonfiresClient();
+   client.shouldThrowSearch = true;
+-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(res, undefined);
+ });
+ 
+@@ -39,31 +39,31 @@ test('agent_end throttles per session', async () => {
+   let now = 1000;
+   const nowMs = () => now;
+   const event = { messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }] };
+-  await handleAgentEnd(event, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+-  await handleAgentEnd(event, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
++  await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
++  await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+   assert.equal(client.captureCalls.length, 1);
+   now += 16 * 60_000;
+-  await handleAgentEnd({ messages: [...event.messages, { role: 'user', content: 'c' }] }, { agentId: 'lyle', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
++  await handleAgentEnd({ messages: [...event.messages, { role: 'user', content: 'c' }] }, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+   assert.equal(client.captureCalls.length, 2);
+ });
+ 
+ test('bonfires_search validates query and returns deterministic shape', async () => {
+   const client = new MockBonfiresClient();
+-  const out = await bonfiresSearchTool({ query: 'abc', limit: 2 }, { agentId: 'lyle' }, { cfg, client });
++  const out = await bonfiresSearchTool({ query: 'abc', limit: 2 }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(out.results.length, 2);
+-  await assert.rejects(async () => bonfiresSearchTool({}, { agentId: 'lyle' }, { cfg, client }));
++  await assert.rejects(async () => bonfiresSearchTool({}, { agentId: 'agent_primary' }, { cfg, client }));
+ });
+ 
+ test('bonfires_search clamps limit to max 50', async () => {
+   const client = new MockBonfiresClient();
+-  await bonfiresSearchTool({ query: 'abc', limit: 9999 }, { agentId: 'lyle' }, { cfg, client });
++  await bonfiresSearchTool({ query: 'abc', limit: 9999 }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.at(-1).limit, 50);
+ });
+ 
+ test('before_agent_start truncates query to 500 chars', async () => {
+   const client = new MockBonfiresClient();
+   const longPrompt = 'a'.repeat(800);
+-  await handleBeforeAgentStart({ prompt: longPrompt }, { agentId: 'lyle' }, { cfg, client });
++  await handleBeforeAgentStart({ prompt: longPrompt }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.length, 1);
+   assert.equal(client.searchCalls[0].query.length, 500);
+ });
+@@ -77,7 +77,7 @@ test('before_agent_start caps prependContext at 2000 chars', async () => {
+       score: 0.9,
+     })),
+   });
+-  const res = await handleBeforeAgentStart({ prompt: 'cap-test' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'cap-test' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.ok(res?.prependContext);
+   assert.ok(res.prependContext.length <= 2000);
+ });
+@@ -92,34 +92,35 @@ test('before_agent_start skips unknown agent mapping', async () => {
+ test('agent_end skips when sessionKey is missing', async () => {
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle' }, { cfg, client, ledger });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary' }, { cfg, client, ledger });
+   assert.equal(client.captureCalls.length, 0);
+ });
+ 
+-test('parseConfig rejects missing agent mappings', async () => {
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1' } }));
+-  assert.throws(() => parseConfig({ agents: { reviewer: 'a2' } }));
++test('parseConfig requires at least one mapped agent id', async () => {
++  assert.doesNotThrow(() => parseConfig({ agents: { agent_primary: 'a1' } }));
++  assert.doesNotThrow(() => parseConfig({ agents: { any_agent: 'a2' } }));
++  assert.throws(() => parseConfig({ agents: {} }));
+ });
+ 
+ test('parseConfig validates numeric bounds', async () => {
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: 0 } }));
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: 0 } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: 0 } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: 0 } }));
+ });
+ 
+ test('resolveBonfiresAgentId ignores inherited prototype keys', async () => {
+-  const local = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
++  const local = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
+   assert.equal(resolveBonfiresAgentId(local, '__proto__'), null);
+ });
+ 
+ test('resolveBonfiresAgentId handles missing agentId and unknown key', async () => {
+-  const local = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
++  const local = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
+   assert.equal(resolveBonfiresAgentId(local, undefined), null);
+   assert.equal(resolveBonfiresAgentId(local, 'nope'), null);
+-  assert.equal(resolveBonfiresAgentId(local, 'lyle'), 'a1');
++  assert.equal(resolveBonfiresAgentId(local, 'agent_primary'), 'a1');
+ });
+ 
+ test('parseConfig uses defaults for optional values', async () => {
+-  const out = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' } });
++  const out = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
+   assert.equal(out.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
+   assert.equal(out.apiKeyEnv, 'DELVE_API_KEY');
+   assert.equal(out.search.maxResults, 5);
+@@ -128,30 +129,40 @@ test('parseConfig uses defaults for optional values', async () => {
+ });
+ 
+ test('parseConfig rejects non-finite numeric values', async () => {
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, search: { maxResults: Infinity } }));
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, capture: { throttleMinutes: NaN } }));
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, network: { timeoutMs: 0 } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: Infinity } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: NaN } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, network: { timeoutMs: 0 } }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1' }, ingestion: { everyMinutes: 0 } }));
++});
++
++test('parseConfig ingestion defaults and mapped-agent validation', async () => {
++  const out = parseConfig({ agents: { only: 'a1' } });
++  assert.equal(out.ingestion.enabled, false);
++  assert.equal(out.ingestion.everyMinutes, 1440);
++  assert.equal(typeof out.ingestion.ledgerPath, 'string');
++  assert.equal(typeof out.ingestion.summaryPath, 'string');
++  assert.throws(() => parseConfig({ agents: { only: 123 } }));
+ });
+ 
+ test('parseConfig validates baseUrl host and protocol', async () => {
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evil.example.com/' }));
+-  assert.throws(() => parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://evilbonfires.ai/' }));
+-  const ok = parseConfig({ agents: { lyle: 'a1', reviewer: 'a2' }, baseUrl: 'https://tnt-v2.api.bonfires.ai/' });
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'http://tnt-v2.api.bonfires.ai/' }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://evil.example.com/' }));
++  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://evilbonfires.ai/' }));
++  const ok = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, baseUrl: 'https://tnt-v2.api.bonfires.ai/' });
+   assert.equal(ok.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
+ });
+ 
+ test('before_agent_start returns undefined when result set is empty', async () => {
+   const client = new MockBonfiresClient();
+   client.search = async () => ({ results: [] });
+-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(res, undefined);
+ });
+ 
+ test('before_agent_start handles missing results field from search response', async () => {
+   const client = new MockBonfiresClient();
+   client.search = async () => ({} as any);
+-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(res, undefined);
+ });
+ 
+@@ -166,11 +177,11 @@ test('agent_end skips when there are no new messages since watermark', async ()
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+   const nowMs = () => 10_000_000;
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
+   assert.equal(client.captureCalls.length, 1);
+   // Force no-throttle but no new messages branch
+   ledger.set('s3', { lastPushedAt: 0, lastPushedIndex: 0 });
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's3' }, { cfg, client, ledger, nowMs });
+   assert.equal(client.captureCalls.length, 1);
+ });
+ 
+@@ -184,7 +195,7 @@ test('session_end flush captures uncaptured tail immediately when messages are p
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
+-    { agentId: 'lyle', sessionKey: 's-session-end' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end' },
+     { cfg, client, ledger, logger: { warn: () => {} }, nowMs: () => 42 },
+   );
+   assert.equal(client.captureCalls.length, 1);
+@@ -199,7 +210,7 @@ test('session_end flush respects endIndex <= lastPushedIndex guard', async () =>
+ 
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
+-    { agentId: 'lyle', sessionKey: 's-session-end-guard' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end-guard' },
+     { cfg, client, ledger, logger: { warn: () => {} } },
+   );
+ 
+@@ -211,7 +222,7 @@ test('session_end flush skips when sessionKey is missing', async () => {
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }] },
+-    { agentId: 'lyle' },
++    { agentId: 'agent_primary' },
+     { cfg, client, ledger, logger: { warn: () => {} } },
+   );
+   assert.equal(client.captureCalls.length, 0);
+@@ -234,7 +245,7 @@ test('session_end flush catch path swallows capture errors', async () => {
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }] },
+-    { agentId: 'lyle', sessionKey: 's-session-end-catch' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end-catch' },
+     { cfg, client, ledger, logger: { warn: () => {} } },
+   );
+   assert.equal(ledger.get('s-session-end-catch'), undefined);
+@@ -245,7 +256,7 @@ test('session_end flush no-messages branch returns without capture', async () =>
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     {},
+-    { agentId: 'lyle', sessionKey: 's-session-end-empty' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end-empty' },
+     { cfg, client, ledger, logger: { warn: () => {} } },
+   );
+   assert.equal(client.captureCalls.length, 0);
+@@ -256,7 +267,7 @@ test('session_end flush sets lastPushedAt from Date.now when nowMs is absent', a
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }] },
+-    { agentId: 'lyle', sessionKey: 's-session-end-now' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end-now' },
+     { cfg, client, ledger, logger: { warn: () => {} } },
+   );
+   const mark = ledger.get('s-session-end-now');
+@@ -270,7 +281,7 @@ test('session_end catch path is safe with non-Error throw and missing logger', a
+   const ledger = new InMemoryCaptureLedger();
+   await handleSessionEnd(
+     { messages: [{ role: 'user', content: 'm0' }] },
+-    { agentId: 'lyle', sessionKey: 's-session-end-string-catch' },
++    { agentId: 'agent_primary', sessionKey: 's-session-end-string-catch' },
+     { cfg, client, ledger },
+   );
+   assert.equal(ledger.get('s-session-end-string-catch'), undefined);
+@@ -301,13 +312,13 @@ test('capture ledger rejects unsafe path outside baseDir', async () => {
+ 
+ test('bonfires_search uses fallback maxResults when limit is NaN', async () => {
+   const client = new MockBonfiresClient();
+-  await bonfiresSearchTool({ query: 'abc', limit: Number.NaN }, { agentId: 'lyle' }, { cfg, client });
++  await bonfiresSearchTool({ query: 'abc', limit: Number.NaN }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.at(-1).limit, cfg.search.maxResults);
+ });
+ 
+ test('bonfires_search clamps limit to minimum 1', async () => {
+   const client = new MockBonfiresClient();
+-  await bonfiresSearchTool({ query: 'abc', limit: 0 }, { agentId: 'lyle' }, { cfg, client });
++  await bonfiresSearchTool({ query: 'abc', limit: 0 }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.at(-1).limit, 1);
+ });
+ 
+@@ -318,8 +329,8 @@ test('bonfires_search unknown agent without logger returns empty', async () => {
+ });
+ 
+ test('resolveBonfiresAgentId returns null for non-string mapped value', async () => {
+-  const weird = { ...cfg, agents: { ...cfg.agents, lyle: 123 } };
+-  assert.equal(resolveBonfiresAgentId(weird, 'lyle'), null);
++  const weird = { ...cfg, agents: { ...cfg.agents, agent_primary: 123 } };
++  assert.equal(resolveBonfiresAgentId(weird, 'agent_primary'), null);
+ });
+ 
+ test('handleBeforeAgentStart handles unknown agent without logger safely', async () => {
+@@ -331,7 +342,7 @@ test('handleBeforeAgentStart handles unknown agent without logger safely', async
+ test('handleAgentEnd uses Date.now path when nowMs is absent', async () => {
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-date-now' }, { cfg, client, ledger });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-date-now' }, { cfg, client, ledger });
+   assert.equal(client.captureCalls.length, 1);
+ });
+ 
+@@ -339,7 +350,7 @@ test('handleAgentEnd catch path swallows capture errors', async () => {
+   const client = new MockBonfiresClient();
+   client.capture = async () => { throw new Error('boom'); };
+   const ledger = new InMemoryCaptureLedger();
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch' }, { cfg, client, ledger, logger: { warn: () => {} } });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-catch' }, { cfg, client, ledger, logger: { warn: () => {} } });
+   assert.equal(ledger.get('s-catch'), undefined);
+ });
+ 
+@@ -347,7 +358,7 @@ test('handleAgentEnd catch path is safe when logger is missing and error is non-
+   const client = new MockBonfiresClient();
+   client.capture = async () => { throw 'string-failure'; };
+   const ledger = new InMemoryCaptureLedger();
+-  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'lyle', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
++  await handleAgentEnd({ messages: [{ role: 'user', content: 'a' }] }, { agentId: 'agent_primary', sessionKey: 's-catch-nolog' }, { cfg, client, ledger });
+   assert.equal(ledger.get('s-catch-nolog'), undefined);
+ });
+ 
+@@ -355,9 +366,9 @@ test('before_agent_start handles undefined event and logger-present catch path',
+   const client = new MockBonfiresClient();
+   client.search = async () => { throw new Error('forced'); };
+   let warned = false;
+-  const res1 = await handleBeforeAgentStart(undefined, { agentId: 'lyle' }, { cfg, client, logger: { warn: () => { warned = true; } } });
++  const res1 = await handleBeforeAgentStart(undefined, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
+   assert.equal(res1, undefined);
+-  const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client, logger: { warn: () => { warned = true; } } });
++  const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
+   assert.equal(res2, undefined);
+   assert.equal(warned, true);
+ });
+@@ -365,7 +376,7 @@ test('before_agent_start handles undefined event and logger-present catch path',
+ test('before_agent_start catch path is safe with non-Error throw and missing logger', async () => {
+   const client = new MockBonfiresClient();
+   client.search = async () => { throw 'forced-string'; };
+-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'lyle' }, { cfg, client });
++  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(res, undefined);
+ });
+ 
+@@ -379,18 +390,18 @@ test('agent_end handles unknown agent with missing agentId and logger', async ()
+ test('agent_end handles missing messages array branch', async () => {
+   const client = new MockBonfiresClient();
+   const ledger = new InMemoryCaptureLedger();
+-  await handleAgentEnd({}, { agentId: 'lyle', sessionKey: 's-empty-msg' }, { cfg, client, ledger, nowMs: () => 1000 });
++  await handleAgentEnd({}, { agentId: 'agent_primary', sessionKey: 's-empty-msg' }, { cfg, client, ledger, nowMs: () => 1000 });
+   assert.equal(client.captureCalls.length, 0);
+ });
+ 
+ test('bonfires_search rejects non-string query', async () => {
+   const client = new MockBonfiresClient();
+-  await assert.rejects(async () => bonfiresSearchTool({ query: 123 }, { agentId: 'lyle' }, { cfg, client }));
++  await assert.rejects(async () => bonfiresSearchTool({ query: 123 }, { agentId: 'agent_primary' }, { cfg, client }));
+ });
+ 
+ test('bonfires_search uses config default when limit omitted', async () => {
+   const client = new MockBonfiresClient();
+-  await bonfiresSearchTool({ query: 'abc' }, { agentId: 'lyle' }, { cfg, client });
++  await bonfiresSearchTool({ query: 'abc' }, { agentId: 'agent_primary' }, { cfg, client });
+   assert.equal(client.searchCalls.at(-1).limit, cfg.search.maxResults);
+ });
+ 
+@@ -398,7 +409,7 @@ test('plugin register wires hooks and tool', async () => {
+   const events = [];
+   let toolDef = null;
+   const api = {
+-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
++    pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
+     resolvePath: (p) => p,
+     logger: { warn: () => {} },
+     on: (name, fn) => events.push([name, fn]),
+@@ -408,14 +419,31 @@ test('plugin register wires hooks and tool', async () => {
+   assert.equal(events.length, 3);
+   assert.ok(toolDef);
+   assert.equal(toolDef.name, 'bonfires_search');
+-  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'lyle' });
++  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'agent_primary' });
+   assert.equal(Array.isArray(result.results), true);
+ });
+ 
+ test('plugin register fallback path works when resolvePath missing', async () => {
+   const events = [];
+   const api = {
+-    pluginConfig: { agents: { lyle: 'a1', reviewer: 'a2' } },
++    pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' } },
++    logger: { warn: () => {} },
++    on: (name, fn) => events.push([name, fn]),
++    registerTool: () => {},
++  };
++  register(api);
++  assert.equal(events.length, 3);
++});
++
++test('plugin register supports functional recovery source and enabled ingestion config', async () => {
++  const events = [];
++  const api = {
++    pluginConfig: {
++      agents: { agent_primary: 'a1', agent_secondary: 'a2' },
++      ingestion: { enabled: true, everyMinutes: 60, ledgerPath: '.ai/log/plan/custom-ledger.json', summaryPath: '.ai/log/plan/custom-summary.json' },
++    },
++    resolvePath: (p) => p,
++    getPersistedSessions: () => [],
+     logger: { warn: () => {} },
+     on: (name, fn) => events.push([name, fn]),
+     registerTool: () => {},
+diff --git a/tests/wave2-hosted.test.ts b/tests/wave2-hosted.test.ts
+index bcce0df..6638344 100644
+--- a/tests/wave2-hosted.test.ts
++++ b/tests/wave2-hosted.test.ts
+@@ -305,3 +305,28 @@ test('hosted capture accepted count tracks successful post calls', async () => {
+     if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+   }
+ });
++
++test('hosted ingestContent maps payload to ingest_content endpoint', async () => {
++  const oldKey = process.env.DELVE_API_KEY;
++  process.env.DELVE_API_KEY = 'x';
++  const oldFetch = globalThis.fetch;
++  let hit = '';
++  let body: any = null;
++  globalThis.fetch = (async (url: any, init: any) => {
++    hit = String(url);
++    body = JSON.parse(String(init.body));
++    return new Response(JSON.stringify({ accepted: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
++  }) as any;
++  try {
++    const c = new HostedBonfiresClient(cfg);
++    const out = await c.ingestContent!({ sourcePath: 'memory/2026-03-02.md', content: 'abc', contentHash: 'sha256:123' });
++    assert.equal(hit.includes('/ingest_content'), true);
++    assert.equal(body.bonfire_id, cfg.bonfireId);
++    assert.equal(body.source_path, 'memory/2026-03-02.md');
++    assert.equal(body.content_hash, 'sha256:123');
++    assert.equal(out.accepted, 1);
++  } finally {
++    globalThis.fetch = oldFetch;
++    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
++  }
++});
+diff --git a/tests/wave3-heartbeat.test.ts b/tests/wave3-heartbeat.test.ts
+index 6ec9018..bece1c2 100644
+--- a/tests/wave3-heartbeat.test.ts
++++ b/tests/wave3-heartbeat.test.ts
+@@ -14,7 +14,7 @@ import {
+ } from '../src/heartbeat.js';
+ 
+ const cfg = {
+-  agents: { lyle: 'agent-lyle', reviewer: 'agent-reviewer' },
++  agents: { agent_primary: 'agent-primary', agent_secondary: 'agent-secondary' },
+   capture: { throttleMinutes: 15 },
+   network: { retryBackoffMs: [0, 0] },
+ };
+@@ -41,7 +41,7 @@ test('wave3: recovery overlap precedence uses endIndex guard and dedupe key iden
+     sessions: [
+       {
+         sessionKey: 's-overlap',
+-        agentId: 'lyle',
++        agentId: 'agent_primary',
+         ended: true,
+         messages: [
+           { role: 'user', content: 'm0' },
+@@ -71,7 +71,7 @@ test('wave3: recovery overlap precedence uses endIndex guard and dedupe key iden
+     sessions: [
+       {
+         sessionKey: 's-overlap',
+-        agentId: 'lyle',
++        agentId: 'agent_primary',
+         ended: true,
+         messages: [
+           { role: 'user', content: 'm0' },
+@@ -116,7 +116,7 @@ test('wave3: recovery skips sessions that are not ended and not inactive long en
+     sessions: [
+       {
+         sessionKey: 's-active',
+-        agentId: 'lyle',
++        agentId: 'agent_primary',
+         lastActivityAtMs: 100_000,
+         messages: [{ role: 'user', content: 'recent' }],
+       },
+@@ -142,7 +142,7 @@ test('wave3: process stack retry policy retries retriable failures and stops on
+   const retryCfg = { ...cfg, network: { retryBackoffMs: [1, 2] } };
+ 
+   const ok = await runProcessStackWithRetry({
+-    agentId: 'agent-lyle',
++    agentId: 'agent-primary',
+     client: retriableThenSuccess,
+     cfg: retryCfg,
+     sleepFn: async (ms: number) => { delays.push(ms); },
+@@ -162,7 +162,7 @@ test('wave3: process stack retry policy retries retriable failures and stops on
+   };
+ 
+   const fail = await runProcessStackWithRetry({
+-    agentId: 'agent-lyle',
++    agentId: 'agent-primary',
+     client: nonRetriable,
+     cfg: retryCfg,
+     sleepFn: async (ms: number) => { delays.push(ms); },
+@@ -194,7 +194,7 @@ test('wave3: recovery capture failure is fail-open and logs warning', async () =
+       get: (k: string) => ledgerMap.get(k),
+       set: (k: string, v: any) => { ledgerMap.set(k, v); },
+     },
+-    sessions: [{ sessionKey: 's-recovery-fail', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'x' }] }],
++    sessions: [{ sessionKey: 's-recovery-fail', agentId: 'agent_primary', ended: true, messages: [{ role: 'user', content: 'x' }] }],
+     logger: { warn: () => { warned = true; } },
+     nowMs: () => 123,
+   });
+@@ -242,7 +242,7 @@ test('wave3: startStackHeartbeat runs first tick, persists state, and supports s
+         set: (k: string, v: any) => { ledgerMap.set(k, v); },
+       },
+       recoverySource: () => ([
+-        { sessionKey: 's-heartbeat', agentId: 'lyle', ended: true, messages: [{ role: 'user', content: 'm0' }] },
++        { sessionKey: 's-heartbeat', agentId: 'agent_primary', ended: true, messages: [{ role: 'user', content: 'm0' }] },
+       ]),
+       statePath,
+       nowMs: () => 10_000,
+@@ -253,9 +253,9 @@ test('wave3: startStackHeartbeat runs first tick, persists state, and supports s
+     stop();
+ 
+     const state = JSON.parse(readFileSync(statePath, 'utf8'));
+-    assert.equal(processCalls.length >= 2, true); // mapped agents (lyle + reviewer)
++    assert.equal(processCalls.length >= 2, true); // mapped agents (agent_primary + agent_secondary)
+     assert.equal(captureCalls.length, 1);
+-    assert.equal(state.agents['agent-lyle'].last_status, 'success');
++    assert.equal(state.agents['agent-primary'].last_status, 'success');
+     assert.equal(typeof state.recovery['s-heartbeat'].last_dedupe_key, 'string');
+   } finally {
+     (globalThis as any).setTimeout = oldSetTimeout;
+diff --git a/tests/wave6-ingestion.test.ts b/tests/wave6-ingestion.test.ts
+new file mode 100644
+index 0000000..0517795
+--- /dev/null
++++ b/tests/wave6-ingestion.test.ts
+@@ -0,0 +1,204 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
++import { MockBonfiresClient } from '../src/bonfires-client.js';
++
++function tmpDir() {
++  return mkdtempSync(join(tmpdir(), 'bonfires-ingest-'));
++}
++
++test('wave6: ingestion skips unchanged content and persists ledger across runs', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    writeFileSync(join(dir, 'memory', '2026-03-02.md'), 'alpha');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    const ingestCalls: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => {
++        ingestCalls.push(req.sourcePath);
++        return { accepted: 1 };
++      },
++    };
++
++    const first = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(first.ingested, 1);
++    assert.equal(first.skipped, 0);
++    assert.equal(first.errors, 0);
++    assert.equal(ingestCalls.length, 1);
++
++    const second = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(second.ingested, 0);
++    assert.equal(second.skipped, 1);
++    assert.equal(second.errors, 0);
++    assert.equal(ingestCalls.length, 1);
++
++    const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'));
++    assert.equal(typeof ledger.entries['memory/2026-03-02.md'].hash, 'string');
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave6: changed content ingests exactly once per new hash and emits summary', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    const target = join(dir, 'memory', '2026-03-03.md');
++    writeFileSync(target, 'v1');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    let calls = 0;
++    const client = {
++      ingestContent: async () => {
++        calls += 1;
++        return { accepted: 1 };
++      },
++    };
++
++    await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    writeFileSync(target, 'v2');
++    const afterChange = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++
++    assert.equal(calls, 2);
++    assert.equal(afterChange.ingested, 1);
++
++    const summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
++    assert.equal(typeof summary.timestamp, 'string');
++    assert.equal(typeof summary.ingested, 'number');
++    assert.equal(typeof summary.skipped, 'number');
++    assert.equal(typeof summary.errors, 'number');
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave6: ingestContent error increments error count and records failure detail', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    writeFileSync(join(dir, 'memory', 'fail-target.md'), 'boom');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    const client = {
++      ingestContent: async () => { throw new Error('remote 500'); },
++    };
++
++    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(result.errors, 1);
++    assert.equal(result.ingested, 0);
++    assert.equal(result.errorDetails.length, 1);
++    assert.match(result.errorDetails[0].error, /remote 500/);
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave6: missing ingestContent on client throws and records error', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    writeFileSync(join(dir, 'memory', 'orphan.md'), 'data');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    const client = {}; // no ingestContent method
++
++    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(result.errors, 1);
++    assert.equal(result.ingested, 0);
++    assert.match(result.errorDetails[0].error, /ingestContent is not available/);
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave6: startIngestionCron skips scheduling when disabled', () => {
++  const ticks: number[] = [];
++  const client = {
++    ingestContent: async () => { ticks.push(1); return { accepted: 0 }; },
++  };
++
++  const stop = startIngestionCron({
++    enabled: false,
++    everyMinutes: 1,
++    rootDir: '/nonexistent',
++    ledgerPath: '/nonexistent/ledger.json',
++    summaryPath: '/nonexistent/summary.json',
++    client,
++  });
++
++  assert.equal(typeof stop, 'function');
++  // Calling stop should be safe even when disabled
++  stop();
++  assert.equal(ticks.length, 0);
++});
++
++test('wave6: ingestion scans vault and projects directories', async () => {
++  const dir = tmpDir();
++  try {
++    // vault/ markdown
++    mkdirSync(join(dir, 'vault', 'notes'), { recursive: true });
++    writeFileSync(join(dir, 'vault', 'notes', 'entry.md'), 'vault-content');
++
++    // projects/<name>/README.md + .ai/spec/
++    mkdirSync(join(dir, 'projects', 'alpha', '.ai', 'spec'), { recursive: true });
++    writeFileSync(join(dir, 'projects', 'alpha', 'README.md'), 'readme-content');
++    writeFileSync(join(dir, 'projects', 'alpha', '.ai', 'spec', 'design.md'), 'spec-content');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(result.scanned, 3);
++    assert.equal(result.ingested, 3);
++    assert.equal(result.errors, 0);
++    assert.ok(paths.some(p => p.includes('vault/')));
++    assert.ok(paths.some(p => p.includes('README.md')));
++    assert.ok(paths.some(p => p.includes('spec/design.md')));
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave6: ingestion skips non-markdown files', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    writeFileSync(join(dir, 'memory', 'notes.md'), 'markdown');
++    writeFileSync(join(dir, 'memory', 'data.json'), '{}');
++    writeFileSync(join(dir, 'memory', 'readme.txt'), 'text');
++    writeFileSync(join(dir, 'memory', 'image.png'), 'binary');
++
++    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
++    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
++
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(result.scanned, 1, 'only .md files should be scanned');
++    assert.equal(result.ingested, 1);
++    assert.ok(paths[0].endsWith('.md'));
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});

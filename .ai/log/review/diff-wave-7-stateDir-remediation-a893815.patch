@@ -1,0 +1,54 @@
+commit a893815740db9c20d35915c005eb3aeaf8a2a5f8
+Author: lyle <code@spengrah.xyz>
+Date:   Tue Mar 3 16:00:33 2026 -0600
+
+    fix: normalize blank stateDir to safe default
+
+diff --git a/openclaw.plugin.json b/openclaw.plugin.json
+index 9915dde..13d21d7 100644
+--- a/openclaw.plugin.json
++++ b/openclaw.plugin.json
+@@ -140,7 +140,8 @@
+       },
+       "stateDir": {
+         "type": "string",
+-        "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Defaults to .bonfires-state/ within the plugin scope."
++        "minLength": 1,
++        "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Empty/whitespace values are normalized to .bonfires-state/."
+       }
+     },
+     "required": ["agents"],
+diff --git a/src/config.ts b/src/config.ts
+index 7d76bf9..e5804dc 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -13,7 +13,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+   const throttleMinutes = Number(cfg.capture?.throttleMinutes ?? 15);
+   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
+   if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
+-  const stateDir = String(cfg.stateDir ?? '.bonfires-state');
++  const stateDir = String(cfg.stateDir ?? '.bonfires-state').trim() || '.bonfires-state';
+ 
+   // Parse ingestion profiles (PM6-R1)
+   const profiles: Record<string, IngestionProfile> = {};
+diff --git a/tests/wave7-packaging.test.ts b/tests/wave7-packaging.test.ts
+index bbb75be..5dd8ff3 100644
+--- a/tests/wave7-packaging.test.ts
++++ b/tests/wave7-packaging.test.ts
+@@ -154,6 +154,16 @@ test('wave7: config stateDir is configurable', () => {
+   assert.equal(out.stateDir, '/tmp/my-state');
+ });
+ 
++test('wave7: empty stateDir normalizes to .bonfires-state', () => {
++  const out = parseConfig({ agents: { a: 'b' }, stateDir: '' });
++  assert.equal(out.stateDir, '.bonfires-state');
++});
++
++test('wave7: whitespace stateDir normalizes to .bonfires-state', () => {
++  const out = parseConfig({ agents: { a: 'b' }, stateDir: '   ' });
++  assert.equal(out.stateDir, '.bonfires-state');
++});
++
+ test('wave7: ingestion ledgerPath defaults use stateDir', () => {
+   const out = parseConfig({ agents: { a: 'b' } });
+   assert.ok(out.ingestion.ledgerPath.startsWith('.bonfires-state/'));
