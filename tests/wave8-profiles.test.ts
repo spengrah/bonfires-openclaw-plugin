@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parseConfig, resolveIngestionProfile } from '../src/config.js';
-import { runIngestionOnce } from '../src/ingestion.js';
+import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
 import register from '../src/index.js';
 
 function tmpDir() {
@@ -207,6 +207,146 @@ test('wave8: defaultProfile referencing unknown profile throws at parse time', (
       defaultProfile: 'nonexistent',
     },
   })), /references unknown profile/);
+});
+
+test('wave8: defaultProfile without profiles throws explicit config error', () => {
+  assert.throws(() => parseConfig(baseCfg({
+    ingestion: {
+      defaultProfile: 'docs',
+    },
+  })), /requires at least one ingestion\.profiles entry/);
+});
+
+test('wave8: agentProfiles without profiles throws explicit config error', () => {
+  assert.throws(() => parseConfig(baseCfg({
+    ingestion: {
+      agentProfiles: { agentA: 'docs' },
+    },
+  })), /requires at least one ingestion\.profiles entry/);
+});
+
+test('wave8: runIngestionOnce throws when profile selectors are set but profiles are missing', async () => {
+  const dir = tmpDir();
+  try {
+    const ledgerPath = join(dir, 'ledger.json');
+    const summaryPath = join(dir, 'summary.json');
+    const client = { ingestContent: async () => ({ accepted: 1 }) };
+
+    await assert.rejects(
+      () => runIngestionOnce({
+        rootDir: dir,
+        ledgerPath,
+        summaryPath,
+        client,
+        defaultProfile: 'docs',
+      }),
+      /no ingestion profiles are defined/i,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('wave8: profile selectors resolve to defaultProfile at runtime', async () => {
+  const rootDocs = tmpDir();
+  const rootSpecs = tmpDir();
+  const stateDir = tmpDir();
+  try {
+    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
+
+    const ledgerPath = join(stateDir, 'ledger.json');
+    const summaryPath = join(stateDir, 'summary.json');
+    const paths: string[] = [];
+    const client = {
+      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
+    };
+
+    const result = await runIngestionOnce({
+      rootDir: rootDocs,
+      ledgerPath,
+      summaryPath,
+      client,
+      profiles: {
+        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+      },
+      defaultProfile: 'docs',
+      agentProfiles: { agentA: 'specs' },
+    });
+
+    assert.equal(result.ingested, 1);
+    assert.ok(paths.every((p) => p.startsWith('docs:')));
+  } finally {
+    rmSync(rootDocs, { recursive: true, force: true });
+    rmSync(rootSpecs, { recursive: true, force: true });
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
+test('wave8: profile selectors prefer active agent mapping over default', async () => {
+  const rootDocs = tmpDir();
+  const rootSpecs = tmpDir();
+  const stateDir = tmpDir();
+  try {
+    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
+
+    const ledgerPath = join(stateDir, 'ledger.json');
+    const summaryPath = join(stateDir, 'summary.json');
+    const paths: string[] = [];
+    const client = {
+      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
+    };
+
+    const result = await runIngestionOnce({
+      rootDir: rootDocs,
+      ledgerPath,
+      summaryPath,
+      client,
+      profiles: {
+        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+      },
+      defaultProfile: 'docs',
+      activeAgentId: 'agentA',
+      agentProfiles: { agentA: 'specs' },
+    });
+
+    assert.equal(result.ingested, 1);
+    assert.ok(paths.every((p) => p.startsWith('specs:')));
+  } finally {
+    rmSync(rootDocs, { recursive: true, force: true });
+    rmSync(rootSpecs, { recursive: true, force: true });
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
+test('wave8: profile selectors throw when resolved profile is missing', async () => {
+  const dir = tmpDir();
+  try {
+    writeFileSync(join(dir, 'x.md'), 'x');
+    const ledgerPath = join(dir, 'ledger.json');
+    const summaryPath = join(dir, 'summary.json');
+    const client = { ingestContent: async () => ({ accepted: 1 }) };
+
+    await assert.rejects(
+      () => runIngestionOnce({
+        rootDir: dir,
+        ledgerPath,
+        summaryPath,
+        client,
+        profiles: {
+          docs: { rootDir: dir, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+        },
+        activeAgentId: 'agentA',
+        agentProfiles: { agentA: 'missing' },
+      }),
+      /was not found/i,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // --- PM6-R3: Backward compatibility migration ---
@@ -462,6 +602,39 @@ test('wave8: profile with missing rootDir returns zero items gracefully', async 
     assert.equal(result.errors, 0);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick', async () => {
+  const rootDocs = tmpDir();
+  const stateDir = tmpDir();
+  try {
+    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
+    const loggerWarnings: string[] = [];
+
+    const stop = startIngestionCron({
+      enabled: true,
+      everyMinutes: 1,
+      rootDir: rootDocs,
+      ledgerPath: join(stateDir, 'ledger.json'),
+      summaryPath: join(stateDir, 'summary.json'),
+      client: { ingestContent: async () => ({ accepted: 1 }) },
+      profiles: {
+        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
+      },
+      agentProfiles: { agentA: 'missing' },
+      activeAgentId: 'agentA',
+      defaultProfile: 'missing',
+      logger: { warn: (m: string) => loggerWarnings.push(m) },
+    });
+
+    await new Promise((r) => setTimeout(r, 1200));
+    stop();
+
+    assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
+  } finally {
+    rmSync(rootDocs, { recursive: true, force: true });
+    rmSync(stateDir, { recursive: true, force: true });
   }
 });
 

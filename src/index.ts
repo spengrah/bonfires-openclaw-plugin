@@ -34,6 +34,7 @@ export default function register(api){
   // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
   const profiles = cfg.ingestion.profiles;
   const agentProfiles = cfg.ingestion.agentProfiles;
+  const defaultProfile = cfg.ingestion.defaultProfile;
 
   const stopIngestion = startIngestionCron({
     enabled: cfg.ingestion.enabled,
@@ -45,6 +46,7 @@ export default function register(api){
     logger: api.logger,
     profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
     agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
+    defaultProfile,
   });
 
   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));

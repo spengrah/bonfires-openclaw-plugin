@@ -182,11 +182,19 @@ export async function runIngestionOnce(opts: {
   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
   profiles?: Record<string, IngestionProfile>;
   agentProfiles?: Record<string, string>;
+  defaultProfile?: string;
+  activeAgentId?: string;
 }) {
   const ledger = loadLedger(opts.ledgerPath);
 
   const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
   const hasProfiles = profileNames.length > 0;
+  const hasProfileSelectors = Boolean(opts.defaultProfile) || Boolean(opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0);
+  const requiresProfileResolution = Boolean(opts.defaultProfile) || Boolean(opts.activeAgentId);
+
+  if (!hasProfiles && hasProfileSelectors) {
+    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');
+  }
 
   // Collect items: profile-based or legacy
   let items: IngestItem[];
@@ -194,10 +202,31 @@ export async function runIngestionOnce(opts: {
 
   if (hasProfiles) {
     items = [];
-    for (const [name, profile] of Object.entries(opts.profiles!)) {
-      const profileItems = collectProfileFiles(profile, name);
-      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
-      items.push(...profileItems);
+
+    // PM6-R2 runtime behavior: when explicit profile resolution inputs are present,
+    // resolve a single active profile and fail explicitly when unresolved.
+    if (requiresProfileResolution) {
+      let selectedProfileName: string | undefined;
+      if (opts.activeAgentId && opts.agentProfiles?.[opts.activeAgentId]) {
+        selectedProfileName = opts.agentProfiles[opts.activeAgentId];
+      } else if (opts.defaultProfile) {
+        selectedProfileName = opts.defaultProfile;
+      }
+
+      const selectedProfile = selectedProfileName ? opts.profiles![selectedProfileName] : undefined;
+      if (!selectedProfile) {
+        throw new Error(`Configured ingestion profile "${selectedProfileName}" was not found`);
+      }
+
+      const selectedItems = collectProfileFiles(selectedProfile, selectedProfileName);
+      profileStats[selectedProfileName] = { scanned: selectedItems.length, ingested: 0, skipped: 0, errors: 0 };
+      items.push(...selectedItems);
+    } else {
+      for (const [name, profile] of Object.entries(opts.profiles!)) {
+        const profileItems = collectProfileFiles(profile, name);
+        profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
+        items.push(...profileItems);
+      }
     }
   } else {
     items = collectIngestionFiles(opts.rootDir);
@@ -275,6 +304,8 @@ export function startIngestionCron(opts: {
   logger?: { warn?: (msg: string) => void };
   profiles?: Record<string, IngestionProfile>;
   agentProfiles?: Record<string, string>;
+  defaultProfile?: string;
+  activeAgentId?: string;
 }) {
   if (!opts.enabled) return () => {};
 
@@ -291,6 +322,8 @@ export function startIngestionCron(opts: {
         client: opts.client,
         profiles: opts.profiles,
         agentProfiles: opts.agentProfiles,
+        defaultProfile: opts.defaultProfile,
+        activeAgentId: opts.activeAgentId,
       });
     } catch (e: any) {
       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);

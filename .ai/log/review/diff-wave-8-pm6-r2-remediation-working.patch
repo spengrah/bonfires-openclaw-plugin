@@ -1,0 +1,316 @@
+diff --git a/src/config.ts b/src/config.ts
+index e5804dc..b43787c 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -44,6 +44,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+   }
+   const defaultProfile: string | undefined = typeof cfg.ingestion?.defaultProfile === 'string' ? cfg.ingestion.defaultProfile : undefined;
+ 
++  // Prevent silent fallback to legacy hardcoded collector when profile selectors are provided
++  // without any defined profiles (PM6-R2 explicit configuration failures).
++  const hasProfileSelectors = Object.keys(agentProfiles).length > 0 || Boolean(defaultProfile);
++  if (hasProfileSelectors && Object.keys(profiles).length === 0) {
++    throw new Error('ingestion.agentProfiles/defaultProfile requires at least one ingestion.profiles entry');
++  }
++
+   // Validate agent profile references point to existing profiles
+   if (Object.keys(profiles).length > 0) {
+     for (const [agentId, profileName] of Object.entries(agentProfiles)) {
+diff --git a/src/index.ts b/src/index.ts
+index 66a0b7d..69d56c3 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -34,6 +34,7 @@ export default function register(api){
+   // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
+   const profiles = cfg.ingestion.profiles;
+   const agentProfiles = cfg.ingestion.agentProfiles;
++  const defaultProfile = cfg.ingestion.defaultProfile;
+ 
+   const stopIngestion = startIngestionCron({
+     enabled: cfg.ingestion.enabled,
+@@ -45,6 +46,7 @@ export default function register(api){
+     logger: api.logger,
+     profiles: Object.keys(profiles).length > 0 ? profiles : undefined,
+     agentProfiles: Object.keys(agentProfiles).length > 0 ? agentProfiles : undefined,
++    defaultProfile,
+   });
+ 
+   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 25d95d8..0f779d7 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -182,11 +182,19 @@ export async function runIngestionOnce(opts: {
+   client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
++  defaultProfile?: string;
++  activeAgentId?: string;
+ }) {
+   const ledger = loadLedger(opts.ledgerPath);
+ 
+   const profileNames = opts.profiles ? Object.keys(opts.profiles) : [];
+   const hasProfiles = profileNames.length > 0;
++  const hasProfileSelectors = Boolean(opts.defaultProfile) || Boolean(opts.agentProfiles && Object.keys(opts.agentProfiles).length > 0);
++  const requiresProfileResolution = Boolean(opts.defaultProfile) || Boolean(opts.activeAgentId);
++
++  if (!hasProfiles && hasProfileSelectors) {
++    throw new Error('Ingestion profile mapping/default is configured but no ingestion profiles are defined');
++  }
+ 
+   // Collect items: profile-based or legacy
+   let items: IngestItem[];
+@@ -194,10 +202,31 @@ export async function runIngestionOnce(opts: {
+ 
+   if (hasProfiles) {
+     items = [];
+-    for (const [name, profile] of Object.entries(opts.profiles!)) {
+-      const profileItems = collectProfileFiles(profile, name);
+-      profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
+-      items.push(...profileItems);
++
++    // PM6-R2 runtime behavior: when explicit profile resolution inputs are present,
++    // resolve a single active profile and fail explicitly when unresolved.
++    if (requiresProfileResolution) {
++      let selectedProfileName: string | undefined;
++      if (opts.activeAgentId && opts.agentProfiles?.[opts.activeAgentId]) {
++        selectedProfileName = opts.agentProfiles[opts.activeAgentId];
++      } else if (opts.defaultProfile) {
++        selectedProfileName = opts.defaultProfile;
++      }
++
++      const selectedProfile = selectedProfileName ? opts.profiles![selectedProfileName] : undefined;
++      if (!selectedProfile) {
++        throw new Error(`Configured ingestion profile "${selectedProfileName}" was not found`);
++      }
++
++      const selectedItems = collectProfileFiles(selectedProfile, selectedProfileName);
++      profileStats[selectedProfileName] = { scanned: selectedItems.length, ingested: 0, skipped: 0, errors: 0 };
++      items.push(...selectedItems);
++    } else {
++      for (const [name, profile] of Object.entries(opts.profiles!)) {
++        const profileItems = collectProfileFiles(profile, name);
++        profileStats[name] = { scanned: profileItems.length, ingested: 0, skipped: 0, errors: 0 };
++        items.push(...profileItems);
++      }
+     }
+   } else {
+     items = collectIngestionFiles(opts.rootDir);
+@@ -275,6 +304,8 @@ export function startIngestionCron(opts: {
+   logger?: { warn?: (msg: string) => void };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
++  defaultProfile?: string;
++  activeAgentId?: string;
+ }) {
+   if (!opts.enabled) return () => {};
+ 
+@@ -291,6 +322,8 @@ export function startIngestionCron(opts: {
+         client: opts.client,
+         profiles: opts.profiles,
+         agentProfiles: opts.agentProfiles,
++        defaultProfile: opts.defaultProfile,
++        activeAgentId: opts.activeAgentId,
+       });
+     } catch (e: any) {
+       opts.logger?.warn?.(`[ingestion] tick failed: ${e?.message ?? e}`);
+diff --git a/tests/wave8-profiles.test.ts b/tests/wave8-profiles.test.ts
+index 18a5d01..f5811d6 100644
+--- a/tests/wave8-profiles.test.ts
++++ b/tests/wave8-profiles.test.ts
+@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
+ import { join } from 'node:path';
+ import { tmpdir } from 'node:os';
+ import { parseConfig, resolveIngestionProfile } from '../src/config.js';
+-import { runIngestionOnce } from '../src/ingestion.js';
++import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
+ import register from '../src/index.js';
+ 
+ function tmpDir() {
+@@ -209,6 +209,146 @@ test('wave8: defaultProfile referencing unknown profile throws at parse time', (
+   })), /references unknown profile/);
+ });
+ 
++test('wave8: defaultProfile without profiles throws explicit config error', () => {
++  assert.throws(() => parseConfig(baseCfg({
++    ingestion: {
++      defaultProfile: 'docs',
++    },
++  })), /requires at least one ingestion\.profiles entry/);
++});
++
++test('wave8: agentProfiles without profiles throws explicit config error', () => {
++  assert.throws(() => parseConfig(baseCfg({
++    ingestion: {
++      agentProfiles: { agentA: 'docs' },
++    },
++  })), /requires at least one ingestion\.profiles entry/);
++});
++
++test('wave8: runIngestionOnce throws when profile selectors are set but profiles are missing', async () => {
++  const dir = tmpDir();
++  try {
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++    const client = { ingestContent: async () => ({ accepted: 1 }) };
++
++    await assert.rejects(
++      () => runIngestionOnce({
++        rootDir: dir,
++        ledgerPath,
++        summaryPath,
++        client,
++        defaultProfile: 'docs',
++      }),
++      /no ingestion profiles are defined/i,
++    );
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors resolve to defaultProfile at runtime', async () => {
++  const rootDocs = tmpDir();
++  const rootSpecs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
++
++    const ledgerPath = join(stateDir, 'ledger.json');
++    const summaryPath = join(stateDir, 'summary.json');
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: rootDocs,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      defaultProfile: 'docs',
++      agentProfiles: { agentA: 'specs' },
++    });
++
++    assert.equal(result.ingested, 1);
++    assert.ok(paths.every((p) => p.startsWith('docs:')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(rootSpecs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors prefer active agent mapping over default', async () => {
++  const rootDocs = tmpDir();
++  const rootSpecs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    writeFileSync(join(rootSpecs, 'specs.md'), 'specs');
++
++    const ledgerPath = join(stateDir, 'ledger.json');
++    const summaryPath = join(stateDir, 'summary.json');
++    const paths: string[] = [];
++    const client = {
++      ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: rootDocs,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        specs: { rootDir: rootSpecs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      defaultProfile: 'docs',
++      activeAgentId: 'agentA',
++      agentProfiles: { agentA: 'specs' },
++    });
++
++    assert.equal(result.ingested, 1);
++    assert.ok(paths.every((p) => p.startsWith('specs:')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(rootSpecs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
++test('wave8: profile selectors throw when resolved profile is missing', async () => {
++  const dir = tmpDir();
++  try {
++    writeFileSync(join(dir, 'x.md'), 'x');
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++    const client = { ingestContent: async () => ({ accepted: 1 }) };
++
++    await assert.rejects(
++      () => runIngestionOnce({
++        rootDir: dir,
++        ledgerPath,
++        summaryPath,
++        client,
++        profiles: {
++          docs: { rootDir: dir, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++        },
++        activeAgentId: 'agentA',
++        agentProfiles: { agentA: 'missing' },
++      }),
++      /was not found/i,
++    );
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
+ // --- PM6-R3: Backward compatibility migration ---
+ 
+ test('wave8: legacy rootDir normalizes into synthetic _legacy profile', () => {
+@@ -465,6 +605,39 @@ test('wave8: profile with missing rootDir returns zero items gracefully', async
+   }
+ });
+ 
++test('wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick', async () => {
++  const rootDocs = tmpDir();
++  const stateDir = tmpDir();
++  try {
++    writeFileSync(join(rootDocs, 'docs.md'), 'docs');
++    const loggerWarnings: string[] = [];
++
++    const stop = startIngestionCron({
++      enabled: true,
++      everyMinutes: 1,
++      rootDir: rootDocs,
++      ledgerPath: join(stateDir, 'ledger.json'),
++      summaryPath: join(stateDir, 'summary.json'),
++      client: { ingestContent: async () => ({ accepted: 1 }) },
++      profiles: {
++        docs: { rootDir: rootDocs, includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.md'] },
++      },
++      agentProfiles: { agentA: 'missing' },
++      activeAgentId: 'agentA',
++      defaultProfile: 'missing',
++      logger: { warn: (m: string) => loggerWarnings.push(m) },
++    });
++
++    await new Promise((r) => setTimeout(r, 1200));
++    stop();
++
++    assert.ok(loggerWarnings.some((m) => m.includes('Configured ingestion profile')));
++  } finally {
++    rmSync(rootDocs, { recursive: true, force: true });
++    rmSync(stateDir, { recursive: true, force: true });
++  }
++});
++
+ // --- Integration: register() with profiles wires through to ingestion cron ---
+ 
+ test('wave8: register with profiles and agentProfiles wires ingestion cron', () => {

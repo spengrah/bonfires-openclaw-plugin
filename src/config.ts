@@ -44,6 +44,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
   }
   const defaultProfile: string | undefined = typeof cfg.ingestion?.defaultProfile === 'string' ? cfg.ingestion.defaultProfile : undefined;
 
+  // Prevent silent fallback to legacy hardcoded collector when profile selectors are provided
+  // without any defined profiles (PM6-R2 explicit configuration failures).
+  const hasProfileSelectors = Object.keys(agentProfiles).length > 0 || Boolean(defaultProfile);
+  if (hasProfileSelectors && Object.keys(profiles).length === 0) {
+    throw new Error('ingestion.agentProfiles/defaultProfile requires at least one ingestion.profiles entry');
+  }
+
   // Validate agent profile references point to existing profiles
   if (Object.keys(profiles).length > 0) {
     for (const [agentId, profileName] of Object.entries(agentProfiles)) {
