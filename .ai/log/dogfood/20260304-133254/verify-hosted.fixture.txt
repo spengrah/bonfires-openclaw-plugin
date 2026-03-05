@@ -1,0 +1,10 @@
+
+> bonfires-plugin@0.1.0 verify:hosted
+> tsx scripts/hosted-integration-verify.ts
+
+[verify:hosted] PASS contract:/delve normalization
+[verify:hosted] PASS contract:/stack/add mapping
+[verify:hosted] PASS contract:/stack/process response handling
+[verify:hosted] SKIP preflight:/healthz — live mode not requested
+[verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested
+[verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json

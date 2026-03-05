@@ -413,14 +413,15 @@ test('plugin register wires hooks and tool', async () => {
     resolvePath: (p) => p,
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
-    registerTool: (def) => { toolDef = def; },
+    registerTool: (factory) => { toolDef = factory; },
   };
   register(api);
   assert.equal(events.length, 3);
   assert.ok(toolDef);
-  assert.equal(toolDef.name, 'bonfires_search');
-  const result = await toolDef.execute({ query: 'hello', limit: 1 }, { agentId: 'agent_primary' });
-  assert.equal(Array.isArray(result.results), true);
+  const tool = toolDef({ agentId: 'agent_primary' });
+  assert.equal(tool.name, 'bonfires_search');
+  const result = await tool.execute('mock-tool-call-id', { query: 'hello', limit: 1 });
+  assert.equal(Array.isArray(result.details.results), true);
 });
 
 test('plugin register fallback path works when resolvePath missing', async () => {

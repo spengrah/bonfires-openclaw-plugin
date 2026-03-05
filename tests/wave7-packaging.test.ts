@@ -40,10 +40,12 @@ test('wave7: openclaw.plugin.json nested objects set additionalProperties false'
   }
 });
 
-test('wave7: package.json has openclaw.extensions.plugin', () => {
+test('wave7: package.json has openclaw.extensions array', () => {
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.ok(pkg.openclaw);
-  assert.equal(typeof pkg.openclaw.extensions.plugin, 'string');
+  assert.ok(Array.isArray(pkg.openclaw.extensions));
+  assert.ok(pkg.openclaw.extensions.length > 0);
+  assert.equal(typeof pkg.openclaw.extensions[0], 'string');
 });
 
 // ---------- PM5-R2: env-friendly config fallbacks ----------

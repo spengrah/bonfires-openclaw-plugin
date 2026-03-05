@@ -1,0 +1,17 @@
+
+> bonfires-plugin@0.1.0 gate:all
+> tsx scripts/gates/gate-all.ts
+
+  ✓ [Tier 1] lint: PASS (2858ms)
+  ✓ [Tier 2] test:coverage: PASS (3689ms)
+  ✓ [Tier 2] gate:coverage: PASS (324ms)
+  ✓ [Tier 2] gate:changed-lines: PASS (407ms)
+  ✓ [Tier 3] gate:quality: PASS (339ms)
+  ✓ [Tier 3] gate:mutation-lite: PASS (11423ms)
+  ✓ [Tier 4] gate:traceability: PASS (335ms)
+  ✓ [Tier X] gate:diff-escalation: PASS (329ms)
+  ✓ [Tier X] gate:anti-gaming: PASS (342ms)
+
+Gate report written to .ai/log/plan/verification-gates-report-current.json
+
+gate:all VERDICT: PASS — all gates passed

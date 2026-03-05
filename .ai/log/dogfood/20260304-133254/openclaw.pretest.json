@@ -1,0 +1,393 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.26",
+    "lastTouchedAt": "2026-03-01T21:23:21.458Z"
+  },
+  "env": {
+    "vars": {}
+  },
+  "wizard": {
+    "lastRunAt": "2026-02-22T20:33:56.386Z",
+    "lastRunVersion": "2026.2.14",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "diagnostics": {
+    "enabled": true,
+    "flags": [
+      "telegram.payload"
+    ]
+  },
+  "logging": {
+    "level": "info",
+    "file": "/tmp/openclaw-lyle/openclaw.log",
+    "consoleLevel": "warn",
+    "consoleStyle": "compact",
+    "redactSensitive": "tools"
+  },
+  "browser": {
+    "enabled": true,
+    "executablePath": "/home/lyle/.openclaw/workspace/bin/chromium-limited",
+    "headless": true,
+    "noSandbox": true
+  },
+  "auth": {
+    "profiles": {
+      "openai-codex:default": {
+        "provider": "openai-codex",
+        "mode": "oauth"
+      }
+    }
+  },
+  "acp": {
+    "enabled": true,
+    "dispatch": {
+      "enabled": true
+    },
+    "backend": "acpx",
+    "defaultAgent": "claude",
+    "allowedAgents": [
+      "claude",
+      "codex"
+    ],
+    "maxConcurrentSessions": 8,
+    "runtime": {
+      "ttlMinutes": 120
+    }
+  },
+  "models": {
+    "providers": {
+      "venice": {
+        "baseUrl": "https://api.venice.ai/api/v1",
+        "api": "openai-completions",
+        "models": []
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openai-codex/gpt-5.3-codex"
+      },
+      "workspace": "/home/lyle/.openclaw/workspace",
+      "skipBootstrap": true,
+      "memorySearch": {
+        "enabled": true,
+        "sources": [
+          "memory"
+        ],
+        "extraPaths": [
+          "vault/"
+        ],
+        "experimental": {
+          "sessionMemory": true
+        },
+        "provider": "openai",
+        "remote": {
+          "baseUrl": "https://api.venice.ai/api/v1/",
+          "batch": {
+            "enabled": false
+          }
+        },
+        "model": "text-embedding-bge-m3",
+        "sync": {
+          "onSearch": true,
+          "sessions": {
+            "deltaBytes": 200000,
+            "deltaMessages": 50
+          }
+        }
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "3d",
+        "keepLastAssistants": 12,
+        "softTrimRatio": 0.6,
+        "hardClearRatio": 0.85
+      },
+      "compaction": {
+        "mode": "safeguard",
+        "reserveTokensFloor": 200000,
+        "maxHistoryShare": 0.35,
+        "memoryFlush": {
+          "enabled": true,
+          "softThresholdTokens": 4000
+        }
+      },
+      "typingIntervalSeconds": 6,
+      "typingMode": "instant",
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "subagents": {
+          "allowAgents": [
+            "reviewer"
+          ]
+        },
+        "tools": {}
+      },
+      {
+        "id": "reviewer",
+        "name": "Reviewer",
+        "workspace": "/home/lyle/.openclaw/workspace-reviewer",
+        "agentDir": "/home/lyle/.openclaw/agents/reviewer/agent",
+        "tools": {
+          "allow": [
+            "read",
+            "exec",
+            "process",
+            "browser",
+            "sessions_list",
+            "sessions_history",
+            "sessions_send",
+            "session_status"
+          ],
+          "deny": [
+            "write",
+            "edit",
+            "apply_patch",
+            "canvas",
+            "nodes",
+            "cron",
+            "tts",
+            "message"
+          ]
+        },
+        "model": {
+          "primary": "openai-codex/gpt-5.2-codex",
+          "fallbacks": [
+            "openai-codex/gpt-5.3-codex"
+          ]
+        }
+      }
+    ]
+  },
+  "tools": {
+    "deny": [
+      "gateway"
+    ],
+    "web": {
+      "search": {
+        "enabled": true
+      },
+      "fetch": {
+        "enabled": true
+      }
+    },
+    "agentToAgent": {
+      "enabled": true
+    },
+    "elevated": {
+      "enabled": false,
+      "allowFrom": {
+        "webchat": [],
+        "matrix": [
+          "room:!RTLKGXiCazQMirSMfp:matrix.org",
+          "!RTLKGXiCazQMirSMfp:matrix.org",
+          "matrix:channel:!RTLKGXiCazQMirSMfp:matrix.org"
+        ]
+      }
+    },
+    "exec": {
+      "security": "full",
+      "pathPrepend": [
+        "/opt/tools/bin",
+        "/opt/tools/npm/bin",
+        "/opt/tools/go/bin"
+      ],
+      "notifyOnExit": true
+    },
+    "subagents": {
+      "tools": {
+        "deny": [
+          "write",
+          "edit",
+          "apply_patch"
+        ]
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "approvals": {
+    "exec": {
+      "enabled": false,
+      "mode": "targets",
+      "agentFilter": [
+        "main"
+      ],
+      "targets": [
+        {
+          "channel": "matrix",
+          "to": "!RTLKGXiCazQMirSMfp:matrix.org"
+        }
+      ]
+    }
+  },
+  "session": {
+    "scope": "per-sender",
+    "dmScope": "per-channel-peer",
+    "resetByChannel": {
+      "cron": {
+        "mode": "idle",
+        "idleMinutes": 30
+      }
+    }
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "command-logger": {
+          "enabled": true
+        },
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "tokenFile": "/home/lyle/.openclaw/credentials/telegram-bot-token.txt",
+      "groups": {
+        "-1002762229163": {
+          "requireMention": false,
+          "enabled": true,
+          "topics": {
+            "1": {
+              "requireMention": false,
+              "enabled": true
+            }
+          }
+        }
+      },
+      "groupPolicy": "allowlist",
+      "streaming": "partial",
+      "linkPreview": false
+    },
+    "matrix": {
+      "enabled": true,
+      "homeserver": "https://matrix.org",
+      "userId": "@lyle.agent:matrix.org",
+      "encryption": true,
+      "deviceName": "openclaw",
+      "dm": {
+        "policy": "allowlist",
+        "allowFrom": [
+          "@spengrah:matrix.org"
+        ]
+      },
+      "groupPolicy": "open",
+      "groups": {
+        "*": {
+          "requireMention": false
+        },
+        "!RTLKGXiCazQMirSMfp:matrix.org": {
+          "allow": true,
+          "requireMention": false
+        },
+        "!HPwOeldkkVErSHdllf:matrix.org": {
+          "allow": true,
+          "requireMention": false
+        },
+        "!DYLxCyaASnUYeUvkid:matrix.org": {
+          "allow": true,
+          "requireMention": false
+        }
+      },
+      "threadReplies": "inbound",
+      "autoJoin": "always",
+      "sessionScope": "room",
+      "replyToMode": "off"
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "lan",
+    "controlUi": {
+      "allowedOrigins": [
+        "https://lyle.tail3df4a6.ts.net:18789"
+      ]
+    },
+    "auth": {
+      "mode": "token"
+    },
+    "trustedProxies": [
+      "127.0.0.1",
+      "100.82.225.120"
+    ],
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "tls": {
+      "enabled": true,
+      "certPath": "/home/lyle/.openclaw/tls/ts.crt",
+      "keyPath": "/home/lyle/.openclaw/tls/ts.key"
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    },
+    "entries": {
+      "nano-banana-pro": {
+        "enabled": true,
+        "env": {
+          "NANOBANANA_PROVIDER": "venice",
+          "VENICE_BASE_URL": "https://api.venice.ai/api/v1"
+        }
+      }
+    }
+  },
+  "plugins": {
+    "allow": [
+      "matrix",
+      "telegram",
+      "memory-core",
+      "acpx"
+    ],
+    "load": {
+      "paths": [
+        "/home/lyle/.openclaw/extensions/matrix",
+        "/opt/tools/npm/lib/node_modules/openclaw/extensions/acpx"
+      ]
+    },
+    "entries": {
+      "telegram": {
+        "enabled": true
+      },
+      "matrix": {
+        "enabled": true
+      },
+      "acpx": {
+        "enabled": true
+      }
+    },
+    "installs": {
+      "acpx": {
+        "source": "path",
+        "spec": "@openclaw/acpx",
+        "sourcePath": "/opt/tools/npm/lib/node_modules/openclaw/extensions/acpx",
+        "installPath": "/opt/tools/npm/lib/node_modules/openclaw/extensions/acpx",
+        "installedAt": "2026-03-01T21:23:21.326Z"
+      }
+    }
+  }
+}

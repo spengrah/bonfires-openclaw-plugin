@@ -31,7 +31,6 @@ export default function register(api){
     recoverySource: recoveryFn ? () => recoveryFn() : undefined,
   });
 
-  // Wire profiles and agentProfiles into ingestion cron (PM6-R1, PM6-R2)
   const profiles = cfg.ingestion.profiles;
   const agentProfiles = cfg.ingestion.agentProfiles;
   const defaultProfile = cfg.ingestion.defaultProfile;
@@ -52,15 +51,17 @@ export default function register(api){
   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,logger:api.logger}));
   api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
   api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
-  api.registerTool({
+  api.registerTool((toolCtx) => ({
     name:'bonfires_search',
+    label:'Search Bonfires memories',
     description:'Search Bonfires memories',
     parameters:{type:'object',properties:{query:{type:'string'},limit:{type:'number',minimum:1,maximum:50}},required:['query']},
-    execute: async (params,ctx)=>bonfiresSearchTool(params,ctx,{cfg,client,logger:api.logger})
-  });
+    execute: async (_toolCallId, params) => {
+      const result = await bonfiresSearchTool(params, toolCtx, {cfg, client, logger: api.logger});
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
+    },
+  }));
 
-  // Return dispose handle for lifecycle management (PM5-R5).
-  // If the host calls this, background loops stop deterministically.
   return {
     dispose() {
       stopHeartbeat?.();

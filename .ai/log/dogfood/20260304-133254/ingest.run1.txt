@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-04T20:16:08.552Z",
+  "scanned": 406,
+  "ingested": 1,
+  "skipped": 405,
+  "errors": 0,
+  "errorDetails": [],
+  "profiles": {
+    "lyle": {
+      "scanned": 406,
+      "ingested": 1,
+      "skipped": 405,
+      "errors": 0
+    }
+  }
+}

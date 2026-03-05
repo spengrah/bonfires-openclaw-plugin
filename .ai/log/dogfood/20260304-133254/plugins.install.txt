@@ -1,0 +1,34 @@
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+- plugins.entries.bonfires-plugin: plugin not found: bonfires-plugin (stale config entry ignored; remove it from plugins config)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+- plugins.entries.bonfires-plugin: plugin not found: bonfires-plugin (stale config entry ignored; remove it from plugins config)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+- plugins.entries.bonfires-plugin: plugin not found: bonfires-plugin (stale config entry ignored; remove it from plugins config)
+│
+◇  Config warnings ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - plugins.entries.matrix: plugin matrix: duplicate plugin id detected;      │
+│    later plugin may be overridden                                            │
+│    (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disa  │
+│  bled/index.ts)                                                              │
+│  - plugins.entries.bonfires-plugin: plugin not found: bonfires-plugin        │
+│    (stale config entry ignored; remove it from plugins config)               │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - channels.telegram.groupPolicy is "allowlist" but groupAllowFrom (and  │
+│    allowFrom) is empty — all group messages will be silently dropped.    │
+│    Add sender IDs to channels.telegram.groupAllowFrom or                 │
+│    channels.telegram.allowFrom, or set groupPolicy to "open".            │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+- plugins.entries.bonfires-plugin: plugin not found: bonfires-plugin (stale config entry ignored; remove it from plugins config)
+[venice-models] Discovery failed: TimeoutError: The operation was aborted due to timeout, using static catalog
+Config warnings:
+- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config overwrite: /home/lyle/.openclaw/openclaw.json (sha256 f760981c429cdc33aff2b235e408ec1aeae297001114a5325f1dc1700f996f77 -> 4c22e95ff15e7dfbabd1309e613d0939b0a581a44bb1dca641a977a478646fed, backup=/home/lyle/.openclaw/openclaw.json.bak)
+Linked plugin path: ~/.openclaw/workspace/projects/bonfires-plugin
+Restart the gateway to load plugins.

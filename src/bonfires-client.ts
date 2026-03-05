@@ -107,7 +107,6 @@ export class HostedBonfiresClient implements BonfiresClient {
       body: JSON.stringify({
         query: req.query,
         bonfire_id: this.cfg.bonfireId,
-        agent_id: req.agentId,
         num_results: req.limit,
       }),
     });
@@ -115,13 +114,15 @@ export class HostedBonfiresClient implements BonfiresClient {
     const episodes = Array.isArray(body.episodes) ? body.episodes : [];
     const entities = Array.isArray(body.entities) ? body.entities : [];
 
-    const fromEpisodes = episodes.map((e: any, i: number) => ({
-      summary: String(e.summary ?? e.content ?? e.name ?? 'Episode'),
-      source: `delve:episode:${i}`,
-      score: Math.max(0, 1 - i * 0.05),
-    }));
+    const fromEpisodes = episodes.map((e: any, i: number) => {
+      let summary = e.summary as string | null;
+      if (!summary && e.content) {
+        try { const p = JSON.parse(e.content); summary = p.content ?? p.name ?? null; } catch { summary = String(e.content); }
+      }
+      return { summary: String(summary ?? e.name ?? 'Episode').replace(/\n/g, ' '), source: `delve:episode:${i}`, score: Math.max(0, 1 - i * 0.05) };
+    });
     const fromEntities = entities.map((e: any, i: number) => ({
-      summary: String(e.summary ?? e.name ?? 'Entity'),
+      summary: String(e.summary ?? e.name ?? 'Entity').replace(/\n/g, ' '),
       source: `delve:entity:${i}`,
       score: Math.max(0, 0.8 - i * 0.05),
     }));
@@ -129,28 +130,57 @@ export class HostedBonfiresClient implements BonfiresClient {
     return { results: [...fromEpisodes, ...fromEntities].slice(0, req.limit) };
   }
 
+  private extractText(m: { role: string; content: any }): string {
+    if (typeof m.content === 'string') return m.content;
+    if (Array.isArray(m.content))
+      return m.content.filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('\n');
+    return String(m.content ?? '');
+  }
+
+  private toStackMsg(m: { role: string; content: any }, sessionKey: string) {
+    const text = this.extractText(m);
+    if (!text) return null;
+    return { text, userId: m.role, chatId: sessionKey, role: m.role, content: text, timestamp: new Date().toISOString() };
+  }
+
   async capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }) {
     this.validateAgentId(req.agentId);
     if (!req.messages.length) return { accepted: 0 };
 
+    // Build paired user+assistant messages
     let accepted = 0;
-    for (const m of req.messages) {
-      const body = {
-        message: {
-          text: m.content,
-          userId: m.role,
-          chatId: req.sessionKey,
-          timestamp: new Date().toISOString(),
-        },
-      };
+    let i = 0;
+    while (i < req.messages.length) {
+      const m = req.messages[i];
+      const next = i + 1 < req.messages.length ? req.messages[i + 1] : null;
 
-      await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
-        method: 'POST',
-        headers: this.headers(),
-        body: JSON.stringify(body),
-      });
+      // Try to form a pair: user + assistant
+      if (m.role === 'user' && next && next.role === 'assistant') {
+        const userMsg = this.toStackMsg(m, req.sessionKey);
+        const assistantMsg = this.toStackMsg(next, req.sessionKey);
+        if (userMsg && assistantMsg) {
+          await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify({ messages: [userMsg, assistantMsg], is_paired: true }),
+          });
+          accepted += 2;
+          i += 2;
+          continue;
+        }
+      }
 
-      accepted += 1;
+      // Unpaired fallback (single message)
+      const msg = this.toStackMsg(m, req.sessionKey);
+      if (msg) {
+        await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
+          method: 'POST',
+          headers: this.headers(),
+          body: JSON.stringify({ message: msg }),
+        });
+        accepted += 1;
+      }
+      i += 1;
     }
 
     return { accepted };

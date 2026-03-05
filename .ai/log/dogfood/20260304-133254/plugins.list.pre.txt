@@ -1,0 +1,120 @@
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+│
+◇  Config warnings ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - plugins.entries.matrix: plugin matrix: duplicate plugin id detected;      │
+│    later plugin may be overridden                                            │
+│    (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disa  │
+│  bled/index.ts)                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - channels.telegram.groupPolicy is "allowlist" but groupAllowFrom (and  │
+│    allowFrom) is empty — all group messages will be silently dropped.    │
+│    Add sender IDs to channels.telegram.groupAllowFrom or                 │
+│    channels.telegram.allowFrom, or set groupPolicy to "open".            │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Plugins (4/39 loaded)
+Source roots:
+  stock: /opt/tools/npm/lib/node_modules/openclaw/extensions
+
+┌──────────────┬──────────┬──────────┬────────────────────────────────────────────────────────────────────┬───────────┐
+│ Name         │ ID       │ Status   │ Source                                                             │ Version   │
+├──────────────┼──────────┼──────────┼────────────────────────────────────────────────────────────────────┼───────────┤
+│ Matrix       │ matrix   │ loaded   │ ~/.openclaw/extensions/matrix/index.ts                             │ 2026.2.27 │
+│              │          │          │ Matrix channel plugin (matrix-js-sdk)                              │           │
+│ ACPX Runtime │ acpx     │ loaded   │ /opt/tools/npm/lib/node_modules/openclaw/extensions/acpx/index.ts  │ 2026.3.1  │
+│              │          │          │ ACP runtime backend powered by the acpx CLI.                       │           │
+│ @openclaw/   │ bluebubb │ disabled │ stock:bluebubbles/index.ts                                         │ 2026.3.1  │
+│ bluebubbles  │ les      │          │ OpenClaw BlueBubbles channel plugin                                │           │
+│ @openclaw/   │ copilot- │ disabled │ stock:copilot-proxy/index.ts                                       │ 2026.3.1  │
+│ copilot-     │ proxy    │          │ OpenClaw Copilot Proxy provider plugin                             │           │
+│ proxy        │          │          │                                                                    │           │
+│ Device       │ device-  │ disabled │ stock:device-pair/index.ts                                         │           │
+│ Pairing      │ pair     │          │ Generate setup codes and approve device pairing requests.          │           │
+│ @openclaw/   │ diagnost │ disabled │ stock:diagnostics-otel/index.ts                                    │ 2026.3.1  │
+│ diagnostics- │ ics-otel │          │ OpenClaw diagnostics OpenTelemetry exporter                        │           │
+│ otel         │          │          │                                                                    │           │
+│ Diffs        │ diffs    │ disabled │ stock:diffs/index.ts                                               │ 2026.3.1  │
+│              │          │          │ Read-only diff viewer and image renderer for agents.               │           │
+│ @openclaw/   │ discord  │ disabled │ stock:discord/index.ts                                             │ 2026.3.1  │
+│ discord      │          │          │ OpenClaw Discord channel plugin                                    │           │
+│ @openclaw/   │ feishu   │ disabled │ stock:feishu/index.ts                                              │ 2026.3.1  │
+│ feishu       │          │          │ OpenClaw Feishu/Lark channel plugin (community maintained by       │           │
+│              │          │          │ @m1heng)                                                           │           │
+│ @openclaw/   │ google-  │ disabled │ stock:google-gemini-cli-auth/index.ts                              │ 2026.3.1  │
+│ google-      │ gemini-  │          │ OpenClaw Gemini CLI OAuth provider plugin                          │           │
+│ gemini-cli-  │ cli-auth │          │                                                                    │           │
+│ auth         │          │          │                                                                    │           │
+│ @openclaw/   │ googlech │ disabled │ stock:googlechat/index.ts                                          │ 2026.3.1  │
+│ googlechat   │ at       │          │ OpenClaw Google Chat channel plugin                                │           │
+│ @openclaw/   │ imessage │ disabled │ stock:imessage/index.ts                                            │ 2026.3.1  │
+│ imessage     │          │          │ OpenClaw iMessage channel plugin                                   │           │
+│ @openclaw/   │ irc      │ disabled │ stock:irc/index.ts                                                 │ 2026.3.1  │
+│ irc          │          │          │ OpenClaw IRC channel plugin                                        │           │
+│ @openclaw/   │ line     │ disabled │ stock:line/index.ts                                                │ 2026.3.1  │
+│ line         │          │          │ OpenClaw LINE channel plugin                                       │           │
+│ LLM Task     │ llm-task │ disabled │ stock:llm-task/index.ts                                            │ 2026.3.1  │
+│              │          │          │ Generic JSON-only LLM tool for structured tasks callable from      │           │
+│              │          │          │ workflows.                                                         │           │
+│ Lobster      │ lobster  │ disabled │ stock:lobster/index.ts                                             │ 2026.3.1  │
+│              │          │          │ Typed workflow tool with resumable approvals.                      │           │
+│ @openclaw/   │ matrix   │ disabled │ stock:matrix.bundled-disabled/index.ts                             │ 2026.3.1  │
+│ matrix       │          │          │ OpenClaw Matrix channel plugin                                     │           │
+│ @openclaw/   │ mattermo │ disabled │ stock:mattermost/index.ts                                          │ 2026.3.1  │
+│ mattermost   │ st       │          │ OpenClaw Mattermost channel plugin                                 │           │
+│ Memory       │ memory-  │ loaded   │ stock:memory-core/index.ts                                         │ 2026.3.1  │
+│ (Core)       │ core     │          │ File-backed memory search tools and CLI                            │           │
+│ @openclaw/   │ memory-  │ disabled │ stock:memory-lancedb/index.ts                                      │ 2026.3.1  │
+│ memory-      │ lancedb  │          │ OpenClaw LanceDB-backed long-term memory plugin with auto-recall/  │           │
+│ lancedb      │          │          │ capture                                                            │           │
+│ @openclaw/   │ minimax- │ disabled │ stock:minimax-portal-auth/index.ts                                 │ 2026.3.1  │
+│ minimax-     │ portal-  │          │ OpenClaw MiniMax Portal OAuth provider plugin                      │           │
+│ portal-auth  │ auth     │          │                                                                    │           │
+│ @openclaw/   │ msteams  │ disabled │ stock:msteams/index.ts                                             │ 2026.3.1  │
+│ msteams      │          │          │ OpenClaw Microsoft Teams channel plugin                            │           │
+│ @openclaw/   │ nextclou │ disabled │ stock:nextcloud-talk/index.ts                                      │ 2026.3.1  │
+│ nextcloud-   │ d-talk   │          │ OpenClaw Nextcloud Talk channel plugin                             │           │
+│ talk         │          │          │                                                                    │           │
+│ @openclaw/   │ nostr    │ disabled │ stock:nostr/index.ts                                               │ 2026.3.1  │
+│ nostr        │          │          │ OpenClaw Nostr channel plugin for NIP-04 encrypted DMs             │           │
+│ OpenProse    │ open-    │ disabled │ stock:open-prose/index.ts                                          │ 2026.3.1  │
+│              │ prose    │          │ OpenProse VM skill pack with a /prose slash command.               │           │
+│ Phone        │ phone-   │ disabled │ stock:phone-control/index.ts                                       │           │
+│ Control      │ control  │          │ Arm/disarm high-risk phone node commands (camera/screen/writes)    │           │
+│              │          │          │ with an optional auto-expiry.                                      │           │
+│ qwen-portal- │          │ disabled │ stock:qwen-portal-auth/index.ts                                    │           │
+│ auth         │          │          │                                                                    │           │
+│ @openclaw/   │ signal   │ disabled │ stock:signal/index.ts                                              │ 2026.3.1  │
+│ signal       │          │          │ OpenClaw Signal channel plugin                                     │           │
+│ @openclaw/   │ slack    │ disabled │ stock:slack/index.ts                                               │ 2026.3.1  │
+│ slack        │          │          │ OpenClaw Slack channel plugin                                      │           │
+│ @openclaw/   │ synology │ disabled │ stock:synology-chat/index.ts                                       │ 2026.3.1  │
+│ synology-    │ -chat    │          │ Synology Chat channel plugin for OpenClaw                          │           │
+│ chat         │          │          │                                                                    │           │
+│ Talk Voice   │ talk-    │ disabled │ stock:talk-voice/index.ts                                          │           │
+│              │ voice    │          │ Manage Talk voice selection (list/set).                            │           │
+│ Telegram     │ telegram │ loaded   │ stock:telegram/index.ts                                            │ 2026.3.1  │
+│              │          │          │ Telegram channel plugin                                            │           │
+│ Thread       │ thread-  │ disabled │ stock:thread-ownership/index.ts                                    │           │
+│ Ownership    │ ownershi │          │ Prevents multiple agents from responding in the same Slack thread. │           │
+│              │ p        │          │  Uses HTTP calls to the slack-forwarder ownership API.             │           │
+│ @openclaw/   │ tlon     │ disabled │ stock:tlon/index.ts                                                │ 2026.3.1  │
+│ tlon         │          │          │ OpenClaw Tlon/Urbit channel plugin                                 │           │
+│ @openclaw/   │ twitch   │ disabled │ stock:twitch/index.ts                                              │ 2026.3.1  │
+│ twitch       │          │          │ OpenClaw Twitch channel plugin                                     │           │
+│ @openclaw/   │ voice-   │ disabled │ stock:voice-call/index.ts                                          │ 2026.3.1  │
+│ voice-call   │ call     │          │ OpenClaw voice-call plugin                                         │           │
+│ @openclaw/   │ whatsapp │ disabled │ stock:whatsapp/index.ts                                            │ 2026.3.1  │
+│ whatsapp     │          │          │ OpenClaw WhatsApp channel plugin                                   │           │
+│ @openclaw/   │ zalo     │ disabled │ stock:zalo/index.ts                                                │ 2026.3.1  │
+│ zalo         │          │          │ OpenClaw Zalo channel plugin                                       │           │
+│ @openclaw/   │ zalouser │ disabled │ stock:zalouser/index.ts                                            │ 2026.3.1  │
+│ zalouser     │          │          │ OpenClaw Zalo Personal Account plugin via zca-cli                  │           │
+└──────────────┴──────────┴──────────┴────────────────────────────────────────────────────────────────────┴───────────┘

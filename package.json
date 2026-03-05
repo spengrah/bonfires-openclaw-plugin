@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "openclaw": {
-    "extensions": {
-      "plugin": "src/index.ts"
-    }
+    "extensions": [
+      "./src/index.ts"
+    ]
   },
   "scripts": {
     "lint": "tsx scripts/spec-lint.ts && tsc --noEmit",

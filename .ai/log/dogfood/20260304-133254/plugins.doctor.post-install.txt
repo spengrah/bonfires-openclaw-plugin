@@ -1,0 +1,23 @@
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+│
+◇  Config warnings ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - plugins.entries.matrix: plugin matrix: duplicate plugin id detected;      │
+│    later plugin may be overridden                                            │
+│    (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disa  │
+│  bled/index.ts)                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - channels.telegram.groupPolicy is "allowlist" but groupAllowFrom (and  │
+│    allowFrom) is empty — all group messages will be silently dropped.    │
+│    Add sender IDs to channels.telegram.groupAllowFrom or                 │
+│    channels.telegram.allowFrom, or set groupPolicy to "open".            │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+No plugin issues detected.

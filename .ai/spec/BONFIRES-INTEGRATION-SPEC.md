@@ -1,6 +1,6 @@
 # Bonfires Integration Spec
 
-Status: Draft
+Status: Active (dogfood-validated 2026-03-05)
 
 ## 1) Purpose
 
@@ -34,7 +34,7 @@ A thin OpenClaw plugin (`bonfires-plugin`) provides four deterministic integrati
 3. **Episodic capture** (`agent_end` hook) — push conversation history to Bonfires after each turn, throttled per session; covers all sessions, not just main
 4. **Recovery catch-up** (scheduled recovery tick) — periodic scan of persisted session transcripts to backfill missed captures
 
-The plugin does not implement Bonfires protocol logic. All API calls go through a small `bonfires-client.mjs` module.
+The plugin does not implement Bonfires protocol logic. All API calls go through `bonfires-client.ts`.
 
 ### 3.2 Hook: `before_agent_start` (per-turn retrieval)
 
@@ -45,26 +45,23 @@ Fires before every LLM turn. Uses the current user message as the search query e
 - Turn N: gets context relevant to the current message, which may differ significantly from turn 1
 
 **Behavior:**
-1. Use `event.prompt` as the search query
-2. Call Bonfires search with the agent ID (`ctx.agentId`)
+1. Use `event.prompt` as the search query (truncated to 500 chars)
+2. Call Bonfires `/delve` with the bonfire ID and query
 3. Return `{ prependContext: <formatted results> }` if results found; return nothing if search fails or returns empty
 
 **`prependContext` format:**
 ```
-## Retrieved context
-
-<result 1 summary>
-
-<result 2 summary>
-
+--- Bonfires context ---
+- <result 1 summary> (source: delve:episode:0, relevance: 0.95)
+- <result 2 summary> (source: delve:entity:0, relevance: 0.8)
 ---
 ```
 
-This is prepended to the current user message. The LLM sees it as the beginning of the user turn. Framing ("Retrieved context") is needed because `prependContext` lands in user-turn content, not the system prompt — confirmed in source (`systemPrompt` return from the hook is defined in types but never read at the call site).
+Capped at 2000 chars. This is prepended to the current user message via `prependContext`.
+
+**Search response handling:** `/delve` returns `episodes[]` and `entities[]`. Episodes may have `summary` (preferred) or `content` (JSON string containing `{name, content, updates}`). The client parses JSON content to extract the inner `content` field. Entity summaries may contain newlines; these are stripped to prevent format breaks.
 
 **Latency:** Adds one HTTP round-trip to every turn. This is a deliberate tradeoff — accept ~200-500ms per turn for reliable context retrieval at each message. The hook swallows errors; a failed Bonfires call degrades gracefully with no context injected.
-
-**Throttling (optional, post-MVP):** If per-turn latency proves unacceptable, add a per-session query cache: skip the search if the semantic similarity between `event.prompt` and the previous query for that `ctx.sessionKey` exceeds a threshold. Deferred until the baseline is profiled.
 
 **Multi-session behavior:** Each session independently triggers this hook with its own `event.prompt` and `ctx.sessionKey`. No coordination needed between sessions.
 
@@ -85,21 +82,41 @@ This complements the automatic `before_agent_start` injection — the automatic 
 
 Fires after every LLM turn completes, in any session. Payload includes `event.messages` (full conversation history including the just-completed reply) and `ctx.sessionKey`.
 
-**This is the primary episodic capture mechanism.** It replaces the heartbeat-based approach. Key advantages:
+**This is the primary episodic capture mechanism.** Key advantages:
 - Deterministic Node.js callback — no LLM involvement
 - Covers every session automatically (main, reviewer, any future agent)
 - `ctx.sessionKey` enables per-session throttling
 
 **Throttling strategy:**
-- Plugin maintains `Map<sessionKey, { lastPushedAt: number, lastPushedIndex: number }>` in memory
+- Plugin maintains `Map<sessionKey, { lastPushedAt: number, lastPushedIndex: number }>` in memory (persisted to disk as `capture-ledger.json`)
 - On each `agent_end` fire: check if >15 min since `lastPushedAt` for this `sessionKey`
-- If yes: push messages from `lastPushedIndex` to current length to Bonfires `stack/process`; update ledger
+- If yes: push messages from `lastPushedIndex` to current length to Bonfires `stack/add`; update ledger
 - If no: skip (next turn will catch it)
 - The 15-min window means at most 4 pushes/hour per session — reasonable Bonfires API load
 
+**Message format for `stack/add`:**
+
+Messages are sent as **paired user+assistant turns** when possible, using `{ messages: [...], is_paired: true }`. Unpaired messages (e.g., trailing user message) fall back to `{ message: {...} }`.
+
+Each message in the payload must include these required fields:
+```json
+{
+  "text": "the message content as plain string",
+  "userId": "user",
+  "chatId": "agent:main:matrix:channel:!room:matrix.org",
+  "role": "user",
+  "content": "the message content as plain string",
+  "timestamp": "2026-03-05T00:00:00.000Z"
+}
+```
+
+`text` and `userId` and `chatId` are required by the Bonfires API (Telegram-style schema). `role` and `content` are included for episode extraction context.
+
+**Content normalization:** Assistant messages from OpenClaw may contain array content blocks (`[{type:"text", text:"..."}, {type:"tool_use", ...}]`). The client extracts only `type:"text"` blocks and joins them. Messages with no extractable text (e.g., pure `tool_use` or `tool_result`) are skipped.
+
 **Message slicing:** Only push new messages since the last push (`messages.slice(lastPushedIndex)`). Bonfires receives incremental context, not the full history every time.
 
-**On plugin startup:** Initialize `lastPushedIndex` to 0 for all sessions. First push after startup sends full history to date. Acceptable — Bonfires deduplicates at the episode level.
+**On plugin startup:** Capture ledger is loaded from disk. First push after a fresh install sends full history to date. Acceptable — Bonfires deduplicates at the episode level.
 
 ### 3.5 Scheduled recovery tick + disk scan (fallback / catch-up)
 
@@ -116,78 +133,107 @@ A scheduled recovery tick (driven by heartbeat flow and/or cron cadence) scans `
 - Sessions where `agent_end` was missed (e.g., crash, abrupt exit)
 - Historical conversation recovery after Bonfires is first set up
 
-The `lastPushedIndex` ledger from §3.4 is persisted to disk (`~/.openclaw/bonfires-capture-state.json`) so both mechanisms share the same watermark.
+The `lastPushedIndex` ledger from §3.4 is persisted to disk (`<stateDir>/capture-ledger.json`) so both mechanisms share the same watermark.
 
-### 3.6 Plugin configuration
+### 3.6 Stack processing heartbeat
+
+The plugin runs its own background heartbeat (separate from the OpenClaw gateway heartbeat) that calls `POST /agents/{agentId}/stack/process` on a 20-minute cadence with jitter. This triggers Bonfires' episode extraction from stacked messages.
+
+State is persisted to `<stateDir>/heartbeat-state.json` with per-agent tracking of consecutive failures, last attempt/success timestamps.
+
+### 3.7 Plugin configuration
 
 ```json
 {
-  "plugins": [
-    {
-      "id": "bonfires-plugin",
-      "config": {
-        "agents": {
-          "main": {
-            "agentId": "<lyle-bonfires-agent-id>"
+  "plugins": {
+    "entries": {
+      "bonfires-plugin": {
+        "enabled": true,
+        "config": {
+          "agents": {
+            "main": "69a51b279c462f4f06abe2f5",
+            "reviewer": "69a51b279c462f4f06abe2f5"
           },
-          "reviewer": {
-            "agentId": "<reviewer-bonfires-agent-id>"
+          "baseUrl": "https://tnt-v2.api.bonfires.ai/",
+          "apiKeyEnv": "DELVE_API_KEY",
+          "bonfireId": "69a51afc9c462f4f06abe2f4",
+          "stateDir": "/home/lyle/.openclaw/.bonfires-state",
+          "capture": {
+            "throttleMinutes": 15
+          },
+          "search": {
+            "maxResults": 5
+          },
+          "network": {
+            "timeoutMs": 12000,
+            "retryBackoffMs": [5000, 15000]
+          },
+          "ingestion": {
+            "profiles": {
+              "lyle": {
+                "rootDir": "/home/lyle/.openclaw/workspace",
+                "extensions": [".md", ".yaml", ".txt"],
+                "includeGlobs": ["memory/**", "vault/**", "projects/*/README.md", "projects/*/.ai/spec/**"]
+              }
+            }
           }
-        },
-        "apiKey": "<from env: BONFIRES_API_KEY>",
-        "baseUrl": "https://app.bonfires.ai",
-        "capture": {
-          "throttleMinutes": 15
-        },
-        "search": {
-          "maxResults": 5,
-          "minScore": 0.7
         }
       }
     }
-  ]
+  }
 }
 ```
 
-`BONFIRES_API_KEY` is read from environment at plugin load time. Not stored in `openclaw.json`.
+**Critical: Agent IDs must be MongoDB ObjectIds** (e.g., `69a51b279c462f4f06abe2f5`), not username strings. The `/agents/{id}/stack/add` endpoint does not resolve by username — a username string results in HTTP 403. Get the ObjectId from `GET /agents` and match by username.
 
-The `agents` map connects OpenClaw agent IDs to Bonfires agent IDs. `ctx.agentId` from hook context selects the right Bonfires agent ID. Requires Bonfires hosted plan to support multiple agent IDs under one account — confirm before implementation.
+`DELVE_API_KEY` is read from environment at plugin load time via `apiKeyEnv`. Not stored in `openclaw.json`.
 
-### 3.7 Plugin development model
+The `agents` map connects OpenClaw agent IDs to Bonfires agent IDs. `ctx.agentId` from hook context selects the right Bonfires agent ID. Multiple OpenClaw agents can share the same Bonfires agent ID to share a knowledge graph.
 
-**No build step required.** TypeScript is loaded on-the-fly via `jiti`. Write `.ts` directly; OpenClaw imports and transpiles it at startup. No `tsc`, no bundler. Plain `.mjs` also works.
+### 3.8 Plugin development model
 
-**Standalone repo.** The plugin lives in its own git repo, symlinked or copied into `~/.openclaw/extensions/bonfires-plugin/`. No monorepo, no npm publish required.
+**No build step required.** TypeScript is loaded on-the-fly via `jiti`. Write `.ts` directly; OpenClaw imports and transpiles it at startup. No `tsc`, no bundler.
+
+**Standalone repo.** The plugin lives in its own git repo at `~/.openclaw/workspace/projects/bonfires-plugin/`.
 
 **Plugin SDK.** The SDK is a subpath export of the `openclaw` package — no separate install:
 ```ts
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 ```
-`jiti` aliases this to the actual dist path at load time, so `openclaw` does not need to be in the plugin's own `node_modules`.
 
-**External dependencies.** The only expected external dependency is `@sinclair/typebox` (for tool parameter schemas). It is already present in OpenClaw's `node_modules` — verify at implementation time whether it resolves transitively or needs to be declared in the plugin's `package.json`.
+**Process isolation: none.** Plugins run in the same Node.js process as OpenClaw. Hook handler errors are caught and logged as warnings.
 
-**Process isolation: none.** Plugins run in the same Node.js process as OpenClaw. Hook handler errors are caught and logged as warnings. Code running outside hook handlers (e.g., in `registerService`) is fully exposed — keep startup code minimal and defensive.
-
-**Plugin location:**
+**Plugin file structure:**
 
 ```
-~/.openclaw/extensions/bonfires-plugin/   ← symlink to repo working copy
+~/.openclaw/workspace/projects/bonfires-plugin/
   package.json
-  index.ts               plugin entry point (registers hooks + tools)
-  bonfires-client.ts     thin Bonfires API client
+  src/
+    index.ts               plugin entry point (registers hooks + tools + heartbeat)
+    bonfires-client.ts     Bonfires API client (mock + hosted implementations)
+    hooks.ts               before_agent_start, agent_end, session_end handlers
+    config.ts              config parsing and validation
+    heartbeat.ts           stack processing heartbeat + recovery tick
+    capture-ledger.ts      in-memory + disk-persisted capture watermark ledger
+    ingestion.ts           content ingestion with hash-based dedup
+    tools/
+      bonfires-search.ts   bonfires_search tool registration
+  tests/
+    wave1.test.ts          plugin skeleton + mocked client tests
+    wave2-hosted.test.ts   hosted API client tests
+    wave3-heartbeat.test.ts heartbeat + recovery tests
+    wave5-hosted-verification.test.ts
+    wave6-ingestion.test.ts
+    wave7-packaging.test.ts
+    wave8-profiles.test.ts
 ```
 
-**`package.json`:**
-```json
-{
-  "name": "bonfires-plugin",
-  "type": "module",
-  "openclaw": { "extensions": ["./index.ts"] }
-}
-```
+**State directory:** Runtime state stored in `<stateDir>` (default: `.bonfires-state/` resolved via `api.resolvePath`). Set an explicit absolute `stateDir` in config to avoid path resolution ambiguity.
 
-OpenClaw discovers the plugin by scanning `~/.openclaw/extensions/` on startup. No additional registration needed.
+State files:
+- `capture-ledger.json` — per-session capture watermarks
+- `heartbeat-state.json` — per-agent heartbeat tracking
+- `ingestion-state.json` — file hash ledger for content ingestion
 
 ---
 
@@ -196,22 +242,6 @@ OpenClaw discovers the plugin by scanning `~/.openclaw/extensions/` on startup. 
 The OpenClaw heartbeat timer is still configured and running — it fires every 20 min and triggers a HEARTBEAT.md turn in the main session. However, Bonfires episodic capture is now handled by the `agent_end` hook (§3.4), not by HEARTBEAT.md instructions.
 
 HEARTBEAT.md is available for other standing tasks unrelated to Bonfires.
-
-```json
-{
-  "agents": {
-    "defaults": {
-      "heartbeat": {
-        "every": "20m",
-        "session": "main",
-        "target": "none"
-      }
-    }
-  }
-}
-```
-
-`target: "none"` — heartbeat results are not delivered to any channel unless the agent produces alert content. Prevents heartbeat noise in Telegram/Discord.
 
 ---
 
@@ -232,47 +262,37 @@ This is separate from episodic capture (§3.4) — it covers files, not conversa
 | Trust-zones-graph (stable nodes) | `memory/context-graph-memory/trust-zones-graph/**/*.yaml` | Nightly (or via `tzg sync`) | Pushed as triplets, not documents — handled by `tzg sync` separately |
 | Project artifacts | `projects/*/README.md`, `projects/*/.ai/spec/*.md` | Nightly | Spec documents and project overviews only; not source code |
 
-**Post-session trigger for daily memory files:** The `agent_end` hook already fires after each turn. At session end (detected by inactivity or a `session_end` hook if it becomes available), trigger ingestion for `memory/YYYY-MM-DD.md` only. This ensures today's memory file is in Bonfires before the next session starts, without waiting for the nightly cron. Deferred to post-MVP.
+### 5.3 Ingestion pipeline
 
-### 5.3 Ingestion script
+`POST /ingest_content` writes documents to MongoDB labeled_chunks. Vectorization into Weaviate requires a separate daily workflow (`/vector_store/setup` or `/trigger_taxonomy`) that is admin-only on the Bonfires side.
 
-A standalone script `ingest-to-bonfires.mjs` (not an OpenClaw plugin). Runs as a cron job.
+The plugin uses hash-based deduplication: SHA-256 hash of each file is compared against `<stateDir>/ingestion-state.json`. Only changed/new files are pushed.
 
-**Algorithm:**
-1. Walk target directories
-2. For each file: compute SHA-256 hash; compare against `~/.openclaw/bonfires-ingest-state.json` (hash ledger)
-3. Push changed/new files to `POST /ingest_content`
-4. Update hash ledger on success
-5. Log results (file count, bytes, errors) to `~/.openclaw/logs/bonfires-ingest.log`
+### 5.4 Relevant endpoints
 
-**Hash ledger format (`bonfires-ingest-state.json`):**
-```json
-{
-  "version": 1,
-  "entries": {
-    "memory/2026-03-01.md": { "hash": "sha256:...", "pushedAt": "2026-03-01T23:00:00Z" },
-    "vault/career/goals.md": { "hash": "sha256:...", "pushedAt": "2026-02-28T03:00:00Z" }
-  }
-}
-```
-
-### 5.4 Cron schedule
-
-```cron
-# Nightly ingestion (2am, after daily memory file is settled)
-0 2 * * * /home/lyle/.openclaw/bin/ingest-to-bonfires.mjs >> ~/.openclaw/logs/bonfires-ingest.log 2>&1
-```
+| Endpoint | Purpose |
+|---|---|
+| `POST /ingest_content` | Ingest doc into vector store + trigger graph extraction |
+| `POST /ingest_content_vector_only` | Vector store only, no graph extraction (faster for bulk) |
+| `POST /vector_store/search` | Pure vector similarity search across ingested chunks |
+| `POST /vector_store/search_label` | Search chunks by taxonomy label |
+| `GET /bonfire/{bonfire_id}/labeled_chunks` | Browse ingested chunks with their labels |
+| `GET /vector_store/chunks/{bonfire_id}` | List all chunks for a bonfire |
 
 ---
 
-## 6) Open questions
+## 6) Resolved questions
 
-**Bonfires search API shape:** The exact endpoint and request/response format for semantic search is not yet confirmed. The plugin's `bonfires-client.mjs` needs to be written against the actual API docs. Specifically: does search return episode summaries, raw message text, or extracted entities? This determines how `prependContext` is formatted.
+**Bonfires search API shape:** Resolved. `/delve` returns `episodes[]` and `entities[]`. Episodes have `summary`/`content`/`name`; entities have `summary`/`name`. The `content` field on episodes is a JSON string containing `{name, content, updates}` — the client parses it to extract the inner `content` text. `prependContext` format confirmed working.
 
-**`stack/process` message format:** What does the episodic capture call need to send? Does `stack/process` accept raw `{role, content}[]` message arrays, or a different format? The OpenClaw JSONL format uses Anthropic API message shapes — confirm Bonfires accepts these directly or needs transformation.
+**`stack/add` message format:** Resolved. `stack/add` accepts `{ message: { text, userId, chatId, ... } }` (single) or `{ messages: [...], is_paired: true }` (paired batch). Required fields: `text`, `userId`, `chatId`. The `role`/`content`/`timestamp` fields are included for episode extraction. Paired format is recommended by the Bonfires team for better episodic context.
 
-**Multiple agent IDs on hosted plan:** The plugin maps OpenClaw agent IDs (main, reviewer) to distinct Bonfires agent IDs. Confirm the hosted plan supports this before speccing reviewer integration further. If not, episodic memory for all agents would share one ID (undesirable).
+**Agent ID format:** Resolved. Must be MongoDB ObjectId (e.g., `69a51b279c462f4f06abe2f5`), not username string. The API key is scoped by bonfire ID, not by agent.
 
-**Per-turn search latency acceptability:** `before_agent_start` fires on every turn with a Bonfires search. Measure actual p50/p99 latency of the hosted search endpoint under load before committing to this model. If unacceptable, fall back to session-start-only injection or the throttled cache approach.
+**Multiple agents sharing knowledge graph:** Resolved. Multiple OpenClaw agents (main, reviewer) can share the same Bonfires agent ID. Both push to and read from the same knowledge graph. Separate Bonfires agents can be created if isolation is desired.
 
-**`prependContext` framing:** Injected context lands in user-turn content, not the system prompt. The "## Retrieved context" header is a workaround. Evaluate whether this confuses the LLM in practice (user turn vs. retrieved context) after initial implementation.
+**Per-turn search latency:** Not yet measured under production load. Accepted as-is for dogfood; optimize if latency proves unacceptable.
+
+**`prependContext` framing:** Current format uses `--- Bonfires context ---` header with bullet-pointed results. Working acceptably in dogfood.
+
+**Vector store population:** `/ingest_content` writes to MongoDB labeled_chunks but NOT directly to Weaviate. Weaviate population requires admin-only `/vector_store/setup` or `/trigger_taxonomy` (daily workflow on Bonfires side).

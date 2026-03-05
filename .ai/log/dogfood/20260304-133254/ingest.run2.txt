@@ -1,0 +1,1 @@
+{"run2_note": "idempotency verified via plugin cron", "scanned": 405, "ingested": 0, "skipped": 405, "errors": 0}

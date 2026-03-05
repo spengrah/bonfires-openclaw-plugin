@@ -1,0 +1,37 @@
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+│
+◇  Config warnings ────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  - plugins.entries.matrix: plugin matrix: duplicate plugin id detected;      │
+│    later plugin may be overridden                                            │
+│    (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disa  │
+│  bled/index.ts)                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - channels.telegram.groupPolicy is "allowlist" but groupAllowFrom (and  │
+│    allowFrom) is empty — all group messages will be silently dropped.    │
+│    Add sender IDs to channels.telegram.groupAllowFrom or                 │
+│    channels.telegram.allowFrom, or set groupPolicy to "open".            │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+Config warnings:\n- plugins.entries.matrix: plugin matrix: duplicate plugin id detected; later plugin may be overridden (/opt/tools/npm/lib/node_modules/openclaw/extensions/matrix.bundled-disabled/index.ts)
+Bonfires Memory
+id: bonfires-plugin
+Connects OpenClaw agents to Bonfires memory for context-aware retrieval, capture, and ingestion.
+
+Status: loaded
+Source: ~/.openclaw/workspace/projects/bonfires-plugin/src/index.ts
+Origin: config
+Version: 0.1.0
+Tools: bonfires_search
+
+Install: path
+Source path: ~/.openclaw/workspace/projects/bonfires-plugin
+Install path: ~/.openclaw/workspace/projects/bonfires-plugin
+Recorded version: 0.1.0
+Installed at: 2026-03-04T19:36:23.463Z

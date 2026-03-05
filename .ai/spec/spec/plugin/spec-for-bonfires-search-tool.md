@@ -13,3 +13,13 @@ Provide explicit, agent-invoked retrieval inside sessions.
 ## Acceptance
 - Valid call returns schema-compliant results array.
 - Invalid inputs are rejected via schema validation.
+
+## Registration
+
+The tool must be registered using the factory form (api.registerTool((toolCtx) => tool)) so that toolCtx.agentId is available in the execute closure.
+
+The execute function must follow the AgentTool interface:
+- Signature: (toolCallId: string, params, signal?) => Promise<AgentToolResult>
+- Return: { content: [{ type: 'text', text: JSON.stringify(result) }], details: result }
+
+The toolCtx from the factory provides agentId for Bonfires agent resolution.

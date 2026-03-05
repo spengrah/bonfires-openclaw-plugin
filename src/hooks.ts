@@ -26,6 +26,8 @@ export async function handleAgentEnd(event, ctx, deps){
     const mark=deps.ledger.get(sessionKey); if(mark && now-mark.lastPushedAt < throttleMs) return;
     const start=mark ? mark.lastPushedIndex+1 : 0; const slice=msgs.slice(start); if(!slice.length) return;
     await deps.client.capture({agentId:agent, sessionKey, messages:slice});
+    // Process stack immediately after capture for timely episode extraction
+    try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`agent_end processStack: ${pe?.message ?? pe}`); }
     deps.ledger.set(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
   }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
 }

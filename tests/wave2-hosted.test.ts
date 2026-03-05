@@ -38,19 +38,24 @@ test('mock search handles falsy limit branch', async () => {
   assert.equal(out.results.length, 1);
 });
 
-test('hosted capture posts stack add per message and returns accepted count', async () => {
+test('hosted capture sends user+assistant pair with is_paired:true', async () => {
   const oldKey = process.env.DELVE_API_KEY;
   process.env.DELVE_API_KEY = 'x';
   const oldFetch = globalThis.fetch;
-  const hits: string[] = [];
-  globalThis.fetch = (async (url: any, _init: any) => {
-    hits.push(String(url));
+  const bodies: any[] = [];
+  globalThis.fetch = (async (_url: any, init: any) => {
+    bodies.push(JSON.parse(String(init.body)));
     return new Response(JSON.stringify({ success: true, message_count: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }) as any;
   try {
     const c = new HostedBonfiresClient(cfg);
     const out = await c.capture({ agentId: 'a1', sessionKey: 's1', messages: [{ role: 'user', content: 'u' }, { role: 'assistant', content: 'a' }] });
-    assert.equal(hits.filter(h => h.includes('/agents/a1/stack/add')).length, 2);
+    assert.equal(bodies.length, 1, 'should send one paired request');
+    assert.equal(bodies[0].is_paired, true);
+    assert.equal(Array.isArray(bodies[0].messages), true);
+    assert.equal(bodies[0].messages.length, 2);
+    assert.equal(bodies[0].messages[0].role, 'user');
+    assert.equal(bodies[0].messages[1].role, 'assistant');
     assert.equal(out.accepted, 2);
   } finally {
     globalThis.fetch = oldFetch;
@@ -153,13 +158,13 @@ test('hosted capture single-message payload path', async () => {
   }
 });
 
-test('hosted capture with >2 messages does not drop and reports accepted count', async () => {
+test('hosted capture pairs user+assistant and sends trailing single', async () => {
   const oldKey = process.env.DELVE_API_KEY;
   process.env.DELVE_API_KEY = 'x';
   const oldFetch = globalThis.fetch;
-  let calls = 0;
-  globalThis.fetch = (async (_url: any, _init: any) => {
-    calls += 1;
+  const bodies: any[] = [];
+  globalThis.fetch = (async (_url: any, init: any) => {
+    bodies.push(JSON.parse(String(init.body)));
     return new Response(JSON.stringify({ success: true, message_count: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }) as any;
   try {
@@ -173,7 +178,10 @@ test('hosted capture with >2 messages does not drop and reports accepted count',
         { role: 'user', content: 'm3' },
       ],
     });
-    assert.equal(calls, 3);
+    assert.equal(bodies.length, 2, '1 paired + 1 single');
+    assert.equal(bodies[0].is_paired, true);
+    assert.equal(bodies[0].messages.length, 2);
+    assert.equal(Boolean(bodies[1].message), true, 'trailing single uses message field');
     assert.equal(out.accepted, 3);
   } finally {
     globalThis.fetch = oldFetch;
@@ -325,6 +333,117 @@ test('hosted ingestContent maps payload to ingest_content endpoint', async () =>
     assert.equal(body.source_path, 'memory/2026-03-02.md');
     assert.equal(body.content_hash, 'sha256:123');
     assert.equal(out.accepted, 1);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
+
+test('hosted capture extracts text from array content blocks', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  const bodies: any[] = [];
+  globalThis.fetch = (async (_url: any, init: any) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    await c.capture({
+      agentId: 'a1',
+      sessionKey: 's1',
+      messages: [{ role: 'assistant', content: [{ type: 'text', text: 'hello' }, { type: 'tool_use', id: 't1' }, { type: 'text', text: 'world' }] as any }],
+    });
+    assert.equal(bodies.length, 1);
+    assert.equal(bodies[0].message.text, 'hello\nworld');
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
+
+test('hosted capture skips messages with empty text content', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls += 1;
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    const out = await c.capture({
+      agentId: 'a1',
+      sessionKey: 's1',
+      messages: [{ role: 'assistant', content: [{ type: 'tool_use', id: 't1' }] as any }],
+    });
+    assert.equal(calls, 0, 'no fetch for empty-text message');
+    assert.equal(out.accepted, 0);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
+
+test('hosted search parses JSON episode content and extracts inner content field', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  const episodeJson = JSON.stringify({ name: 'Test Episode', content: 'The actual episode summary text', updates: [] });
+  globalThis.fetch = (async () => new Response(JSON.stringify({
+    episodes: [{ summary: null, content: episodeJson }],
+    entities: [],
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    const out = await c.search({ agentId: 'a1', query: 'q', limit: 5 });
+    assert.equal(out.results[0].summary, 'The actual episode summary text');
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
+
+test('hosted search strips newlines from summaries', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({
+    episodes: [],
+    entities: [{ summary: 'line1\nline2\nline3' }],
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    const out = await c.search({ agentId: 'a1', query: 'q', limit: 5 });
+    assert.equal(out.results[0].summary.includes('\n'), false);
+    assert.equal(out.results[0].summary, 'line1 line2 line3');
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
+
+test('hosted capture message includes required stack/add fields', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  let body: any = null;
+  globalThis.fetch = (async (_url: any, init: any) => {
+    body = JSON.parse(String(init.body));
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    await c.capture({ agentId: 'a1', sessionKey: 'sess1', messages: [{ role: 'user', content: 'hello' }] });
+    const msg = body.message;
+    assert.equal(msg.text, 'hello');
+    assert.equal(msg.userId, 'user');
+    assert.equal(msg.chatId, 'sess1');
+    assert.equal(msg.role, 'user');
+    assert.equal(msg.content, 'hello');
+    assert.equal(typeof msg.timestamp, 'string');
   } finally {
     globalThis.fetch = oldFetch;
     if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
