@@ -134,7 +134,7 @@ export class HostedBonfiresClient implements BonfiresClient {
     if (typeof m.content === 'string') return m.content;
     if (Array.isArray(m.content))
       return m.content.filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('\n');
-    return String(m.content ?? '');
+    return (m.content != null && typeof m.content === 'object') ? JSON.stringify(m.content) : String(m.content ?? '');
   }
 
   private toStackMsg(m: { role: string; content: any }, sessionKey: string) {
@@ -145,14 +145,16 @@ export class HostedBonfiresClient implements BonfiresClient {
 
   async capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }) {
     this.validateAgentId(req.agentId);
-    if (!req.messages.length) return { accepted: 0 };
+    // Only capture conversational messages — filter out toolResult, system, tool_use, etc.
+    const conversational = req.messages.filter(m => m.role === 'user' || m.role === 'assistant');
+    if (!conversational.length) return { accepted: 0 };
 
     // Build paired user+assistant messages
     let accepted = 0;
     let i = 0;
-    while (i < req.messages.length) {
-      const m = req.messages[i];
-      const next = i + 1 < req.messages.length ? req.messages[i + 1] : null;
+    while (i < conversational.length) {
+      const m = conversational[i];
+      const next = i + 1 < conversational.length ? conversational[i + 1] : null;
 
       // Try to form a pair: user + assistant
       if (m.role === 'user' && next && next.role === 'assistant') {
