@@ -25,3 +25,15 @@ This index is authoritative for functionality-organized post-core scope and trac
 ## PM6 — Ingestion target profiles + agent mapping
 - Spec: `../content-ingestion/ingestion-target-profiles-and-agent-mapping.md`
 - Guidance: `../../guidance/content-ingestion/guidance-for-ingestion-target-profiles-and-agent-mapping.md`
+
+## PM7 — Compaction flush (before_compaction hook)
+- Spec: `../conversation-memory/compaction-flush.md`
+- Guidance: `../../guidance/conversation-memory/guidance-for-compaction-flush.md`
+
+## PM8 — Watermark reset on transcript truncation
+- Spec: `../conversation-memory/watermark-reset-on-truncation.md`
+- Guidance: `../../guidance/conversation-memory/guidance-for-watermark-reset-on-truncation.md`
+
+## PM9 — prependContext stripping from captured messages
+- Spec: `../conversation-memory/prepend-context-stripping.md`
+- Guidance: `../../guidance/conversation-memory/guidance-for-prepend-context-stripping.md`

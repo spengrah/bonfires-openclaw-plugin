@@ -6,10 +6,29 @@ function formatPrepend(results){
   return body ? head+body.trimEnd()+tail : '';
 }
 
+/** Extract the actual user message from event.prompt, stripping OpenClaw metadata wrappers. */
+export function extractUserMessage(prompt: string): string {
+  const raw = String(prompt ?? '').trim();
+  if (!raw) return '';
+  // OpenClaw 2026.3.2+ wraps prompts with "(untrusted metadata):" blocks followed by ```json...```
+  // The actual user message follows the last metadata code block.
+  const metaPattern = /```json\s*\n\{[^}]*\}\s*\n```/g;
+  let lastEnd = 0;
+  let match;
+  while ((match = metaPattern.exec(raw)) !== null) {
+    lastEnd = match.index + match[0].length;
+  }
+  if (lastEnd > 0) {
+    return raw.slice(lastEnd).trim();
+  }
+  return raw;
+}
+
 export async function handleBeforeAgentStart(event, ctx, deps){
   try{
     const raw=String(event?.prompt ?? '').trim(); if(!raw) return;
-    const query=raw.slice(0,500);
+    const query=extractUserMessage(raw).slice(0,500);
+    if(!query) return;
     const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);
     if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
     const res=await deps.client.search({agentId:agent, query, limit:deps.cfg.search.maxResults});
@@ -22,12 +41,13 @@ export async function handleAgentEnd(event, ctx, deps){
   try{
     const sessionKey=ctx.sessionKey; if(!sessionKey) return;
     const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId); if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
-    const msgs=event.messages ?? []; const now=deps.nowMs?deps.nowMs():Date.now(); const throttleMs=deps.cfg.capture.throttleMinutes*60000;
-    const mark=deps.ledger.get(sessionKey); if(mark && now-mark.lastPushedAt < throttleMs) return;
-    const start=mark ? mark.lastPushedIndex+1 : 0; const slice=msgs.slice(start); if(!slice.length) return;
+    const msgs=event.messages ?? [];
+    const mark=deps.ledger.get(sessionKey);
+    let start=mark ? mark.lastPushedIndex+1 : 0;
+    if(mark && mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`agent_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
+    const slice=msgs.slice(start); if(!slice.length) return;
     await deps.client.capture({agentId:agent, sessionKey, messages:slice});
-    // Process stack immediately after capture for timely episode extraction
-    try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`agent_end processStack: ${pe?.message ?? pe}`); }
+    const now=deps.nowMs?deps.nowMs():Date.now();
     deps.ledger.set(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
   }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
 }
@@ -40,12 +60,28 @@ export async function handleSessionEnd(event, ctx, deps){
     if(!msgs.length) return;
 
     const mark=deps.ledger.get(sessionKey);
-    const start=mark ? mark.lastPushedIndex+1 : 0;
+    let start=mark ? mark.lastPushedIndex+1 : 0;
+    if(mark && mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`session_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
     const endIndex=msgs.length-1;
-    if(endIndex <= (mark?.lastPushedIndex ?? -1)) return;
+    if(endIndex < 0) return;
 
-    const slice=msgs.slice(start);
+    const slice=msgs.slice(start); if(!slice.length) return;
     await deps.client.capture({agentId:agent, sessionKey, messages:slice});
     deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:endIndex});
+    // Finalize pending episodes before session closes
+    try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`session_end processStack: ${pe?.message ?? pe}`); }
   }catch(e){ deps.logger?.warn?.(`session_end error: ${e?.message ?? e}`); }
+}
+
+
+export async function handleBeforeCompaction(event, ctx, deps){
+  try{
+    const sessionKey=ctx?.sessionKey; if(!sessionKey) return;
+    const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);
+    if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
+    // Finalize pending stack messages into episodes before compaction rewrites transcript
+    try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`before_compaction processStack: ${pe?.message ?? pe}`); }
+    // Reset watermark — transcript will be rewritten, indices invalidated
+    deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:-1});
+  }catch(e){ deps.logger?.warn?.(`before_compaction error: ${e?.message ?? e}`); }
 }

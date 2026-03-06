@@ -1,3 +1,5 @@
+import { extractUserMessage } from './hooks.js';
+
 export interface BonfiresClient {
   search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
   capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
@@ -10,9 +12,12 @@ export class MockBonfiresClient implements BonfiresClient {
   captureCalls: any[];
   shouldThrowSearch: boolean;
 
+  processStackCalls: any[];
+
   constructor() {
     this.searchCalls = [];
     this.captureCalls = [];
+    this.processStackCalls = [];
     this.shouldThrowSearch = false;
   }
 
@@ -34,7 +39,8 @@ export class MockBonfiresClient implements BonfiresClient {
     return { accepted: req.messages.length };
   }
 
-  async processStack() {
+  async processStack(req?: any) {
+    this.processStackCalls.push(req ?? {});
     return { success: true, message_count: 0 };
   }
 
@@ -130,6 +136,23 @@ export class HostedBonfiresClient implements BonfiresClient {
     return { results: [...fromEpisodes, ...fromEntities].slice(0, req.limit) };
   }
 
+  /** Strip leading Bonfires context injection from user messages to prevent feedback loop. */
+  private stripPrependContext(text: string): string {
+    const pattern = /^--- Bonfires context ---\n(?:- [^\n]*\n)*---\n?/;
+    return text.replace(pattern, '').trim();
+  }
+
+  /** Extract sender identity from OpenClaw metadata wrapper. Returns name or null. */
+  private extractSenderFromMetadata(text: string): string | null {
+    const senderPattern = /Sender \(untrusted metadata\):\s*\n```json\s*\n(\{[^}]*\})\s*\n```/;
+    const match = senderPattern.exec(text);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      return parsed.name || parsed.username || parsed.id || null;
+    } catch { return null; }
+  }
+
   private extractText(m: { role: string; content: any }): string {
     if (typeof m.content === 'string') return m.content;
     if (Array.isArray(m.content))
@@ -137,10 +160,20 @@ export class HostedBonfiresClient implements BonfiresClient {
     return (m.content != null && typeof m.content === 'object') ? JSON.stringify(m.content) : String(m.content ?? '');
   }
 
-  private toStackMsg(m: { role: string; content: any }, sessionKey: string) {
-    const text = this.extractText(m);
+  private toStackMsg(m: { role: string; content: any }, sessionKey: string, agentName?: string) {
+    let text = this.extractText(m);
+    let userId = m.role;
+
+    if (m.role === 'user') {
+      text = this.stripPrependContext(text);
+      userId = this.extractSenderFromMetadata(text) ?? 'user';
+      text = extractUserMessage(text);
+    } else if (m.role === 'assistant') {
+      userId = agentName ?? 'assistant';
+    }
+
     if (!text) return null;
-    return { text, userId: m.role, chatId: sessionKey, role: m.role, content: text, timestamp: new Date().toISOString() };
+    return { text, userId, chatId: sessionKey, timestamp: new Date().toISOString() };
   }
 
   async capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }) {
@@ -148,6 +181,9 @@ export class HostedBonfiresClient implements BonfiresClient {
     // Only capture conversational messages — filter out toolResult, system, tool_use, etc.
     const conversational = req.messages.filter(m => m.role === 'user' || m.role === 'assistant');
     if (!conversational.length) return { accepted: 0 };
+
+    // Use agentId as the assistant userId
+    const agentName = req.agentId;
 
     // Build paired user+assistant messages
     let accepted = 0;
@@ -158,8 +194,8 @@ export class HostedBonfiresClient implements BonfiresClient {
 
       // Try to form a pair: user + assistant
       if (m.role === 'user' && next && next.role === 'assistant') {
-        const userMsg = this.toStackMsg(m, req.sessionKey);
-        const assistantMsg = this.toStackMsg(next, req.sessionKey);
+        const userMsg = this.toStackMsg(m, req.sessionKey, agentName);
+        const assistantMsg = this.toStackMsg(next, req.sessionKey, agentName);
         if (userMsg && assistantMsg) {
           await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
             method: 'POST',
@@ -173,7 +209,7 @@ export class HostedBonfiresClient implements BonfiresClient {
       }
 
       // Unpaired fallback (single message)
-      const msg = this.toStackMsg(m, req.sessionKey);
+      const msg = this.toStackMsg(m, req.sessionKey, agentName);
       if (msg) {
         await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
           method: 'POST',

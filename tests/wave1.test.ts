@@ -4,9 +4,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parseConfig, resolveBonfiresAgentId } from '../src/config.js';
-import { MockBonfiresClient } from '../src/bonfires-client.js';
+import { MockBonfiresClient, HostedBonfiresClient } from '../src/bonfires-client.js';
 import { InMemoryCaptureLedger } from '../src/capture-ledger.js';
-import { handleBeforeAgentStart, handleAgentEnd, handleSessionEnd } from '../src/hooks.js';
+import { handleBeforeAgentStart, handleAgentEnd, handleBeforeCompaction, handleSessionEnd, extractUserMessage } from '../src/hooks.js';
 import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
 import register from '../src/index.js';
 
@@ -33,18 +33,34 @@ test('before_agent_start fail-open on search error', async () => {
   assert.equal(res, undefined);
 });
 
-test('agent_end throttles per session', async () => {
+test('agent_end captures every turn without throttle (PM10)', async () => {
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
   let now = 1000;
   const nowMs = () => now;
   const event = { messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }] };
   await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
+  assert.equal(client.captureCalls.length, 1);
+  // Second call with same messages — no new messages, so no capture
   await handleAgentEnd(event, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 1);
-  now += 16 * 60_000;
+  // Third call with new message — should capture immediately (no throttle)
   await handleAgentEnd({ messages: [...event.messages, { role: 'user', content: 'c' }] }, { agentId: 'agent_primary', sessionKey: 's1' }, { cfg, client, ledger, nowMs });
   assert.equal(client.captureCalls.length, 2);
+  assert.equal(client.captureCalls[1].messages.length, 1);
+  assert.equal(client.captureCalls[1].messages[0].content, 'c');
+});
+
+test('agent_end does not call processStack (PM10)', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleAgentEnd(
+    { messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }] },
+    { agentId: 'agent_primary', sessionKey: 's-no-process' },
+    { cfg, client, ledger, nowMs: () => 1000 },
+  );
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(client.processStackCalls.length, 0);
 });
 
 test('bonfires_search validates query and returns deterministic shape', async () => {
@@ -201,6 +217,35 @@ test('session_end flush captures uncaptured tail immediately when messages are p
   assert.equal(client.captureCalls.length, 1);
   assert.equal(client.captureCalls[0].messages.length, 2);
   assert.equal(ledger.get('s-session-end').lastPushedIndex, 1);
+});
+
+test('session_end calls processStack after capture (PM10)', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }, { role: 'assistant', content: 'm1' }] },
+    { agentId: 'agent_primary', sessionKey: 's-session-process' },
+    { cfg, client, ledger, logger: { warn: () => {} }, nowMs: () => 42 },
+  );
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(client.processStackCalls.length, 1);
+});
+
+test('session_end swallows processStack error without affecting capture', async () => {
+  const client = new MockBonfiresClient();
+  client.processStack = async () => { throw new Error('process-boom'); };
+  const ledger = new InMemoryCaptureLedger();
+  const warnings: string[] = [];
+  await handleSessionEnd(
+    { messages: [{ role: 'user', content: 'm0' }] },
+    { agentId: 'agent_primary', sessionKey: 's-session-process-err' },
+    { cfg, client, ledger, logger: { warn: (m: string) => warnings.push(m) }, nowMs: () => 42 },
+  );
+  // Capture still happened
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(ledger.get('s-session-process-err').lastPushedIndex, 0);
+  // processStack error logged
+  assert.ok(warnings.some(w => w.includes('session_end processStack')));
 });
 
 test('session_end flush respects endIndex <= lastPushedIndex guard', async () => {
@@ -416,7 +461,7 @@ test('plugin register wires hooks and tool', async () => {
     registerTool: (factory) => { toolDef = factory; },
   };
   register(api);
-  assert.equal(events.length, 3);
+  assert.equal(events.length, 4);
   assert.ok(toolDef);
   const tool = toolDef({ agentId: 'agent_primary' });
   assert.equal(tool.name, 'bonfires_search');
@@ -433,7 +478,7 @@ test('plugin register fallback path works when resolvePath missing', async () =>
     registerTool: () => {},
   };
   register(api);
-  assert.equal(events.length, 3);
+  assert.equal(events.length, 4);
 });
 
 test('plugin register supports functional recovery source and enabled ingestion config', async () => {
@@ -450,7 +495,7 @@ test('plugin register supports functional recovery source and enabled ingestion 
     registerTool: () => {},
   };
   register(api);
-  assert.equal(events.length, 3);
+  assert.equal(events.length, 4);
 });
 
 test('plugin register throws when pluginConfig is missing required mappings', async () => {
@@ -460,4 +505,252 @@ test('plugin register throws when pluginConfig is missing required mappings', as
     registerTool: () => {},
   };
   assert.throws(() => register(api));
+});
+
+// --- extractUserMessage tests (OpenClaw 2026.3.2 metadata wrapper) ---
+
+const WRAPPED_PROMPT = `Conversation info (untrusted metadata):
+\`\`\`json
+{
+  "message_id": "$abc123",
+  "sender_id": "@user:matrix.org",
+  "sender": "TestUser",
+  "timestamp": "Thu 2026-03-05 17:46 CST"
+}
+\`\`\`
+
+Sender (untrusted metadata):
+\`\`\`json
+{
+  "label": "TestUser (@user:matrix.org)",
+  "id": "@user:matrix.org",
+  "name": "TestUser",
+  "username": "testuser"
+}
+\`\`\`
+
+tell me about cocktails`;
+
+test('extractUserMessage strips metadata wrapper and returns user message', () => {
+  const result = extractUserMessage(WRAPPED_PROMPT);
+  assert.equal(result, 'tell me about cocktails');
+});
+
+test('extractUserMessage returns raw prompt when no metadata wrapper present', () => {
+  const result = extractUserMessage('hello world');
+  assert.equal(result, 'hello world');
+});
+
+test('extractUserMessage returns empty string for empty/whitespace input', () => {
+  assert.equal(extractUserMessage(''), '');
+  assert.equal(extractUserMessage('   '), '');
+  assert.equal(extractUserMessage(undefined as any), '');
+});
+
+test('before_agent_start extracts user message from metadata-wrapped prompt', async () => {
+  const client = new MockBonfiresClient();
+  await handleBeforeAgentStart({ prompt: WRAPPED_PROMPT }, { agentId: 'agent_primary' }, { cfg, client });
+  assert.equal(client.searchCalls.length, 1);
+  assert.equal(client.searchCalls[0].query, 'tell me about cocktails');
+});
+
+
+// --- PM7: before_compaction flush tests ---
+
+test('before_compaction calls processStack and resets watermark to -1 (PM10)', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  ledger.set('sess1', {lastPushedAt: 0, lastPushedIndex: 5});
+  await handleBeforeCompaction(
+    {},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: undefined, nowMs: () => 42}
+  );
+  // Should call processStack (not capture)
+  assert.equal(client.captureCalls.length, 0);
+  assert.equal(client.processStackCalls.length, 1);
+  // Watermark should be reset to -1
+  const mark = ledger.get('sess1');
+  assert.equal(mark.lastPushedIndex, -1);
+});
+
+test('before_compaction resets watermark even with no prior watermark (PM10)', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleBeforeCompaction(
+    {},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: undefined, nowMs: () => 42}
+  );
+  assert.equal(client.processStackCalls.length, 1);
+  const mark = ledger.get('sess1');
+  assert.equal(mark.lastPushedIndex, -1);
+});
+
+test('before_compaction is non-blocking on processStack error (PM10)', async () => {
+  const client = new MockBonfiresClient();
+  client.processStack = async () => { throw new Error('network down'); };
+  const ledger = new InMemoryCaptureLedger();
+  const warnings: string[] = [];
+  await handleBeforeCompaction(
+    {},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: {warn: (m:string) => warnings.push(m)}, nowMs: () => 42}
+  );
+  assert.ok(warnings.some(w => w.includes('before_compaction processStack')));
+  // Watermark still reset despite processStack failure
+  const mark = ledger.get('sess1');
+  assert.equal(mark.lastPushedIndex, -1);
+});
+
+test('before_compaction skips unknown agent mapping', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleBeforeCompaction(
+    {messages: [{role:'user',content:'msg1'}]},
+    {sessionKey: 'sess1', agentId: 'unknown_agent'},
+    {cfg, client, ledger, logger: undefined}
+  );
+  assert.equal(client.captureCalls.length, 0);
+});
+
+test('before_compaction skips missing sessionKey', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  await handleBeforeCompaction(
+    {messages: [{role:'user',content:'msg1'}]},
+    {agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: undefined}
+  );
+  assert.equal(client.captureCalls.length, 0);
+});
+
+// --- PM8: watermark reset on truncation tests ---
+
+test('agent_end resets watermark when lastPushedIndex >= msgs.length', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  // Simulate post-compaction: ledger says index 109 but only 50 messages
+  ledger.set('sess1', {lastPushedAt: 0, lastPushedIndex: 109});
+  const msgs = Array.from({length: 50}, (_, i) => ({role: i%2===0?'user':'assistant', content: `msg${i}`}));
+  const warnings: string[] = [];
+  await handleAgentEnd(
+    {messages: msgs},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: {warn: (m:string) => warnings.push(m)}, nowMs: () => 999999999}
+  );
+  // Should have captured all 50 messages from index 0
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(client.captureCalls[0].messages.length, 50);
+  // Should have logged a warning
+  assert.ok(warnings.some(w => w.includes('watermark reset')));
+  // Watermark should be updated to new length
+  const mark = ledger.get('sess1');
+  assert.equal(mark.lastPushedIndex, 49);
+});
+
+test('session_end resets watermark when lastPushedIndex >= msgs.length', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  ledger.set('sess1', {lastPushedAt: 0, lastPushedIndex: 109});
+  const msgs = Array.from({length: 30}, (_, i) => ({role: i%2===0?'user':'assistant', content: `msg${i}`}));
+  const warnings: string[] = [];
+  await handleSessionEnd(
+    {messages: msgs},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: {warn: (m:string) => warnings.push(m)}, nowMs: () => 999999999}
+  );
+  assert.equal(client.captureCalls.length, 1);
+  assert.equal(client.captureCalls[0].messages.length, 30);
+  assert.ok(warnings.some(w => w.includes('watermark reset')));
+});
+
+// --- PM9: prependContext stripping tests ---
+
+test('capture strips prependContext from user messages', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+  const prepended = '--- Bonfires context ---\n- Mock memory 1 (source: mock, relevance: 0.9)\n---\nhello world';
+  const msgs = [{role:'user', content: prepended}, {role:'assistant', content:'response'}];
+  await handleAgentEnd(
+    {messages: msgs},
+    {sessionKey: 'sess1', agentId: 'agent_primary'},
+    {cfg, client, ledger, logger: undefined, nowMs: () => 999999999}
+  );
+  assert.equal(client.captureCalls.length, 1);
+  // The mock client receives the raw messages; stripping happens in HostedBonfiresClient.
+  // To test stripping directly, we test the HostedBonfiresClient's private method via capture behavior.
+});
+
+test('HostedBonfiresClient strips prependContext from user messages in capture', async () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const strip = (client as any).stripPrependContext.bind(client);
+  
+  assert.equal(strip('--- Bonfires context ---\n- memory 1 (source: mock, relevance: 0.9)\n---\nhello world'), 'hello world');
+  assert.equal(strip('--- Bonfires context ---\n- memory 1 (source: a, relevance: 0.9)\n- memory 2 (source: b, relevance: 0.8)\n---\nactual question'), 'actual question');
+  assert.equal(strip('plain message'), 'plain message');
+  assert.equal(strip('--- Bonfires context ---\n- memory 1 (source: mock, relevance: 0.9)\n---'), '');
+  assert.equal(strip('some text\n--- Bonfires context ---\n- memory\n---'), 'some text\n--- Bonfires context ---\n- memory\n---');
+});
+
+// --- PM11: capture message sanitization tests ---
+
+test('extractSenderFromMetadata parses sender name from metadata wrapper', () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const extract = (client as any).extractSenderFromMetadata.bind(client);
+
+  const withSender = 'Sender (untrusted metadata):\n```json\n{"label": "Spencer (@spengrah:matrix.org)", "id": "@spengrah:matrix.org", "name": "Spencer", "username": "spengrah"}\n```\nhello';
+  assert.equal(extract(withSender), 'Spencer');
+
+  // Falls back to username when name is missing
+  const usernameOnly = 'Sender (untrusted metadata):\n```json\n{"id": "@foo:matrix.org", "username": "foobar"}\n```\nhello';
+  assert.equal(extract(usernameOnly), 'foobar');
+
+  // Falls back to id when name and username missing
+  const idOnly = 'Sender (untrusted metadata):\n```json\n{"id": "@foo:matrix.org"}\n```\nhello';
+  assert.equal(extract(idOnly), '@foo:matrix.org');
+
+  // Returns null when no metadata
+  assert.equal(extract('plain message'), null);
+
+  // Returns null on malformed JSON
+  assert.equal(extract('Sender (untrusted metadata):\n```json\n{broken json}\n```\nhello'), null);
+});
+
+test('toStackMsg strips metadata and resolves userId for user messages (PM11)', () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const toStackMsg = (client as any).toStackMsg.bind(client);
+
+  // Full metadata-wrapped user message
+  const wrapped = '--- Bonfires context ---\n- memory 1 (source: mock, relevance: 0.9)\n---\nConversation info (untrusted metadata):\n```json\n{"message_id": "$abc", "sender": "Spencer"}\n```\n\nSender (untrusted metadata):\n```json\n{"name": "Spencer", "id": "@spengrah:matrix.org", "username": "spengrah"}\n```\n\nhello world';
+  const msg = toStackMsg({role: 'user', content: wrapped}, 'session-1', 'lyle-agent');
+  assert.equal(msg.text, 'hello world');
+  assert.equal(msg.userId, 'Spencer');
+  assert.equal(msg.chatId, 'session-1');
+  assert.ok(!('role' in msg));
+  assert.ok(!('content' in msg));
+
+  // Plain user message without metadata
+  const plain = toStackMsg({role: 'user', content: 'just a plain message'}, 'session-1', 'lyle-agent');
+  assert.equal(plain.text, 'just a plain message');
+  assert.equal(plain.userId, 'user');
+
+  // Assistant message uses agentName
+  const assistant = toStackMsg({role: 'assistant', content: 'I can help with that'}, 'session-1', 'lyle-agent');
+  assert.equal(assistant.text, 'I can help with that');
+  assert.equal(assistant.userId, 'lyle-agent');
+
+  // Assistant message without agentName falls back to 'assistant'
+  const assistantNoName = toStackMsg({role: 'assistant', content: 'response'}, 'session-1');
+  assert.equal(assistantNoName.userId, 'assistant');
+});
+
+test('toStackMsg handles content block arrays (PM11)', () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const toStackMsg = (client as any).toStackMsg.bind(client);
+
+  const arrayContent = [{type: 'text', text: 'Sender (untrusted metadata):\n```json\n{"name": "Spencer"}\n```\n\nhello from array'}];
+  const msg = toStackMsg({role: 'user', content: arrayContent}, 'session-1', 'agent');
+  assert.equal(msg.text, 'hello from array');
+  assert.equal(msg.userId, 'Spencer');
 });
