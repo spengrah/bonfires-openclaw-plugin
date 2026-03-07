@@ -129,14 +129,24 @@ export class HostedBonfiresClient implements BonfiresClient {
     const entities = Array.isArray(body.entities) ? body.entities : [];
 
     const fromEpisodes = episodes.map((e: any, i: number) => {
-      let summary = e.summary as string | null;
+      let summary: string | null = typeof e.summary === 'string' ? e.summary : null;
       if (!summary && e.content) {
-        try { const p = JSON.parse(e.content); summary = p.content ?? p.name ?? null; } catch { summary = String(e.content); }
+        try {
+          const p = JSON.parse(e.content);
+          summary = (typeof p.content === 'string' ? p.content : null)
+                 ?? (typeof p.name === 'string' ? p.name : null)
+                 ?? null;
+        } catch { summary = String(e.content); }
       }
-      return { summary: String(summary ?? e.name ?? 'Episode').replace(/\n/g, ' '), source: `delve:episode:${i}`, score: Math.max(0, 1 - i * 0.05) };
+      const name = typeof e.name === 'string' ? e.name : 'Episode';
+      return { summary: String(summary ?? name).replace(/\n/g, ' '), source: `delve:episode:${i}`, score: Math.max(0, 1 - i * 0.05) };
     });
     const fromEntities = entities.map((e: any, i: number) => ({
-      summary: String(e.summary ?? e.name ?? 'Entity').replace(/\n/g, ' '),
+      summary: String(
+        (typeof e.summary === 'string' ? e.summary : null)
+        ?? (typeof e.name === 'string' ? e.name : null)
+        ?? 'Entity'
+      ).replace(/\n/g, ' '),
       source: `delve:entity:${i}`,
       score: Math.max(0, 0.8 - i * 0.05),
     }));
