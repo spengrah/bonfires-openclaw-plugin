@@ -2,8 +2,9 @@ import { extractUserMessage } from './hooks.js';
 
 export interface BonfiresClient {
   search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
-  capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
+  capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
+  stackSearch?(req: { agentId: string; query: string; limit?: number }): Promise<{ results: any[]; count: number; query: string }>;
   ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
 }
 
@@ -11,13 +12,14 @@ export class MockBonfiresClient implements BonfiresClient {
   searchCalls: any[];
   captureCalls: any[];
   shouldThrowSearch: boolean;
-
   processStackCalls: any[];
+  stackSearchCalls: any[];
 
   constructor() {
     this.searchCalls = [];
     this.captureCalls = [];
     this.processStackCalls = [];
+    this.stackSearchCalls = [];
     this.shouldThrowSearch = false;
   }
 
@@ -42,6 +44,11 @@ export class MockBonfiresClient implements BonfiresClient {
   async processStack(req?: any) {
     this.processStackCalls.push(req ?? {});
     return { success: true, message_count: 0 };
+  }
+
+  async stackSearch(req: any) {
+    this.stackSearchCalls.push(req);
+    return { results: [], count: 0, query: req.query };
   }
 
   async ingestContent(_req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
@@ -113,6 +120,7 @@ export class HostedBonfiresClient implements BonfiresClient {
       body: JSON.stringify({
         query: req.query,
         bonfire_id: this.cfg.bonfireId,
+        agent_id: req.agentId,
         num_results: req.limit,
       }),
     });
@@ -153,30 +161,51 @@ export class HostedBonfiresClient implements BonfiresClient {
     } catch { return null; }
   }
 
-  private extractText(m: { role: string; content: any }): string {
+  /** Extract text from user message content (string or content block array). */
+  private extractUserText(m: { role: string; content: any }): string {
     if (typeof m.content === 'string') return m.content;
     if (Array.isArray(m.content))
-      return m.content.filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('\n');
+      return m.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
     return (m.content != null && typeof m.content === 'object') ? JSON.stringify(m.content) : String(m.content ?? '');
   }
 
-  private toStackMsg(m: { role: string; content: any }, sessionKey: string, agentName?: string) {
-    let text = this.extractText(m);
-    let userId = m.role;
+  /** Extract clean text from assistant message, filtering out thinking/toolCall blocks and [[directive]] prefixes. */
+  private extractAssistantText(m: { role: string; content: any }): string {
+    if (typeof m.content === 'string') return m.content.replace(/^\[\[[^\]]*\]\]\s*/, '');
+    if (Array.isArray(m.content)) {
+      return m.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => String(b.text ?? '').replace(/^\[\[[^\]]*\]\]\s*/, ''))
+        .join('\n')
+        .trim();
+    }
+    return (m.content != null && typeof m.content === 'object') ? JSON.stringify(m.content) : String(m.content ?? '');
+  }
+
+  private toStackMsg(m: { role: string; content: any }, chatId: string, agentName?: string) {
+    let text: string;
+    let userId: string;
+    let username: string;
+    const role: 'user' | 'assistant' = m.role === 'user' ? 'user' : 'assistant';
 
     if (m.role === 'user') {
+      text = this.extractUserText(m);
       text = this.stripPrependContext(text);
-      userId = this.extractSenderFromMetadata(text) ?? 'user';
+      const senderName = this.extractSenderFromMetadata(text) ?? 'user';
+      userId = senderName;
+      username = senderName;
       text = extractUserMessage(text);
-    } else if (m.role === 'assistant') {
+    } else {
+      text = this.extractAssistantText(m);
       userId = agentName ?? 'assistant';
+      username = agentName ?? 'assistant';
     }
 
     if (!text) return null;
-    return { text, userId, chatId: sessionKey, timestamp: new Date().toISOString() };
+    return { text, userId, chatId, timestamp: new Date().toISOString(), role, username };
   }
 
-  async capture(req: { agentId: string; sessionKey: string; messages: Array<{ role: string; content: string }> }) {
+  async capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }> }) {
     this.validateAgentId(req.agentId);
     // Only capture conversational messages — filter out toolResult, system, tool_use, etc.
     const conversational = req.messages.filter(m => m.role === 'user' || m.role === 'assistant');
@@ -184,6 +213,8 @@ export class HostedBonfiresClient implements BonfiresClient {
 
     // Use agentId as the assistant userId
     const agentName = req.agentId;
+    // PM12: Use sessionId as chatId, fall back to sessionKey
+    const chatId = req.sessionId || req.sessionKey;
 
     // Build paired user+assistant messages
     let accepted = 0;
@@ -194,13 +225,14 @@ export class HostedBonfiresClient implements BonfiresClient {
 
       // Try to form a pair: user + assistant
       if (m.role === 'user' && next && next.role === 'assistant') {
-        const userMsg = this.toStackMsg(m, req.sessionKey, agentName);
-        const assistantMsg = this.toStackMsg(next, req.sessionKey, agentName);
+        const userMsg = this.toStackMsg(m, chatId, agentName);
+        const assistantMsg = this.toStackMsg(next, chatId, agentName);
         if (userMsg && assistantMsg) {
+          const _payload = { messages: [userMsg, assistantMsg], is_paired: true };
           await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
             method: 'POST',
             headers: this.headers(),
-            body: JSON.stringify({ messages: [userMsg, assistantMsg], is_paired: true }),
+            body: JSON.stringify(_payload),
           });
           accepted += 2;
           i += 2;
@@ -209,7 +241,7 @@ export class HostedBonfiresClient implements BonfiresClient {
       }
 
       // Unpaired fallback (single message)
-      const msg = this.toStackMsg(m, req.sessionKey, agentName);
+      const msg = this.toStackMsg(m, chatId, agentName);
       if (msg) {
         await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/add`, {
           method: 'POST',
@@ -231,6 +263,23 @@ export class HostedBonfiresClient implements BonfiresClient {
       headers: this.headers(),
     });
     return { success: Boolean(body.success ?? true), message_count: body.message_count };
+  }
+
+  async stackSearch(req: { agentId: string; query: string; limit?: number }) {
+    this.validateAgentId(req.agentId);
+    const body = await this.fetchJson(`/agents/${encodeURIComponent(req.agentId)}/stack/search`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({
+        query: req.query,
+        limit: req.limit ?? 10,
+      }),
+    });
+    return {
+      results: Array.isArray(body.results) ? body.results : [],
+      count: body.count ?? 0,
+      query: body.query ?? req.query,
+    };
   }
 
   async ingestContent(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {

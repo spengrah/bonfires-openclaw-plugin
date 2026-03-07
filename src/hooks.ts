@@ -31,7 +31,16 @@ export async function handleBeforeAgentStart(event, ctx, deps){
     if(!query) return;
     const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);
     if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
+
+    // PM12: Only auto-inject on first message of session
+    const sessionId = ctx.sessionId;
+    if (sessionId && deps.ledger?.hasInjected?.(sessionId)) return;
+
     const res=await deps.client.search({agentId:agent, query, limit:deps.cfg.search.maxResults});
+
+    // PM12: Mark session as injected after successful search
+    if (sessionId) deps.ledger?.markInjected?.(sessionId);
+
     const prependContext=formatPrepend(res.results ?? []);
     return prependContext ? {prependContext} : undefined;
   }catch(e){ deps.logger?.warn?.(`before_agent_start error: ${e?.message ?? e}`); return; }
@@ -46,7 +55,7 @@ export async function handleAgentEnd(event, ctx, deps){
     let start=mark ? mark.lastPushedIndex+1 : 0;
     if(mark && mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`agent_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
     const slice=msgs.slice(start); if(!slice.length) return;
-    await deps.client.capture({agentId:agent, sessionKey, messages:slice});
+    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice});
     const now=deps.nowMs?deps.nowMs():Date.now();
     deps.ledger.set(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
   }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
@@ -66,7 +75,7 @@ export async function handleSessionEnd(event, ctx, deps){
     if(endIndex < 0) return;
 
     const slice=msgs.slice(start); if(!slice.length) return;
-    await deps.client.capture({agentId:agent, sessionKey, messages:slice});
+    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice});
     deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:endIndex});
     // Finalize pending episodes before session closes
     try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`session_end processStack: ${pe?.message ?? pe}`); }

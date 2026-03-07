@@ -11,11 +11,13 @@ export class InMemoryCaptureLedger {
   path?: string;
   baseDir?: string;
   map: Map<string, any>;
+  private injectedSessions: Set<string>;
 
   constructor(path?: string, baseDir?: string) {
     this.path = path;
     this.baseDir = baseDir;
     this.map = new Map();
+    this.injectedSessions = new Set();
     if (path) {
       this.assertSafePath(path);
       try {
@@ -39,5 +41,13 @@ export class InMemoryCaptureLedger {
       mkdirSync(dirname(this.path), { recursive: true });
       writeFileSync(this.path, JSON.stringify(Object.fromEntries(this.map), null, 2));
     }
+  }
+
+  hasInjected(sessionId: string): boolean {
+    return this.injectedSessions.has(sessionId);
+  }
+
+  markInjected(sessionId: string): void {
+    this.injectedSessions.add(sessionId);
   }
 }

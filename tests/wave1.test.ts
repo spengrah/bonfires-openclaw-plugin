@@ -452,20 +452,21 @@ test('bonfires_search uses config default when limit omitted', async () => {
 
 test('plugin register wires hooks and tool', async () => {
   const events = [];
-  let toolDef = null;
+  const toolDefs: any[] = [];
   const api = {
     pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
     resolvePath: (p) => p,
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
-    registerTool: (factory) => { toolDef = factory; },
+    registerTool: (factory) => { toolDefs.push(factory); },
   };
   register(api);
   assert.equal(events.length, 4);
-  assert.ok(toolDef);
-  const tool = toolDef({ agentId: 'agent_primary' });
-  assert.equal(tool.name, 'bonfires_search');
-  const result = await tool.execute('mock-tool-call-id', { query: 'hello', limit: 1 });
+  assert.equal(toolDefs.length, 2);
+  const tools = toolDefs.map(f => f({ agentId: 'agent_primary' }));
+  const searchTool = tools.find(t => t.name === 'bonfires_search');
+  assert.ok(searchTool);
+  const result = await searchTool.execute('mock-tool-call-id', { query: 'hello', limit: 1 });
   assert.equal(Array.isArray(result.details.results), true);
 });
 
@@ -717,35 +718,59 @@ test('extractSenderFromMetadata parses sender name from metadata wrapper', () =>
   assert.equal(extract('Sender (untrusted metadata):\n```json\n{broken json}\n```\nhello'), null);
 });
 
-test('toStackMsg strips metadata and resolves userId for user messages (PM11)', () => {
+test('toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)', () => {
   const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
   const toStackMsg = (client as any).toStackMsg.bind(client);
 
-  // Full metadata-wrapped user message
+  // Full metadata-wrapped user message with prependContext
   const wrapped = '--- Bonfires context ---\n- memory 1 (source: mock, relevance: 0.9)\n---\nConversation info (untrusted metadata):\n```json\n{"message_id": "$abc", "sender": "Spencer"}\n```\n\nSender (untrusted metadata):\n```json\n{"name": "Spencer", "id": "@spengrah:matrix.org", "username": "spengrah"}\n```\n\nhello world';
   const msg = toStackMsg({role: 'user', content: wrapped}, 'session-1', 'lyle-agent');
   assert.equal(msg.text, 'hello world');
   assert.equal(msg.userId, 'Spencer');
   assert.equal(msg.chatId, 'session-1');
-  assert.ok(!('role' in msg));
-  assert.ok(!('content' in msg));
+  assert.equal(typeof msg.timestamp, 'string');
+  // 6 fields per Bonfires API (PM12: added role, username)
+  assert.deepEqual(Object.keys(msg).sort(), ['chatId', 'role', 'text', 'timestamp', 'userId', 'username']);
 
-  // Plain user message without metadata
+  // Plain user message without metadata — userId falls back to 'user'
   const plain = toStackMsg({role: 'user', content: 'just a plain message'}, 'session-1', 'lyle-agent');
   assert.equal(plain.text, 'just a plain message');
   assert.equal(plain.userId, 'user');
-
-  // Assistant message uses agentName
-  const assistant = toStackMsg({role: 'assistant', content: 'I can help with that'}, 'session-1', 'lyle-agent');
-  assert.equal(assistant.text, 'I can help with that');
-  assert.equal(assistant.userId, 'lyle-agent');
-
-  // Assistant message without agentName falls back to 'assistant'
-  const assistantNoName = toStackMsg({role: 'assistant', content: 'response'}, 'session-1');
-  assert.equal(assistantNoName.userId, 'assistant');
 });
 
-test('toStackMsg handles content block arrays (PM11)', () => {
+test('toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)', () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const toStackMsg = (client as any).toStackMsg.bind(client);
+
+  // Assistant with mixed block types (realistic OpenClaw format)
+  const mixedBlocks = [
+    {type: 'thinking', thinking: 'internal reasoning'},
+    {type: 'text', text: '[[reply_to_current]]Here is my response'},
+    {type: 'toolCall', name: 'read', arguments: {file_path: '/tmp/x'}},
+  ];
+  const msg = toStackMsg({role: 'assistant', content: mixedBlocks}, 'session-1', 'my-agent');
+  assert.equal(msg.text, 'Here is my response');
+  assert.equal(msg.userId, 'my-agent');
+  assert.deepEqual(Object.keys(msg).sort(), ['chatId', 'role', 'text', 'timestamp', 'userId', 'username']);
+
+  // Assistant with no text blocks (pure tool call) — returns null
+  const toolOnly = [
+    {type: 'thinking', thinking: 'deciding'},
+    {type: 'toolCall', name: 'write', arguments: {}},
+  ];
+  assert.equal(toStackMsg({role: 'assistant', content: toolOnly}, 'session-1', 'my-agent'), null);
+
+  // Assistant with plain string content (no blocks)
+  const plainAssistant = toStackMsg({role: 'assistant', content: '[[reply_to_current]]Plain string response'}, 'session-1', 'my-agent');
+  assert.equal(plainAssistant.text, 'Plain string response');
+  assert.equal(plainAssistant.userId, 'my-agent');
+
+  // Assistant without agentName falls back to 'assistant'
+  const noAgent = toStackMsg({role: 'assistant', content: 'response'}, 'session-1');
+  assert.equal(noAgent.userId, 'assistant');
+});
+
+test('toStackMsg handles user content block arrays (PM11)', () => {
   const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
   const toStackMsg = (client as any).toStackMsg.bind(client);
 
@@ -753,4 +778,17 @@ test('toStackMsg handles content block arrays (PM11)', () => {
   const msg = toStackMsg({role: 'user', content: arrayContent}, 'session-1', 'agent');
   assert.equal(msg.text, 'hello from array');
   assert.equal(msg.userId, 'Spencer');
+});
+
+test('toStackMsg assistant with multiple text blocks joins them (PM11)', () => {
+  const client = new HostedBonfiresClient({apiKeyEnv: 'NONEXISTENT_KEY', baseUrl: 'http://localhost:1', bonfireId: 'test'});
+  const toStackMsg = (client as any).toStackMsg.bind(client);
+
+  const blocks = [
+    {type: 'text', text: '[[reply_to_current]]First part'},
+    {type: 'thinking', thinking: 'internal'},
+    {type: 'text', text: 'Second part'},
+  ];
+  const msg = toStackMsg({role: 'assistant', content: blocks}, 'session-1', 'agent');
+  assert.equal(msg.text, 'First part\nSecond part');
 });

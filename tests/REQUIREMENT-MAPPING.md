@@ -42,6 +42,31 @@
 - Recovery overlap precedence, close-timeout, retry policy -> R4
 - Recovery range helper, failure handling, startup behavior -> R4
 
+## Wave 9 (wave9-pm12.test.ts)
+
+- `before_agent_start injects on first message of session` -> R12
+- `before_agent_start skips injection on subsequent messages` -> R12
+- `before_agent_start re-injects for new sessionId` -> R12
+- `before_agent_start marks injected even when search returns empty` -> R12
+- `before_agent_start does not mark injected on search error` -> R12
+- `before_agent_start works without sessionId (backward compat)` -> R12
+- `before_agent_start works without ledger (backward compat)` -> R12
+- `agent_end passes sessionId to capture` -> R13
+- `session_end passes sessionId to capture` -> R13
+- `hosted capture includes role and username in stack messages` -> R14
+- `hosted capture uses sessionId as chatId when provided` -> R13
+- `hosted capture falls back to sessionKey as chatId when sessionId absent` -> R13
+- `hosted search passes agent_id to /delve` -> R15
+- `bonfires_stack_search validates query and returns results` -> R16
+- `bonfires_stack_search rejects missing query` -> R16
+- `bonfires_stack_search clamps limit to 1-100` -> R16
+- `bonfires_stack_search returns empty for unknown agent` -> R16
+- `bonfires_stack_search uses default limit of 10` -> R16
+- `hosted stackSearch hits correct endpoint` -> R16
+- `hosted stackSearch handles empty response` -> R16
+- `capture ledger injection tracking is in-memory only` -> R12
+- `plugin register registers both tools` -> R16
+
 ## Requirements index
 
 | ID | Requirement | Status |
@@ -54,8 +79,14 @@
 | R6 | Search response normalization (episodes + entities) | ✅ Implemented + tested |
 | R7 | Paired message format (is_paired: true) | ✅ Implemented + tested |
 | R8 | Content array normalization (extract text blocks) | ✅ Implemented + tested |
-| R9 | stack/add message format (text, userId, chatId required) | ✅ Implemented + tested |
+| R9 | stack/add message format (text, userId, chatId, timestamp, role, username) | ✅ Implemented + tested |
 | R10 | Episode JSON content parsing + newline stripping | ✅ Implemented + tested |
 | R11 | Content ingestion via /ingest_content | ✅ Implemented + tested |
+| R12 | First-message-only context injection (PM12) | ✅ Implemented + tested |
+| R13 | chatId uses sessionId, sessionId passed through hooks (PM12) | ✅ Implemented + tested |
+| R14 | Stack messages include role and username fields (PM12) | ✅ Implemented + tested |
+| R15 | agent_id passed to /delve for graph state persistence (PM12) | ✅ Implemented + tested |
+| R16 | bonfires_stack_search tool for unprocessed stack (PM12) | ✅ Implemented + tested |
 
 R7–R11 were discovered during dogfood testing (2026-03-05).
+R12–R16 added for PM12: Context-Aware Recall (2026-03-06).

@@ -54,8 +54,8 @@ test('hosted capture sends user+assistant pair with is_paired:true', async () =>
     assert.equal(bodies[0].is_paired, true);
     assert.equal(Array.isArray(bodies[0].messages), true);
     assert.equal(bodies[0].messages.length, 2);
-    assert.equal(bodies[0].messages[0].role, 'user');
-    assert.equal(bodies[0].messages[1].role, 'assistant');
+    assert.equal(bodies[0].messages[0].userId, 'user');
+    assert.equal(bodies[0].messages[1].userId, 'a1');
     assert.equal(out.accepted, 2);
   } finally {
     globalThis.fetch = oldFetch;
@@ -441,9 +441,9 @@ test('hosted capture message includes required stack/add fields', async () => {
     assert.equal(msg.text, 'hello');
     assert.equal(msg.userId, 'user');
     assert.equal(msg.chatId, 'sess1');
-    assert.equal(msg.role, 'user');
-    assert.equal(msg.content, 'hello');
     assert.equal(typeof msg.timestamp, 'string');
+    // 6 fields per Bonfires API (PM12: added role, username)
+    assert.deepEqual(Object.keys(msg).sort(), ['chatId', 'role', 'text', 'timestamp', 'userId', 'username']);
   } finally {
     globalThis.fetch = oldFetch;
     if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
