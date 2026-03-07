@@ -131,12 +131,17 @@ export class HostedBonfiresClient implements BonfiresClient {
     const fromEpisodes = episodes.map((e: any, i: number) => {
       let summary: string | null = typeof e.summary === 'string' ? e.summary : null;
       if (!summary && e.content) {
-        try {
-          const p = JSON.parse(e.content);
-          summary = (typeof p.content === 'string' ? p.content : null)
-                 ?? (typeof p.name === 'string' ? p.name : null)
+        let obj: any = null;
+        if (typeof e.content === 'object') {
+          obj = e.content;
+        } else if (typeof e.content === 'string') {
+          try { obj = JSON.parse(e.content); } catch { summary = e.content; }
+        }
+        if (obj && !summary) {
+          summary = (typeof obj.content === 'string' ? obj.content : null)
+                 ?? (typeof obj.name === 'string' ? obj.name : null)
                  ?? null;
-        } catch { summary = String(e.content); }
+        }
       }
       const name = typeof e.name === 'string' ? e.name : 'Episode';
       return { summary: String(summary ?? name).replace(/\n/g, ' '), source: `delve:episode:${i}`, score: Math.max(0, 1 - i * 0.05) };

@@ -493,3 +493,26 @@ test('hosted search handles nested object in parsed episode content', async () =
     if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
   }
 });
+
+test('hosted search extracts content from object-typed episode.content (Bonfires API format)', async () => {
+  const oldKey = process.env.DELVE_API_KEY;
+  process.env.DELVE_API_KEY = 'x';
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({
+    episodes: [{
+      summary: null,
+      content: { name: 'Brief Exchange', content: 'A conversational exchange occurred.', updates: [] },
+      name: 'Brief Exchange',
+    }],
+    entities: [],
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })) as any;
+  try {
+    const c = new HostedBonfiresClient(cfg);
+    const out = await c.search({ agentId: 'a1', query: 'q', limit: 5 });
+    assert.equal(out.results[0].summary, 'A conversational exchange occurred.');
+    assert.equal(out.results[0].summary.includes('[object Object]'), false);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.DELVE_API_KEY; else process.env.DELVE_API_KEY = oldKey;
+  }
+});
