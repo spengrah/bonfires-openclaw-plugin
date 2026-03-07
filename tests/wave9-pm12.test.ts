@@ -8,6 +8,11 @@ import { bonfiresStackSearchTool } from '../src/tools/bonfires-stack-search.js';
 
 const cfg = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
 
+/** Wrap a message with metadata so handleBeforeAgentStart treats it as a real user message. */
+function wrap(msg: string) {
+  return `Conversation info (untrusted metadata):\n\`\`\`json\n{"message_id": "$test"}\n\`\`\`\n\nSender (untrusted metadata):\n\`\`\`json\n{"name": "TestUser"}\n\`\`\`\n\n${msg}`;
+}
+
 // --- Branch coverage: metadata-only prompt with no actual message ---
 
 test('before_agent_start skips when prompt is metadata-only with no user message', async () => {
@@ -28,7 +33,7 @@ test('before_agent_start injects on first message of session (PM12)', async () =
   const client = new MockBonfiresClient();
   const ledger = new InMemoryCaptureLedger();
   const res = await handleBeforeAgentStart(
-    { prompt: 'hello world' },
+    { prompt: wrap('hello world') },
     { agentId: 'agent_primary', sessionId: 'sess-uuid-1' },
     { cfg, client, ledger },
   );
@@ -43,7 +48,7 @@ test('before_agent_start skips injection on subsequent messages (PM12)', async (
 
   // First message — injects
   await handleBeforeAgentStart(
-    { prompt: 'first message' },
+    { prompt: wrap('first message') },
     { agentId: 'agent_primary', sessionId: 'sess-uuid-2' },
     { cfg, client, ledger },
   );
@@ -51,7 +56,7 @@ test('before_agent_start skips injection on subsequent messages (PM12)', async (
 
   // Second message — skips
   const res = await handleBeforeAgentStart(
-    { prompt: 'second message' },
+    { prompt: wrap('second message') },
     { agentId: 'agent_primary', sessionId: 'sess-uuid-2' },
     { cfg, client, ledger },
   );
@@ -65,7 +70,7 @@ test('before_agent_start re-injects for new sessionId (PM12)', async () => {
 
   // First session
   await handleBeforeAgentStart(
-    { prompt: 'message 1' },
+    { prompt: wrap('message 1') },
     { agentId: 'agent_primary', sessionId: 'session-a' },
     { cfg, client, ledger },
   );
@@ -73,7 +78,7 @@ test('before_agent_start re-injects for new sessionId (PM12)', async () => {
 
   // Second message in same session — skips
   await handleBeforeAgentStart(
-    { prompt: 'message 2' },
+    { prompt: wrap('message 2') },
     { agentId: 'agent_primary', sessionId: 'session-a' },
     { cfg, client, ledger },
   );
@@ -81,7 +86,7 @@ test('before_agent_start re-injects for new sessionId (PM12)', async () => {
 
   // New session — re-injects
   const res = await handleBeforeAgentStart(
-    { prompt: 'message 3' },
+    { prompt: wrap('message 3') },
     { agentId: 'agent_primary', sessionId: 'session-b' },
     { cfg, client, ledger },
   );
@@ -95,7 +100,7 @@ test('before_agent_start marks injected even when search returns empty (PM12)', 
   const ledger = new InMemoryCaptureLedger();
 
   const res = await handleBeforeAgentStart(
-    { prompt: 'hello' },
+    { prompt: wrap('hello') },
     { agentId: 'agent_primary', sessionId: 'sess-empty' },
     { cfg, client, ledger },
   );
@@ -109,7 +114,7 @@ test('before_agent_start does not mark injected on search error (PM12)', async (
   const ledger = new InMemoryCaptureLedger();
 
   const res = await handleBeforeAgentStart(
-    { prompt: 'hello' },
+    { prompt: wrap('hello') },
     { agentId: 'agent_primary', sessionId: 'sess-err' },
     { cfg, client, ledger },
   );
@@ -123,7 +128,7 @@ test('before_agent_start works without sessionId (backward compat)', async () =>
 
   // No sessionId — always injects (backward compatible)
   const res1 = await handleBeforeAgentStart(
-    { prompt: 'msg 1' },
+    { prompt: wrap('msg 1') },
     { agentId: 'agent_primary' },
     { cfg, client, ledger },
   );
@@ -131,7 +136,7 @@ test('before_agent_start works without sessionId (backward compat)', async () =>
   assert.ok(res1?.prependContext);
 
   const res2 = await handleBeforeAgentStart(
-    { prompt: 'msg 2' },
+    { prompt: wrap('msg 2') },
     { agentId: 'agent_primary' },
     { cfg, client, ledger },
   );
@@ -144,12 +149,37 @@ test('before_agent_start works without ledger (backward compat)', async () => {
 
   // No ledger passed — always injects
   const res = await handleBeforeAgentStart(
-    { prompt: 'hello' },
+    { prompt: wrap('hello') },
     { agentId: 'agent_primary', sessionId: 'sess-no-ledger' },
     { cfg, client },
   );
   assert.equal(client.searchCalls.length, 1);
   assert.ok(res?.prependContext);
+});
+
+test('before_agent_start skips system message then injects on first real user message (PM12)', async () => {
+  const client = new MockBonfiresClient();
+  const ledger = new InMemoryCaptureLedger();
+
+  // Session startup (system-generated, no metadata wrapper) — skipped, not marked
+  const res1 = await handleBeforeAgentStart(
+    { prompt: 'A new session was started via /new or /reset. Execute your Session Startup sequence now.' },
+    { agentId: 'agent_primary', sessionId: 'sess-startup' },
+    { cfg, client, ledger },
+  );
+  assert.equal(client.searchCalls.length, 0);
+  assert.equal(res1, undefined);
+  assert.equal(ledger.hasInjected('sess-startup'), false);
+
+  // First real user message (has metadata wrapper) — injects
+  const res2 = await handleBeforeAgentStart(
+    { prompt: wrap('hello') },
+    { agentId: 'agent_primary', sessionId: 'sess-startup' },
+    { cfg, client, ledger },
+  );
+  assert.equal(client.searchCalls.length, 1);
+  assert.ok(res2?.prependContext?.includes('Bonfires context'));
+  assert.equal(ledger.hasInjected('sess-startup'), true);
 });
 
 // --- PM12: chatId uses sessionId ---

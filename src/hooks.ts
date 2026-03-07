@@ -6,6 +6,11 @@ function formatPrepend(results){
   return body ? head+body.trimEnd()+tail : '';
 }
 
+/** True when the prompt contains OpenClaw metadata wrappers (real user message from a platform). */
+export function hasUserMetadata(prompt: string): boolean {
+  return /\(untrusted metadata\):\s*\n```json\s*\n\{/.test(prompt);
+}
+
 /** Extract the actual user message from event.prompt, stripping OpenClaw metadata wrappers. */
 export function extractUserMessage(prompt: string): string {
   const raw = String(prompt ?? '').trim();
@@ -27,6 +32,8 @@ export function extractUserMessage(prompt: string): string {
 export async function handleBeforeAgentStart(event, ctx, deps){
   try{
     const raw=String(event?.prompt ?? '').trim(); if(!raw) return;
+    // Skip system-generated messages (session reset, cron, etc.) — no metadata wrapper
+    if(!hasUserMetadata(raw)) return;
     const query=extractUserMessage(raw).slice(0,500);
     if(!query) return;
     const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);

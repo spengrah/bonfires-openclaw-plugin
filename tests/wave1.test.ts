@@ -6,15 +6,20 @@ import { tmpdir } from 'node:os';
 import { parseConfig, resolveBonfiresAgentId } from '../src/config.js';
 import { MockBonfiresClient, HostedBonfiresClient } from '../src/bonfires-client.js';
 import { InMemoryCaptureLedger } from '../src/capture-ledger.js';
-import { handleBeforeAgentStart, handleAgentEnd, handleBeforeCompaction, handleSessionEnd, extractUserMessage } from '../src/hooks.js';
+import { handleBeforeAgentStart, handleAgentEnd, handleBeforeCompaction, handleSessionEnd, extractUserMessage, hasUserMetadata } from '../src/hooks.js';
 import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
 import register from '../src/index.js';
 
 const cfg = parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' } });
 
+/** Wrap a message with metadata so handleBeforeAgentStart treats it as a real user message. */
+function wrap(msg: string) {
+  return `Conversation info (untrusted metadata):\n\`\`\`json\n{"message_id": "$test"}\n\`\`\`\n\nSender (untrusted metadata):\n\`\`\`json\n{"name": "TestUser"}\n\`\`\`\n\n${msg}`;
+}
+
 test('before_agent_start calls search and returns prependContext', async () => {
   const client = new MockBonfiresClient();
-  const res = await handleBeforeAgentStart({ prompt: 'hello world' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('hello world') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.length, 1);
   assert.ok(res?.prependContext?.includes('Bonfires context'));
 });
@@ -29,7 +34,7 @@ test('before_agent_start skips empty prompt', async () => {
 test('before_agent_start fail-open on search error', async () => {
   const client = new MockBonfiresClient();
   client.shouldThrowSearch = true;
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('x') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -78,7 +83,7 @@ test('bonfires_search clamps limit to max 50', async () => {
 
 test('before_agent_start truncates query to 500 chars', async () => {
   const client = new MockBonfiresClient();
-  const longPrompt = 'a'.repeat(800);
+  const longPrompt = wrap('a'.repeat(800));
   await handleBeforeAgentStart({ prompt: longPrompt }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(client.searchCalls.length, 1);
   assert.equal(client.searchCalls[0].query.length, 500);
@@ -93,14 +98,14 @@ test('before_agent_start caps prependContext at 2000 chars', async () => {
       score: 0.9,
     })),
   });
-  const res = await handleBeforeAgentStart({ prompt: 'cap-test' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('cap-test') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.ok(res?.prependContext);
   assert.ok(res.prependContext.length <= 2000);
 });
 
 test('before_agent_start skips unknown agent mapping', async () => {
   const client = new MockBonfiresClient();
-  const res = await handleBeforeAgentStart({ prompt: 'hello' }, { agentId: 'unknown-agent' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('hello') }, { agentId: 'unknown-agent' }, { cfg, client });
   assert.equal(res, undefined);
   assert.equal(client.searchCalls.length, 0);
 });
@@ -171,14 +176,14 @@ test('parseConfig validates baseUrl host and protocol', async () => {
 test('before_agent_start returns undefined when result set is empty', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => ({ results: [] });
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('x') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
 test('before_agent_start handles missing results field from search response', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => ({} as any);
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('x') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -380,7 +385,7 @@ test('resolveBonfiresAgentId returns null for non-string mapped value', async ()
 
 test('handleBeforeAgentStart handles unknown agent without logger safely', async () => {
   const client = new MockBonfiresClient();
-  const res = await handleBeforeAgentStart({ prompt: 'hello' }, { agentId: 'unknown' }, { cfg, client, logger: undefined });
+  const res = await handleBeforeAgentStart({ prompt: wrap('hello') }, { agentId: 'unknown' }, { cfg, client, logger: undefined });
   assert.equal(res, undefined);
 });
 
@@ -413,7 +418,7 @@ test('before_agent_start handles undefined event and logger-present catch path',
   let warned = false;
   const res1 = await handleBeforeAgentStart(undefined, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
   assert.equal(res1, undefined);
-  const res2 = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
+  const res2 = await handleBeforeAgentStart({ prompt: wrap('x') }, { agentId: 'agent_primary' }, { cfg, client, logger: { warn: () => { warned = true; } } });
   assert.equal(res2, undefined);
   assert.equal(warned, true);
 });
@@ -421,7 +426,7 @@ test('before_agent_start handles undefined event and logger-present catch path',
 test('before_agent_start catch path is safe with non-Error throw and missing logger', async () => {
   const client = new MockBonfiresClient();
   client.search = async () => { throw 'forced-string'; };
-  const res = await handleBeforeAgentStart({ prompt: 'x' }, { agentId: 'agent_primary' }, { cfg, client });
+  const res = await handleBeforeAgentStart({ prompt: wrap('x') }, { agentId: 'agent_primary' }, { cfg, client });
   assert.equal(res, undefined);
 });
 
@@ -555,6 +560,23 @@ test('before_agent_start extracts user message from metadata-wrapped prompt', as
   assert.equal(client.searchCalls[0].query, 'tell me about cocktails');
 });
 
+
+test('before_agent_start skips system-generated messages without metadata wrapper', async () => {
+  const client = new MockBonfiresClient();
+  const res = await handleBeforeAgentStart(
+    { prompt: 'A new session was started via /new or /reset. Execute your Session Startup sequence now.' },
+    { agentId: 'agent_primary' },
+    { cfg, client },
+  );
+  assert.equal(client.searchCalls.length, 0);
+  assert.equal(res, undefined);
+});
+
+test('hasUserMetadata detects metadata wrapper presence', () => {
+  assert.equal(hasUserMetadata(wrap('hello')), true);
+  assert.equal(hasUserMetadata('plain message'), false);
+  assert.equal(hasUserMetadata(''), false);
+});
 
 // --- PM7: before_compaction flush tests ---
 
