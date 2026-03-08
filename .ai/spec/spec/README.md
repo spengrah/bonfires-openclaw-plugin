@@ -5,7 +5,7 @@ This folder follows a split-spec model:
 - `guidance/**` = implementation guidance (how to approach it)
 
 Start here:
-1. `spec/requirements-index.md` — unified index (R1–R6 + PM1–PM13, grouped by feature)
+1. `spec/requirements-index.md` — unified index (R1–R6 + PM1–PM15, grouped by feature)
 2. Feature specs organized by component:
    - `spec/retrieval/` — search + context injection (before_agent_start, bonfires_search tool)
    - `spec/capture/` — message capture to stack (immediate capture, sanitization, display names)

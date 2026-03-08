@@ -71,6 +71,17 @@ Authoritative index for all requirements and their spec/guidance locations.
 - Spec: `ingestion/ingestion-profiles-and-agent-mapping.md`
 - Guidance: `../../guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md`
 
+### PM14 — PDF ingestion routing (Phase A)
+- **Active.** Adds extension-routed PDF upload lane via Bonfires `/ingest_pdf` with no new required config keys.
+- Spec: `ingestion/pdf-ingestion-routing.md`
+- Guidance: `../../guidance/ingestion/guidance-for-pdf-ingestion-routing.md`
+
+### PM15 — Linked content ingestion (Phase B)
+- **Active (implementation/remediation).** Per-link explicit confirmation for user-provided links; routes approved links via shared ingestion core.
+- Includes deterministic app-layer redirect-hop enforcement and tolerant duplicate-message no-op semantics.
+- Spec: `ingestion/linked-content-ingestion.md`
+- Guidance: `../../guidance/ingestion/guidance-for-linked-content-ingestion.md`
+
 ## Client
 
 ### R6 — Bonfires client interface

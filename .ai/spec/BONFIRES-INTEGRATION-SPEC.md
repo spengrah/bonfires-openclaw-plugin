@@ -1,6 +1,6 @@
 # Bonfires Integration Spec
 
-Status: Active (updated 2026-03-07, reflects PM10-PM13)
+Status: Active (updated 2026-03-07, reflects PM10-PM15 planning)
 
 ## 1) Purpose
 
@@ -195,7 +195,27 @@ tests/
 
 ## 4) Content ingestion
 
-Pushes file-based knowledge into Bonfires via `POST /ingest_content`. Uses hash-based deduplication (SHA-256). Supports named ingestion profiles with agent-to-profile mapping (PM6).
+Content ingestion uses endpoint routing by source type:
+
+1. **Text lane** — `POST /ingest_content`
+   - Existing path for text-like files discovered via ingestion profiles.
+   - Uses hash-based dedup semantics in plugin ledger (PM4/PM6).
+
+2. **PDF lane (PM14, Phase A)** — `POST /ingest_pdf`
+   - Activated when profile `extensions` includes `.pdf`.
+   - Uploads binary PDF directly to Bonfires (`bonfire_id` + multipart `file`).
+   - No local PDF extraction/chunking in plugin; Bonfires handles document processing.
+   - Failure is per-file (run continues), consistent with fail-open policy.
+
+Current PM14 scope is workspace profile ingestion only.
+
+PM15 extends ingestion to user-provided links with **explicit per-link confirmation** and shared routing core reuse:
+- Linked PDF -> `/ingest_pdf`
+- Linked text/common text files -> `/ingest_content`
+- Linked HTML -> deterministic readable-content extraction then `/ingest_content`
+
+PM15 keeps transport safety guards (`http/https`, SSRF protections, timeout/size/redirect limits) and per-link failure isolation.
+Redirect-hop limits are expected to be deterministically enforced at application layer (not only runtime default follow behavior). Duplicate outcomes are treated as success/no-op using tolerant duplicate-indicator matching (not exact-string-only).
 
 ---
 
@@ -211,3 +231,5 @@ Pushes file-based knowledge into Bonfires via `POST /ingest_content`. Uses hash-
 | PM11 | Capture message sanitization | **Active** |
 | PM12 | Stack search tool + first-message-only injection + sessionId chatId | **Active** |
 | PM13 | Agent display names in stack messages | **Active** |
+| PM14 | PDF ingestion routing (`.pdf` -> `/ingest_pdf`) | **Active (Phase A)** |
+| PM15 | Linked content ingestion with per-link confirmation + HTML extraction | **Active (implementation/remediation)** |
