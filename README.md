@@ -4,7 +4,7 @@ OpenClaw plugin that connects agents to [Bonfires](https://bonfires.ai) for pers
 
 ## What it does
 
-`bonfires-plugin` adds four memory capabilities to OpenClaw:
+`bonfires-plugin` adds five memory/ingestion capabilities to OpenClaw:
 
 1. **Context injection before turns** (`before_agent_start`)
    - Runs Bonfires retrieval for the first user message in a session (PM12 behavior).
@@ -23,6 +23,10 @@ OpenClaw plugin that connects agents to [Bonfires](https://bonfires.ai) for pers
    - Heartbeat triggers stack processing (`/agents/{id}/stack/process`).
    - `session_end` flushes remaining messages and processes stack.
    - `before_compaction` processes stack + resets watermark guard.
+
+5. **Ingestion expansion (PM14 + PM15)**
+   - PM14: deterministic file routing for ingestion profiles (`.pdf` -> `/ingest_pdf`, text-like files -> `/ingest_content`).
+   - PM15: explicit `bonfires_ingest_link` tool for user-provided links (confirmation-first UX), with transport safety guards, link classification, and HTML text extraction.
 
 ## Install
 
@@ -86,7 +90,7 @@ export BONFIRE_ID="your-bonfire-id"
 | `stateDir` | string | `.bonfires-state` | | Runtime state directory |
 | `ingestion.enabled` | boolean | `false` | | Enable periodic ingestion |
 | `ingestion.everyMinutes` | number | `1440` | | Ingestion interval |
-| `ingestion.profiles.<name>.*` | object | | | Profile-based ingestion config |
+| `ingestion.profiles.<name>.*` | object | | | Profile-based ingestion config; include `.pdf` in `extensions` to enable PDF lane |
 | `ingestion.agentProfiles` | object | `{}` | | Agent -> profile mapping |
 | `ingestion.defaultProfile` | string | | | Fallback profile |
 
@@ -103,12 +107,16 @@ src/
   capture-ledger.ts      capture watermark + injection tracking
   heartbeat.ts           stack processing heartbeat + recovery logic
   ingestion.ts           ingestion cron + hash-ledger dedup
+  ingestion-core.ts      shared ingestion classification + duplicate semantics
+  transport-safety.ts    URL/fetch guards (scheme/private-host/redirect/size/timeout)
+  html-extract.ts        readable-text extraction for HTML link ingestion
   tools/
     bonfires-search.ts
     bonfires-stack-search.ts
+    bonfires-ingest-link.ts
 
 tests/
-  wave1.test.ts ... wave10-pm13.test.ts
+  wave1.test.ts ... wave12-pm15.test.ts
   REQUIREMENT-MAPPING.md
 
 .ai/spec/
@@ -147,6 +155,8 @@ npm run ingest:bonfires
 - Capture sanitization strips metadata wrappers, injected context markers, non-text assistant blocks, and reply directives before `stack/add`.
 - `chatId` uses `sessionId` when present, else `sessionKey` (PM12).
 - Assistant identity uses configured display names when available (PM13), else falls back to `ctx.agentId`.
+- PM14 routing is deterministic by extension/classification (`.pdf` -> `/ingest_pdf`; text-like -> `/ingest_content`).
+- PM15 link ingestion is explicit-tool driven (`bonfires_ingest_link`) and enforces transport controls (http/https only, private-host blocking, redirect-hop limit/revalidation, response-size/time bounds).
 - State files are stored under `stateDir` (default `.bonfires-state/`):
   - `capture-ledger.json`
   - `heartbeat-state.json`
