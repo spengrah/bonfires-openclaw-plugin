@@ -406,7 +406,7 @@ test('capture ledger injection tracking is in-memory only (PM12)', () => {
 
 // --- PM12: Plugin registration with two tools ---
 
-test('plugin register registers both bonfires_search and bonfires_stack_search tools (PM12)', async () => {
+test('plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)', async () => {
   const { default: register } = await import('../src/index.js');
   const events: any[] = [];
   const toolDefs: any[] = [];
@@ -419,12 +419,15 @@ test('plugin register registers both bonfires_search and bonfires_stack_search t
   };
   register(api);
   assert.equal(events.length, 4);
-  assert.equal(toolDefs.length, 2);
+  assert.equal(toolDefs.length, 3);
 
   const searchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_search');
   const stackSearchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_stack_search');
+  const ingestLinkTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_ingest_link');
   assert.ok(searchTool);
   assert.ok(stackSearchTool);
+  assert.ok(ingestLinkTool);
   assert.ok(searchTool.description.includes('knowledge graph'));
   assert.ok(stackSearchTool.description.includes('unprocessed'));
+  assert.ok(ingestLinkTool.description.includes('Ingest'));
 });

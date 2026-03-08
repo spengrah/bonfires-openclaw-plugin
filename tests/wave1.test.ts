@@ -482,7 +482,7 @@ test('plugin register wires hooks and tool', async () => {
   };
   register(api);
   assert.equal(events.length, 4);
-  assert.equal(toolDefs.length, 2);
+  assert.equal(toolDefs.length, 3);
   const tools = toolDefs.map(f => f({ agentId: 'agent_primary' }));
   const searchTool = tools.find(t => t.name === 'bonfires_search');
   assert.ok(searchTool);
