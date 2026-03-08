@@ -1,32 +1,12 @@
 import { resolveBonfiresAgentId } from './config.js';
+import { extractUserMessage, hasUserMetadata } from './message-utils.js';
+
+export { extractUserMessage, hasUserMetadata };
 
 function formatPrepend(results){
   const head='--- Bonfires context ---\n'; const tail='\n---'; let body='';
   for(const r of results){ const line=`- ${r.summary} (source: ${r.source}, relevance: ${r.score})\n`; if((head+body+line+tail).length>2000) break; body+=line; }
   return body ? head+body.trimEnd()+tail : '';
-}
-
-/** True when the prompt contains OpenClaw metadata wrappers (real user message from a platform). */
-export function hasUserMetadata(prompt: string): boolean {
-  return /\(untrusted metadata\):\s*\n```json\s*\n\{/.test(prompt);
-}
-
-/** Extract the actual user message from event.prompt, stripping OpenClaw metadata wrappers. */
-export function extractUserMessage(prompt: string): string {
-  const raw = String(prompt ?? '').trim();
-  if (!raw) return '';
-  // OpenClaw 2026.3.2+ wraps prompts with "(untrusted metadata):" blocks followed by ```json...```
-  // The actual user message follows the last metadata code block.
-  const metaPattern = /```json\s*\n\{[^}]*\}\s*\n```/g;
-  let lastEnd = 0;
-  let match;
-  while ((match = metaPattern.exec(raw)) !== null) {
-    lastEnd = match.index + match[0].length;
-  }
-  if (lastEnd > 0) {
-    return raw.slice(lastEnd).trim();
-  }
-  return raw;
 }
 
 export async function handleBeforeAgentStart(event, ctx, deps){
@@ -62,7 +42,11 @@ export async function handleAgentEnd(event, ctx, deps){
     let start=mark ? mark.lastPushedIndex+1 : 0;
     if(mark && mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`agent_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
     const slice=msgs.slice(start); if(!slice.length) return;
-    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice});
+    const agentDisplayName = deps.agentDisplayNames?.[ctx.agentId] ?? ctx.agentId;
+    const roles = slice.map(m => m.role);
+    const conversational = slice.filter(m => m.role === 'user' || m.role === 'assistant');
+    deps.logger?.warn?.(`agent_end capture: ${slice.length} msgs (roles: ${roles.join(',')}), ${conversational.length} conversational, displayName=${agentDisplayName}`);
+    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice, agentDisplayName});
     const now=deps.nowMs?deps.nowMs():Date.now();
     deps.ledger.set(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
   }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
@@ -82,7 +66,8 @@ export async function handleSessionEnd(event, ctx, deps){
     if(endIndex < 0) return;
 
     const slice=msgs.slice(start); if(!slice.length) return;
-    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice});
+    const agentDisplayName = deps.agentDisplayNames?.[ctx.agentId] ?? ctx.agentId;
+    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice, agentDisplayName});
     deps.ledger.set(sessionKey,{lastPushedAt:deps.nowMs?deps.nowMs():Date.now(),lastPushedIndex:endIndex});
     // Finalize pending episodes before session closes
     try{ await deps.client.processStack?.({agentId:agent}); }catch(pe){ deps.logger?.warn?.(`session_end processStack: ${pe?.message ?? pe}`); }

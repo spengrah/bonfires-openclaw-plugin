@@ -1,14 +1,28 @@
-# bonfires-openclaw-plugin
+# bonfires-plugin
 
-Bonfires integration plugin for OpenClaw.
+OpenClaw plugin that connects agents to [Bonfires](https://bonfires.ai) for persistent conversation memory and searchable knowledge.
 
-## Overview
-`bonfires-openclaw-plugin` connects OpenClaw agents to Bonfires memory so agents can retrieve and persist useful context during conversations.
+## What it does
 
-The plugin is intended to improve continuity and recall by combining:
-1. **Pre-turn retrieval** of relevant memory context.
-2. **On-demand search** via an agent tool.
-3. **Post-turn capture** of episodic conversation slices.
+`bonfires-plugin` adds four memory capabilities to OpenClaw:
+
+1. **Context injection before turns** (`before_agent_start`)
+   - Runs Bonfires retrieval for the first user message in a session (PM12 behavior).
+   - Returns bounded `prependContext` when relevant memory is found.
+
+2. **Agent-callable search tools**
+   - `bonfires_search(query, limit?)` for processed graph memory (`/delve`).
+   - `bonfires_stack_search(query, limit?)` for recent unprocessed stack memory (`/stack/search`).
+
+3. **Immediate per-turn capture** (`agent_end`)
+   - Captures new messages after every turn to Bonfires stack (`/agents/{id}/stack/add`).
+   - Uses capture watermarks to send only uncaptured transcript tail.
+   - PM10 removed runtime throttling from hook behavior.
+
+4. **Background processing + safety flushes**
+   - Heartbeat triggers stack processing (`/agents/{id}/stack/process`).
+   - `session_end` flushes remaining messages and processes stack.
+   - `before_compaction` processes stack + resets watermark guard.
 
 ## Install
 
@@ -17,135 +31,30 @@ The plugin is intended to improve continuity and recall by combining:
 openclaw plugins install -l /path/to/bonfires-plugin
 ```
 
-### npm install (pinned version)
+### NPM install (pinned)
 ```bash
 openclaw plugins install bonfires-plugin --pin
 ```
 
-### Verify installation
+### Verify install
 ```bash
 openclaw plugins doctor
 ```
 
 ## Configuration
 
-Add a `bonfires-plugin` entry to your `openclaw.json`:
+Add a `bonfires-plugin` entry in `openclaw.json`:
 
 ```json
 {
   "plugins": {
-    "bonfires-plugin": {
-      "agents": {
-        "my-agent": "bonfires-agent-id-here"
-      }
-    }
-  }
-}
-```
-
-### Minimal env-only setup
-
-All sensitive and deployment-specific values can be provided via environment variables, avoiding plaintext secrets in config files:
-
-```bash
-export BONFIRES_BASE_URL="https://tnt-v2.api.bonfires.ai/"
-export BONFIRES_API_KEY_ENV="DELVE_API_KEY"   # name of the env var holding the key
-export DELVE_API_KEY="your-api-key"            # the actual API key
-export BONFIRE_ID="your-bonfire-id"
-```
-
-```json
-{
-  "plugins": {
-    "bonfires-plugin": {
-      "agents": { "my-agent": "bonfires-agent-id" }
-    }
-  }
-}
-```
-
-### Config field reference
-
-| Field | Type | Default | Env fallback | Description |
-|---|---|---|---|---|
-| `baseUrl` | string | `https://tnt-v2.api.bonfires.ai/` | `BONFIRES_BASE_URL` | Bonfires API base URL |
-| `apiKeyEnv` | string | `DELVE_API_KEY` | `BONFIRES_API_KEY_ENV` | Name of env var holding the API key |
-| `bonfireId` | string | `""` | `BONFIRE_ID` | Bonfire workspace ID |
-| `agents` | object | _(required)_ | | Mapping of local agent IDs to Bonfires agent IDs |
-| `search.maxResults` | number | `5` | | Max search results per query (min 1) |
-| `capture.throttleMinutes` | number | `15` | | Min interval between captures per session (min 1) |
-| `network.timeoutMs` | number | `12000` | | HTTP timeout in ms (min 1000) |
-| `strictHostedMode` | boolean | `false` | | Throw if hosted credentials are missing |
-| `stateDir` | string | `.bonfires-state` | | Directory for plugin runtime state files |
-| `ingestion.enabled` | boolean | `false` | | Enable periodic content ingestion |
-| `ingestion.everyMinutes` | number | `1440` | | Ingestion scan interval in minutes |
-| `ingestion.rootDir` | string | `process.cwd()` | | Root directory for legacy ingestion scan (deprecated; use profiles) |
-| `ingestion.ledgerPath` | string | `<stateDir>/ingestion-hash-ledger.json` | | Path for ingestion hash ledger |
-| `ingestion.summaryPath` | string | `<stateDir>/ingestion-cron-summary-current.json` | | Path for ingestion run summary |
-| `ingestion.profiles.<name>.rootDir` | string | _(required)_ | | Root directory for this profile's content scan |
-| `ingestion.profiles.<name>.includeGlobs` | string[] | `["**/*"]` | | Glob patterns for files to include (relative to rootDir) |
-| `ingestion.profiles.<name>.excludeGlobs` | string[] | node_modules, .git, .openclaw | | Glob patterns for files to exclude |
-| `ingestion.profiles.<name>.extensions` | string[] | `[".md"]` | | File extensions to include |
-| `ingestion.agentProfiles` | object | `{}` | | Mapping of agent IDs to profile names |
-| `ingestion.defaultProfile` | string | | | Default profile when agent has no explicit mapping |
-
-**Precedence**: explicit config value > environment variable fallback > built-in default.
-
-**Profile resolution**: `agentProfiles[agentId]` > `defaultProfile` > config error.
-
-### Single-profile ingestion setup
-
-```json
-{
-  "plugins": {
-    "bonfires-plugin": {
-      "agents": { "my-agent": "bonfires-agent-id" },
-      "ingestion": {
+    "entries": {
+      "bonfires-plugin": {
         "enabled": true,
-        "profiles": {
-          "docs": {
-            "rootDir": "./content",
-            "includeGlobs": ["**/*"],
-            "extensions": [".md"]
+        "config": {
+          "agents": {
+            "main": "69a51b279c462f4f06abe2f5"
           }
-        },
-        "defaultProfile": "docs"
-      }
-    }
-  }
-}
-```
-
-### Multi-profile multi-agent setup
-
-Two agents ingesting from different workspace roots:
-
-```json
-{
-  "plugins": {
-    "bonfires-plugin": {
-      "agents": {
-        "research-agent": "bf-agent-research",
-        "docs-agent": "bf-agent-docs"
-      },
-      "ingestion": {
-        "enabled": true,
-        "profiles": {
-          "research": {
-            "rootDir": "/home/user/research-notes",
-            "includeGlobs": ["papers/**/*", "notes/**/*"],
-            "extensions": [".md"]
-          },
-          "documentation": {
-            "rootDir": "/home/user/project-docs",
-            "includeGlobs": ["**/*"],
-            "excludeGlobs": ["**/drafts/**"],
-            "extensions": [".md", ".txt"]
-          }
-        },
-        "agentProfiles": {
-          "research-agent": "research",
-          "docs-agent": "documentation"
         }
       }
     }
@@ -153,124 +62,109 @@ Two agents ingesting from different workspace roots:
 }
 ```
 
-### Legacy ingestion config (deprecated)
+### Env-first setup (recommended)
 
-Existing `ingestion.rootDir` configurations continue to work. The plugin normalizes legacy config into a synthetic profile and emits a deprecation warning. Migrate to `ingestion.profiles` for portable multi-agent setups.
+```bash
+export BONFIRES_BASE_URL="https://tnt-v2.api.bonfires.ai/"
+export BONFIRES_API_KEY_ENV="DELVE_API_KEY"   # name of env var containing key
+export DELVE_API_KEY="your-api-key"            # actual key
+export BONFIRE_ID="your-bonfire-id"
+```
 
-## Intent
-This plugin exists to make OpenClaw sessions more context-aware without requiring manual copy/paste memory workflows.
+### Config reference
 
-Design intent:
-- Keep retrieval deterministic and bounded.
-- Keep capture reliable and non-disruptive.
-- Degrade gracefully (fail-open) when memory systems are unavailable.
-- Preserve clear spec/guidance/verification artifacts in-repo.
+| Field | Type | Default | Env fallback | Notes |
+|---|---|---|---|---|
+| `agents` | object | _(required)_ | | OpenClaw agent id -> Bonfires agent id mapping |
+| `baseUrl` | string | `https://tnt-v2.api.bonfires.ai/` | `BONFIRES_BASE_URL` | Bonfires API base URL |
+| `apiKeyEnv` | string | `DELVE_API_KEY` | `BONFIRES_API_KEY_ENV` | Name of env var holding API key |
+| `bonfireId` | string | `""` | `BONFIRE_ID` | Bonfire/workspace id |
+| `search.maxResults` | number | `5` | | Default search result limit |
+| `processing.intervalMinutes` | number | `20` | | Heartbeat stack processing interval (minutes) |
+| `network.timeoutMs` | number | `12000` | | HTTP timeout |
+| `strictHostedMode` | boolean | `false` | | Throw instead of mock fallback when hosted credentials missing |
+| `stateDir` | string | `.bonfires-state` | | Runtime state directory |
+| `ingestion.enabled` | boolean | `false` | | Enable periodic ingestion |
+| `ingestion.everyMinutes` | number | `1440` | | Ingestion interval |
+| `ingestion.profiles.<name>.*` | object | | | Profile-based ingestion config |
+| `ingestion.agentProfiles` | object | `{}` | | Agent -> profile mapping |
+| `ingestion.defaultProfile` | string | | | Fallback profile |
 
-## Core features
-- Hook-based retrieval before agent turns (`before_agent_start`)
-- Hook-based episodic capture after turns (`agent_end`)
-- Session-end integration point (`session_end`)
-- Stack-processing heartbeat runner (20-minute base cadence + jitter) with bounded retries
-- Recovery/catch-up flow sharing capture watermark semantics with overlap-safe dedupe guards
-- Hosted strict-mode guard to prevent silent mock fallback in non-dev hosted contexts
-- Agent tool: `bonfires_search(query, limit?)`
-- Agent mapping support for arbitrary agent IDs (project-specific names)
-- Capture ledger for per-session throttling and incremental push behavior
-- Configurable ingestion target profiles with per-agent mapping and portable rootDir selection
-- Per-profile and per-agent ingestion summaries for operability
+Precedence: **config value > env fallback > default**.
 
-## Heartbeat subsystem note
+## Repo structure
 
-This plugin runs its own **stack-processing heartbeat** (20-minute cadence) for flushing captured conversation data through the Bonfires processing pipeline. This is distinct from the **OpenClaw Gateway heartbeat** (`agents.defaults.heartbeat` in Gateway config / `HEARTBEAT.md`), which is a platform-level liveness signal.
+```text
+src/
+  index.ts               plugin entry (register hooks/tools/heartbeat)
+  hooks.ts               before_agent_start / agent_end / session_end / before_compaction
+  bonfires-client.ts     hosted + mock Bonfires client boundary
+  config.ts              config parsing/validation
+  capture-ledger.ts      capture watermark + injection tracking
+  heartbeat.ts           stack processing heartbeat + recovery logic
+  ingestion.ts           ingestion cron + hash-ledger dedup
+  tools/
+    bonfires-search.ts
+    bonfires-stack-search.ts
 
-| Aspect | Plugin stack heartbeat | Gateway heartbeat |
-|---|---|---|
-| **Scope** | Bonfires plugin (this repo) | OpenClaw Gateway platform |
-| **Purpose** | Trigger `processStack` for captured episodes | Platform agent liveness / keep-alive |
-| **Cadence** | 20 min + 0-2 min jitter | Configured per-gateway |
-| **Config** | Managed by plugin; state in `<stateDir>/heartbeat-state.json` | `agents.defaults.heartbeat` in Gateway config |
-| **Failure signal** | `[heartbeat] process failed agent=...` in plugin logs | Gateway-level alerts |
+tests/
+  wave1.test.ts ... wave10-pm13.test.ts
+  REQUIREMENT-MAPPING.md
 
-If you see "heartbeat" in logs or config, check the source subsystem to determine which heartbeat is referenced. Plugin heartbeat log lines are prefixed with `[heartbeat]`.
+.ai/spec/
+  BONFIRES-INTEGRATION-SPEC.md
+  spec/
+    requirements-index.md
+    retrieval/ capture/ processing/ ingestion/ client/ config/ quality/
+  guidance/
+    retrieval/ capture/ processing/ ingestion/ client/ config/
+```
 
-## Plugin state
+## Quality gates and verification
 
-Runtime state files (heartbeat state, capture ledger, ingestion ledger/summary) are stored in a plugin-scoped directory, defaulting to `.bonfires-state/` relative to the plugin working directory. This is configurable via `stateDir` in plugin config.
+Quick commands:
 
-State files:
-- `<stateDir>/heartbeat-state.json` -- per-agent heartbeat attempt/success tracking
-- `<stateDir>/capture-ledger.json` -- per-session capture watermarks
-- `<stateDir>/ingestion-hash-ledger.json` -- content hash dedup ledger
-- `<stateDir>/ingestion-cron-summary-current.json` -- last ingestion run summary
-
-Planning artifacts under `.ai/log/plan/` are development-time workflow records and are not required for runtime operation.
-
-## Repository layout
-- `src/` -- plugin code
-- `tests/` -- automated tests
-- `.ai/spec/` -- feature specs and implementation guidance
-- `.ai/log/` -- planning/review/readiness artifacts
-- `scripts/` -- local verification/gate scripts
-- `openclaw.plugin.json` -- OpenClaw plugin manifest
-
-## Local commands
 ```bash
 npm run lint
 npm run test
+npm run gate:traceability
 npm run gate:all
-npm run verify:hosted        # fixture-mode contract verification + artifact
-npm run verify:hosted -- --live  # adds live preflight probes (requires env)
-npm run ingest:bonfires      # run ingestion scan + hash-ledger update once
 ```
 
-### Hosted verification output
-- Report path: `.ai/log/plan/hosted-integration-verification-current.json`
-- Report includes per-probe status and redacted config metadata (never prints API key values).
+Also available:
 
-### Ingestion cron output
-- Ledger path (default): `<stateDir>/ingestion-hash-ledger.json`
-- Run summary path (default): `<stateDir>/ingestion-cron-summary-current.json`
-- Ingestion is idempotent by content hash (`sha256:*`) and restart-safe via persisted ledger.
+```bash
+npm run test:coverage
+npm run verify:hosted
+npm run ingest:bonfires
+```
 
-## Operator troubleshooting
+`gate:all` runs the full multi-gate pipeline (coverage, changed-lines, quality, mutation-lite, traceability, escalation/integrity checks).
 
-### Common issues
+## Runtime behavior notes
 
-**Plugin not discovered after install**
-- Run `openclaw plugins doctor` to validate the manifest.
-- Verify `openclaw.plugin.json` exists at the plugin root.
-- Check that `package.json` includes the `openclaw.extensions.plugin` field.
+- Hooks are **fail-open**: plugin errors are logged and do not crash host turns.
+- Capture sanitization strips metadata wrappers, injected context markers, non-text assistant blocks, and reply directives before `stack/add`.
+- `chatId` uses `sessionId` when present, else `sessionKey` (PM12).
+- Assistant identity uses configured display names when available (PM13), else falls back to `ctx.agentId`.
+- State files are stored under `stateDir` (default `.bonfires-state/`):
+  - `capture-ledger.json`
+  - `heartbeat-state.json`
+  - `ingestion-hash-ledger.json`
+  - `ingestion-cron-summary-current.json`
 
-**Missing API key / mock fallback**
-- The plugin logs `Using MockBonfiresClient (missing env ...)` when credentials are not found.
-- Ensure the env var named by `apiKeyEnv` (default `DELVE_API_KEY`) is set.
-- Ensure `bonfireId` is set (config or `BONFIRE_ID` env).
-- If `strictHostedMode: true`, missing credentials will throw instead of falling back.
+## Troubleshooting
 
-**Agent mapping not found**
-- Log lines `No bonfires agent mapping for <agentId>` indicate the local agent ID is not in the `agents` config map.
-- Add a mapping entry: `"agents": { "<local-id>": "<bonfires-agent-id>" }`.
+- **Plugin not discovered**: run `openclaw plugins doctor`; verify `openclaw.plugin.json` and `openclaw.extensions` entry in `package.json`.
+- **Unexpected mock client fallback**: verify `apiKeyEnv` target variable and `bonfireId`; use `strictHostedMode: true` to hard-fail.
+- **No capture for an agent**: ensure that OpenClaw `ctx.agentId` exists in `config.agents`.
+- **Ingestion profile mapping errors**: ensure profile names in `agentProfiles`/`defaultProfile` exist under `ingestion.profiles`.
 
-**Heartbeat failures**
-- Check plugin logs for `[heartbeat] process failed agent=...`.
-- Verify network connectivity to the Bonfires API (`baseUrl`).
-- The heartbeat retries on HTTP 429/5xx with backoff; persistent failures increment `consecutive_failures` in heartbeat state.
+## Specs and traceability
 
-**Ingestion profile not found for agent**
-- Error `No ingestion profile mapping for agent "<id>"` means the agent has no entry in `ingestion.agentProfiles` and no `ingestion.defaultProfile` is set.
-- Add a mapping in `agentProfiles` or set `defaultProfile` to a valid profile name.
+- Canonical index: `.ai/spec/spec/requirements-index.md`
+- Traceability map: `.ai/spec/spec/quality/traceability-map.json`
+- Test mapping: `tests/REQUIREMENT-MAPPING.md`
+- Integration overview: `.ai/spec/BONFIRES-INTEGRATION-SPEC.md`
 
-**State directory permissions**
-- Ensure the plugin process can read/write to the `stateDir` path.
-- Default `.bonfires-state/` is created relative to the plugin working directory.
-
-## Typical workflow
-1. Update specs/guidance under `.ai/spec/` when behavior changes.
-2. Implement changes in `src/`.
-3. Add/adjust tests in `tests/` and requirement mapping docs as needed.
-4. Run lint/tests locally.
-5. Record review artifacts under `.ai/log/review/`.
-
-## Notes
-- `.ai/log/` is intentionally tracked for workflow provenance.
-- Keep secrets out of repo and out of memory/log artifacts.
+For architecture and requirement-level detail, start with the integration spec, then the unified requirements index.

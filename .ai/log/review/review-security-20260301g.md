@@ -111,3 +111,11 @@ Both fixes are small and scoped to Wave-1 files. After remediation, re-run tests
 ## 5) delta.git_diff acknowledgement: **yes**
 
 Reviewed the full `.ai/log/plan/wave-1-delta.patch` covering all 37 new files (specs, guidance, rules, config, source, tests, scripts). All hunks examined against specs in `.ai/spec/`.
+
+
+## Proof of review
+- Artifacts inspected: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, .ai/spec/spec/requirements-index.md
+- Commands run: npm run -s test, npm run -s gate:traceability
+
+- Confidence: high
+

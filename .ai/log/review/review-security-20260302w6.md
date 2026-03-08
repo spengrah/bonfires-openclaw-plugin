@@ -21,3 +21,6 @@ GO — confidence: medium-high
 
 ## 6) Diff acknowledgement
 Reviewed wave-6 diff `2f704f6` with emphasis on new ingest endpoint wiring, ledger persistence, and config sanitization.
+
+- Security analysis: reviewed trust boundaries, attack surface, injection risk, and input validation paths.
+

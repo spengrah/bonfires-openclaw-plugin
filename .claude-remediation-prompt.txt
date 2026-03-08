@@ -1,0 +1,52 @@
+You are working in /home/lyle/.openclaw/workspace/projects/bonfires-plugin.
+
+Task: Remediate full-codebase Reviewer findings in ONE BATCH.
+
+Important process requirement:
+1) Start in PLAN MODE first: produce a concrete step-by-step plan (files to edit, tests to add/update, acceptance checks).
+2) Then execute the plan and implement all approved remediations.
+3) Do not commit or push.
+
+Findings to remediate:
+A) Correctness (required-before-merge)
+- File: src/hooks.ts
+- Bug: extractUserMessage strips any ```json {..}``` block even when not an OpenClaw metadata wrapper, which can remove legitimate user content.
+- Fix goal: only strip metadata wrappers when wrapper markers are present; preserve normal user JSON code blocks.
+- Add regression tests.
+
+B) Security/Attacker (required-before-merge)
+- File: src/ingestion.ts
+- Bug: ingestion walker can include symlinks, enabling out-of-root exfiltration if malicious symlink is under ingested root.
+- Fix goal: block symlink ingestion OR enforce realpath containment under rootDir before reading.
+- Add tests covering symlink behavior / containment.
+
+C) Equivalence (required-before-merge)
+- PM11 mismatch: spec vs implementation on stack/add payload fields.
+- User decision: update spec to match CURRENT implementation (keep role + username fields).
+- Update PM11/capture sanitization spec docs accordingly, plus any traceability refs if needed.
+
+D) Architecture / Model Design (include in this batch)
+- Finding 1: bonfires-client.ts imports extractUserMessage from hooks.ts (boundary inversion).
+  Fix goal: move shared parsing logic into neutral utility module and update imports.
+- Finding 2: PM12 first-message-only injection tracking is in-memory and lost on restart.
+  Fix goal: persist injection tracking state (ledger or dedicated state file) so invariant survives restarts.
+- Add tests for restart-persistence behavior.
+
+Constraints:
+- Keep existing behavior unless explicitly changed above.
+- Keep changes minimal, coherent, and spec-aligned.
+- Update docs/tests/requirement mapping where needed.
+
+Validation before finishing:
+- npm run -s lint
+- npm run -s test
+- npm run -s gate:traceability
+
+Deliverable format in final response:
+1) Summary of what changed (by finding A/B/C/D)
+2) Exact files modified
+3) Test/gate outputs
+4) Any residual risks / follow-up suggestions
+
+When completely finished, run this command to notify me:
+openclaw system event --text "Done: Claude batch remediation finished for bonfires-plugin reviewer findings" --mode now

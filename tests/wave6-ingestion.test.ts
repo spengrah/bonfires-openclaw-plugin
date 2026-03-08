@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runIngestionOnce, startIngestionCron } from '../src/ingestion.js';
@@ -200,5 +200,63 @@ test('wave6: ingestion skips non-markdown files', async () => {
     assert.ok(paths[0].endsWith('.md'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('wave6: ingestion walker skips symlinked files outside root', async () => {
+  const dir = tmpDir();
+  const outside = tmpDir();
+  try {
+    mkdirSync(join(dir, 'memory'), { recursive: true });
+    writeFileSync(join(outside, 'secret.md'), 'do-not-ingest');
+
+    try {
+      symlinkSync(join(outside, 'secret.md'), join(dir, 'memory', 'secret-link.md'));
+    } catch {
+      // Symlinks may be unavailable in some environments.
+      return;
+    }
+
+    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
+    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
+    const paths: string[] = [];
+    const client = { ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; } };
+
+    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
+    assert.equal(result.scanned, 0);
+    assert.equal(result.ingested, 0);
+    assert.equal(paths.length, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('wave6: ingestion walker skips symlinked directories outside root', async () => {
+  const dir = tmpDir();
+  const outside = tmpDir();
+  try {
+    mkdirSync(join(dir, 'memory'), { recursive: true });
+    mkdirSync(join(outside, 'vault'), { recursive: true });
+    writeFileSync(join(outside, 'vault', 'escape.md'), 'do-not-ingest');
+
+    try {
+      symlinkSync(join(outside, 'vault'), join(dir, 'memory', 'linked-vault'));
+    } catch {
+      return;
+    }
+
+    const ledgerPath = join(dir, '.ai/log/plan/ingestion-hash-ledger.json');
+    const summaryPath = join(dir, '.ai/log/plan/ingestion-cron-summary-current.json');
+    const paths: string[] = [];
+    const client = { ingestContent: async (req: any) => { paths.push(req.sourcePath); return { accepted: 1 }; } };
+
+    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
+    assert.equal(result.scanned, 0);
+    assert.equal(result.ingested, 0);
+    assert.equal(paths.length, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

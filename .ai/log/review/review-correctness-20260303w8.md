@@ -18,3 +18,10 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed the full Wave 8 diff from commit `0ee3446`.
+
+- Correctness analysis: checked edge-case handling, fallback chain behavior, and branch coverage around conditional paths.
+
+- Spec compliance: acceptance criteria satisfied for referenced PM requirements.
+
+
+- Files reviewed: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, scripts/gates/review-provenance-check.ts

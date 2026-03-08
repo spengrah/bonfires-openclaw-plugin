@@ -128,3 +128,7 @@ No injection, authz/authn bypass, secret leak, or high-confidence path/file expl
 
 ### Exploitation tests run
 - No live exploit command run; static analysis judged sufficient because changes are fail-fast validation and selection wiring, and corresponding negative-path tests are present in `tests/wave8-profiles.test.ts`.
+
+
+- Confidence: high
+

@@ -18,3 +18,4 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed Wave 8 implementation diff from commit `0ee3446` for operational readiness and portability objectives.
+- Files reviewed: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, scripts/gates/review-provenance-check.ts

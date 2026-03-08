@@ -12,7 +12,7 @@ interface BonfiresPluginConfig {
   baseUrl: string;
   apiKeyEnv: string;                  // env var name, e.g. BONFIRES_API_KEY
   search: { maxResults: number };     // default: 5
-  capture: { throttleMinutes: number }; // default: 15
+  processing: { intervalMinutes: number }; // default: 20
   agents: Record<string, string>;     // { "agent_primary": "...", "agent_secondary": "..." }
 }
 ```

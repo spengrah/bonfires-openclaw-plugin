@@ -64,11 +64,11 @@ Push messages to the Bonfires stack immediately on every `agent_end`. Defer epis
 | Component | Before | After |
 |-----------|--------|-------|
 | `agent_end` capture | Throttled (15min), calls stack/add + processStack | Always calls stack/add, never processStack |
-| `agent_end` throttle | `cfg.capture.throttleMinutes` gates entire capture | Removed — always push |
+| `agent_end` throttle | `cfg.processing.intervalMinutes` gates entire capture | Removed — always push |
 | `session_end` | Flush uncaptured + watermark only | Flush uncaptured + **processStack** |
 | `before_compaction` | Flush from event.messages + processStack + reset | **processStack only** + reset watermark |
 | Heartbeat processStack | Every 20min | Every 20min (unchanged) |
-| `capture.throttleMinutes` config | Controls capture frequency | **Unused by hooks** (heartbeat has its own interval) |
+| `processing.intervalMinutes` config | Controls heartbeat tick interval + inactivity close timeout | Configurable (default 20min) |
 | PM7 (compaction flush) | Complex flush logic | Simplified to processStack + watermark reset |
 | PM8 (watermark reset guard) | Critical safety net | Retained but less critical (narrow race window) |
 | PM9 (prependContext strip) | In bonfires-client.ts | Unchanged |
@@ -86,7 +86,7 @@ Push messages to the Bonfires stack immediately on every `agent_end`. Defer epis
 ## Open questions
 1. **Does `session_end` fire on idle reset (30min)?** If yes, this architecture handles it. If no, messages are still safe on the Bonfires stack — only `processStack` would be delayed until the next heartbeat.
 2. **Does context pruning fire any hook?** Same answer — messages are already on the stack, so no data loss regardless.
-3. **Should `capture.throttleMinutes` be repurposed?** Could control processStack frequency instead, or be removed entirely in favor of the heartbeat's own interval.
+3. **Resolved:** `capture.throttleMinutes` replaced by `processing.intervalMinutes` (default 20min), which controls the heartbeat tick interval. Inactivity close timeout is 2x the interval.
 
 ## Acceptance criteria
 - Every `agent_end` results in a `stack/add` call (no skips within throttle window).

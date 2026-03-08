@@ -13,7 +13,7 @@ Guarantee eventual capture when normal hook flow misses data.
    - Never push any range whose `endIndex` is `<= lastPushedIndex`.
 6. Session-end flush policy:
    - Use `session_end` hook if available.
-   - Else emulate close via inactivity timeout: `close_timeout_minutes = 2 * capture.throttleMinutes` (single canonical formula; default 30m when throttle is 15m).
+   - Else emulate close via inactivity timeout: `close_timeout_minutes = 2 * processing.intervalMinutes` (single canonical formula; default 40m when interval is 20m).
    - Flush on first heartbeat tick after close timeout is exceeded.
 7. Ledger updates must avoid stale overwrite between recovery and `agent_end`; write path uses a single in-process ledger owner and read-modify-write from latest in-memory state.
 

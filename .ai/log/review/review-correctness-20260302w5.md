@@ -19,3 +19,8 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed commit `120e7cd` implementing PM3 verification workflow + README refresh.
+
+- Correctness analysis: checked edge-case handling, fallback chain behavior, and branch coverage around conditional paths.
+
+- Spec compliance: acceptance criteria satisfied for referenced PM requirements.
+

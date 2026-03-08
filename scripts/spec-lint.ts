@@ -3,29 +3,37 @@ import { join } from 'node:path';
 
 const root = '.ai/spec';
 const required = [
-  '.ai/spec/spec/plugin/requirements-index.md',
-  '.ai/spec/spec/plugin/verification-checklist.md',
-  '.ai/spec/spec/plugin/coupling-map.md',
-  '.ai/spec/spec/plugin/spec-for-before-agent-start.md',
-  '.ai/spec/spec/plugin/spec-for-bonfires-search-tool.md',
-  '.ai/spec/spec/plugin/spec-for-agent-end-capture.md',
-  '.ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md',
-  '.ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md',
-  '.ai/spec/spec/plugin/spec-for-bonfires-client-interface.md',
+  '.ai/spec/spec/requirements-index.md',
+  '.ai/spec/spec/quality/verification-checklist.md',
+  '.ai/spec/spec/quality/coupling-map.md',
+  '.ai/spec/spec/quality/traceability-map.json',
   '.ai/spec/spec/quality/spec-for-mvp-verification-matrix.md',
-  '.ai/spec/spec/quality/traceability-map.json'
+  '.ai/spec/spec/retrieval/before-agent-start.md',
+  '.ai/spec/spec/retrieval/bonfires-search-tool.md',
+  '.ai/spec/spec/capture/agent-end-capture-legacy.md',
+  '.ai/spec/spec/capture/immediate-stack-capture.md',
+  '.ai/spec/spec/capture/message-sanitization.md',
+  '.ai/spec/spec/capture/agent-display-names.md',
+  '.ai/spec/spec/processing/recovery-and-session-end.md',
+  '.ai/spec/spec/processing/stack-processing-heartbeat.md',
+  '.ai/spec/spec/config/plugin-config-and-agent-mapping.md',
+  '.ai/spec/spec/config/plugin-packaging.md',
+  '.ai/spec/spec/client/bonfires-client-interface.md',
+  '.ai/spec/spec/client/hosted-api-wiring.md',
+  '.ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md',
+  '.ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md',
 ];
 
 const missing = required.filter((p) => {
   try { return !statSync(p).isFile(); } catch { return true; }
 });
 if (missing.length) {
-  console.error('Missing required spec files:\n' + missing.map((m)=>`- ${m}`).join('\n'));
+  console.error('Missing required spec files:\n' + missing.map((m) => `- ${m}`).join('\n'));
   process.exit(1);
 }
 
-function collectMd(dir) {
-  const out = [];
+function collectMd(dir: string): string[] {
+  const out: string[] = [];
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
     const st = statSync(p);

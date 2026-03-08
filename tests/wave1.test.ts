@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os';
 import { parseConfig, resolveBonfiresAgentId } from '../src/config.js';
 import { MockBonfiresClient, HostedBonfiresClient } from '../src/bonfires-client.js';
 import { InMemoryCaptureLedger } from '../src/capture-ledger.js';
-import { handleBeforeAgentStart, handleAgentEnd, handleBeforeCompaction, handleSessionEnd, extractUserMessage, hasUserMetadata } from '../src/hooks.js';
+import { handleBeforeAgentStart, handleAgentEnd, handleBeforeCompaction, handleSessionEnd } from '../src/hooks.js';
+import { extractUserMessage, hasUserMetadata } from '../src/message-utils.js';
 import { bonfiresSearchTool } from '../src/tools/bonfires-search.js';
 import register from '../src/index.js';
 
@@ -125,7 +126,7 @@ test('parseConfig requires at least one mapped agent id', async () => {
 
 test('parseConfig validates numeric bounds', async () => {
   assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: 0 } }));
-  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: 0 } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, processing: { intervalMinutes: 0 } }));
 });
 
 test('resolveBonfiresAgentId ignores inherited prototype keys', async () => {
@@ -145,13 +146,13 @@ test('parseConfig uses defaults for optional values', async () => {
   assert.equal(out.baseUrl, 'https://tnt-v2.api.bonfires.ai/');
   assert.equal(out.apiKeyEnv, 'DELVE_API_KEY');
   assert.equal(out.search.maxResults, 5);
-  assert.equal(out.capture.throttleMinutes, 15);
+  assert.equal(out.processing.intervalMinutes, 20);
   assert.equal(out.network.timeoutMs, 12000);
 });
 
 test('parseConfig rejects non-finite numeric values', async () => {
   assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, search: { maxResults: Infinity } }));
-  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, capture: { throttleMinutes: NaN } }));
+  assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, processing: { intervalMinutes: NaN } }));
   assert.throws(() => parseConfig({ agents: { agent_primary: 'a1', agent_secondary: 'a2' }, network: { timeoutMs: 0 } }));
   assert.throws(() => parseConfig({ agents: { agent_primary: 'a1' }, ingestion: { everyMinutes: 0 } }));
 });
@@ -345,6 +346,20 @@ test('capture ledger persists and reloads from disk', async () => {
     ledgerA.set('s1', { lastPushedAt: 1, lastPushedIndex: 2 });
     const ledgerB = new InMemoryCaptureLedger(path, dir);
     assert.deepEqual(ledgerB.get('s1'), { lastPushedAt: 1, lastPushedIndex: 2 });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('capture ledger persists injected sessions across restart when path is configured', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bonfires-ledger-'));
+  try {
+    const path = join(dir, 'bonfires-ledger.json');
+    const ledgerA = new InMemoryCaptureLedger(path, dir);
+    ledgerA.markInjected('sess-1');
+
+    const ledgerB = new InMemoryCaptureLedger(path, dir);
+    assert.equal(ledgerB.hasInjected('sess-1'), true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -545,6 +560,18 @@ test('extractUserMessage strips metadata wrapper and returns user message', () =
 test('extractUserMessage returns raw prompt when no metadata wrapper present', () => {
   const result = extractUserMessage('hello world');
   assert.equal(result, 'hello world');
+});
+
+test('extractUserMessage preserves normal json code blocks in user content', () => {
+  const input = 'here is config\n```json\n{"mode":"safe"}\n```\nplease review';
+  const result = extractUserMessage(input);
+  assert.equal(result, input);
+});
+
+test('extractUserMessage strips metadata wrappers but keeps trailing user json code block', () => {
+  const withJson = `${WRAPPED_PROMPT}\n\n\`\`\`json\n{"topic":"cocktails"}\n\`\`\``;
+  const result = extractUserMessage(withJson);
+  assert.equal(result, 'tell me about cocktails\n\n```json\n{"topic":"cocktails"}\n```');
 });
 
 test('extractUserMessage returns empty string for empty/whitespace input', () => {

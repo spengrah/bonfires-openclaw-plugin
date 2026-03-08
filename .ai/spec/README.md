@@ -1,8 +1,8 @@
 # Spec directory
 
-Place authoritative project specs here.
+Authoritative project specs organized by component.
 
-Suggested:
-- `spec-for-<project>.md`
-- implementation checklist
-- acceptance criteria map
+## Structure
+- `spec/` — feature specs by component (retrieval, capture, processing, ingestion, client, config, quality)
+- `guidance/` — implementation guidance mirroring spec structure
+- `BONFIRES-INTEGRATION-SPEC.md` — top-level integration overview

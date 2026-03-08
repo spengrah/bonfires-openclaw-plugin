@@ -19,3 +19,6 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed commit `2fca367` and validated gate outputs/artifacts match wave-4 acceptance criteria.
+
+- Anti-gaming check: reviewed for .only/.skip, exclusion abuse, lint-disable usage, and test tautologies.
+

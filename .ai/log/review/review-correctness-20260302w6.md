@@ -20,3 +20,8 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed commit `2f704f6` implementing PM4 ingestion cron/hash-ledger flow and generic agent mapping updates.
+
+- Correctness analysis: checked edge-case handling, fallback chain behavior, and branch coverage around conditional paths.
+
+- Spec compliance: acceptance criteria satisfied for referenced PM requirements.
+

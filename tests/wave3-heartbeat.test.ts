@@ -15,7 +15,7 @@ import {
 
 const cfg = {
   agents: { agent_primary: 'agent-primary', agent_secondary: 'agent-secondary' },
-  capture: { throttleMinutes: 15 },
+  processing: { intervalMinutes: 20 },
   network: { retryBackoffMs: [0, 0] },
 };
 
@@ -88,9 +88,9 @@ test('wave3: recovery overlap precedence uses endIndex guard and dedupe key iden
   assert.equal(makeDedupeKey('s-overlap', 2, 3), 's-overlap:2-3');
 });
 
-test('wave3: close-timeout formula is canonical 2 * capture.throttleMinutes', async () => {
-  assert.equal(inactivityCloseTimeoutMs(15), 30 * 60_000);
-  assert.equal(inactivityCloseTimeoutMs(5), 10 * 60_000);
+test('wave3: close-timeout formula is canonical 2 * processing.intervalMinutes', async () => {
+  assert.equal(inactivityCloseTimeoutMs(20), 40 * 60_000);
+  assert.equal(inactivityCloseTimeoutMs(10), 20 * 60_000);
 });
 
 test('wave3: recovery skips sessions that are not ended and not inactive long enough', async () => {

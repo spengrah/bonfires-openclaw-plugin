@@ -51,9 +51,15 @@ export default function register(api){
     defaultProfile,
   });
 
+  // Build agent display name map from OpenClaw agent config (PM13)
+  const agentDisplayNames: Record<string, string> = {};
+  for (const a of (api.config?.agents?.list ?? [])) {
+    if (a.id && a.name) agentDisplayNames[a.id] = a.name;
+  }
+
   api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,ledger,logger:api.logger}));
-  api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
-  api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger}));
+  api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
+  api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
   api.on('before_compaction',(event,ctx)=>handleBeforeCompaction(event,ctx,{cfg,client,ledger,logger:api.logger}));
 
   api.registerTool((toolCtx) => ({

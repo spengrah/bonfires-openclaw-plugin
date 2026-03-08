@@ -16,7 +16,7 @@
 - [ ] **R2** `bonfires_search` validates input and returns deterministic schema
 - [ ] **R2** tool limit clamps to configured safety bound
 
-- [ ] **R3** `agent_end` throttles and pushes only uncaptured slices
+- [ ] **R3** `agent_end` captures and pushes only uncaptured slices
 - [ ] **R3** missing sessionKey path is non-fatal and skips capture
 
 - [ ] **R4** recovery backfills missed ranges and avoids duplicates

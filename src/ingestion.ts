@@ -30,6 +30,7 @@ function sha256(content: string) {
 
 function walk(dir: string, out: string[]) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) continue;
     const p = join(dir, entry.name);
     if (entry.isDirectory()) walk(p, out);
     else out.push(p);

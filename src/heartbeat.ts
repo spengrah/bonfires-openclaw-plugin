@@ -55,8 +55,8 @@ export function computeRecoveryRange(lastPushedIndex: number, totalMessages: num
   return { startIndex, endIndex };
 }
 
-export function inactivityCloseTimeoutMs(throttleMinutes: number) {
-  return Math.max(1, Number(throttleMinutes) || 1) * 2 * 60_000;
+export function inactivityCloseTimeoutMs(intervalMinutes: number) {
+  return Math.max(1, Number(intervalMinutes) || 1) * 2 * 60_000;
 }
 
 export function isRetriableErrorMessage(msg: string) {
@@ -115,7 +115,7 @@ export async function runRecoveryTick(opts: {
 }) {
   const nowMs = opts.nowMs ?? (() => Date.now());
   const now = nowMs();
-  const closeTimeoutMs = inactivityCloseTimeoutMs(opts.cfg?.capture?.throttleMinutes ?? 15);
+  const closeTimeoutMs = inactivityCloseTimeoutMs(opts.cfg?.processing?.intervalMinutes ?? 20);
 
   for (const session of opts.sessions ?? []) {
     const sessionKey = session?.sessionKey;
@@ -176,7 +176,7 @@ export function startStackHeartbeat(opts: {
   nowMs?: () => number;
   sleepFn?: (ms: number) => Promise<any>;
 }) {
-  const baseMs = 20 * 60 * 1000;
+  const intervalMs = (opts.cfg?.processing?.intervalMinutes ?? 20) * 60 * 1000;
   const jitterMaxMs = 120 * 1000;
 
   mkdirSync(dirname(opts.statePath), { recursive: true });
@@ -233,7 +233,7 @@ export function startStackHeartbeat(opts: {
 
     if (stopped) return;
     const jitter = Math.floor(Math.random() * jitterMaxMs);
-    const next = setTimeout(tick, baseMs + jitter);
+    const next = setTimeout(tick, intervalMs + jitter);
     (next as any).unref?.();
   }
 

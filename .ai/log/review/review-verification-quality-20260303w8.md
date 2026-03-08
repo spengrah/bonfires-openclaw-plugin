@@ -18,3 +18,8 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed Wave 8 commit `0ee3446` and associated gate evidence.
+
+- Vacuous-pass analysis: checked that gates do not pass without exercising meaningful assertions.
+
+
+- Files reviewed: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, scripts/gates/review-provenance-check.ts

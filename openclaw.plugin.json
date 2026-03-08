@@ -40,13 +40,13 @@
         },
         "additionalProperties": false
       },
-      "capture": {
+      "processing": {
         "type": "object",
         "properties": {
-          "throttleMinutes": {
+          "intervalMinutes": {
             "type": "number",
-            "description": "Minimum interval between captures for the same session.",
-            "default": 15,
+            "description": "Interval between stack processing heartbeat ticks in minutes. Also determines inactivity close timeout (2x interval).",
+            "default": 20,
             "minimum": 1
           }
         },

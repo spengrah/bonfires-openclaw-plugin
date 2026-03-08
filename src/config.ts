@@ -10,9 +10,9 @@ const DEFAULT_EXCLUDE_GLOBS = ['**/node_modules/**', '**/.git/**', '**/.openclaw
 export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => void } }) {
   const cfg = input ?? {};
   const maxResults = Number(cfg.search?.maxResults ?? 5);
-  const throttleMinutes = Number(cfg.capture?.throttleMinutes ?? 15);
+  const intervalMinutes = Number(cfg.processing?.intervalMinutes ?? 20);
   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
-  if (!Number.isFinite(throttleMinutes) || throttleMinutes < 1) throw new Error('capture.throttleMinutes must be a finite number >= 1');
+  if (!Number.isFinite(intervalMinutes) || intervalMinutes < 1) throw new Error('processing.intervalMinutes must be a finite number >= 1');
   const stateDir = String(cfg.stateDir ?? '.bonfires-state').trim() || '.bonfires-state';
 
   // Parse ingestion profiles (PM6-R1)
@@ -82,7 +82,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
     apiKeyEnv: String(cfg.apiKeyEnv ?? process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY'),
     bonfireId: String(cfg.bonfireId ?? process.env.BONFIRE_ID ?? ''),
     search: { maxResults },
-    capture: { throttleMinutes },
+    processing: { intervalMinutes },
     agents: cfg.agents ?? {},
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),

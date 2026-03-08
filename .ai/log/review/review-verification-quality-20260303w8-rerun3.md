@@ -101,3 +101,7 @@ No suspicious Tier-3/Tier-4 vacuous pass was found for the changed ingestion pat
 - Tier 3: `gate:quality`, `gate:mutation-lite`
 - Tier 4: `gate:traceability`
 - Tier 0 overlays: `gate:diff-escalation`, `gate:anti-gaming`
+
+
+- Confidence: high
+

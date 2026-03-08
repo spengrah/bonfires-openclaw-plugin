@@ -1,127 +1,123 @@
 {
-    "version": 2,
+    "version": 4,
     "requirements": [
         {
             "id": "R1",
-            "spec": ".ai/spec/spec/plugin/spec-for-before-agent-start.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-before-agent-start.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/retrieval/before-agent-start.md",
+            "guidance": ".ai/spec/guidance/retrieval/guidance-for-before-agent-start.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"]
         },
         {
             "id": "R2",
-            "spec": ".ai/spec/spec/plugin/spec-for-bonfires-search-tool.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/retrieval/bonfires-search-tool.md",
+            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"]
         },
         {
             "id": "R3",
-            "spec": ".ai/spec/spec/plugin/spec-for-agent-end-capture.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-agent-end-capture.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/capture/agent-end-capture-legacy.md",
+            "guidance": ".ai/spec/guidance/capture/guidance-for-agent-end-capture.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"],
+            "note": "Superseded by PM10"
         },
         {
             "id": "R4",
-            "spec": ".ai/spec/spec/plugin/spec-for-recovery-catchup-and-session-end-flush.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-recovery-catchup-and-session-end-flush.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/processing/recovery-and-session-end.md",
+            "guidance": ".ai/spec/guidance/processing/guidance-for-recovery-and-session-end.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"]
         },
         {
             "id": "R5",
-            "spec": ".ai/spec/spec/plugin/spec-for-plugin-config-and-agent-mapping.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-plugin-config-and-agent-mapping.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/config/plugin-config-and-agent-mapping.md",
+            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-config-and-agent-mapping.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"]
         },
         {
             "id": "R6",
-            "spec": ".ai/spec/spec/plugin/spec-for-bonfires-client-interface.md",
-            "guidance": ".ai/spec/guidance/plugin/guidance-for-bonfires-search-tool.md",
-            "verification": [
-                ".ai/spec/spec/plugin/verification-checklist.md"
-            ]
+            "spec": ".ai/spec/spec/client/bonfires-client-interface.md",
+            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+            "verification": [".ai/spec/spec/quality/verification-checklist.md"]
         }
     ],
     "functionality_requirements": [
         {
             "id": "PM1",
-            "spec": ".ai/spec/spec/hosted-integration/hosted-api-wiring.md",
-            "guidance": ".ai/spec/guidance/hosted-integration/guidance-for-hosted-api-wiring.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/client/hosted-api-wiring.md",
+            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-api-wiring.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM2",
-            "spec": ".ai/spec/spec/conversation-memory/stack-processing-heartbeat.md",
-            "guidance": ".ai/spec/guidance/conversation-memory/guidance-for-stack-processing-heartbeat.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/processing/stack-processing-heartbeat.md",
+            "guidance": ".ai/spec/guidance/processing/guidance-for-stack-processing-heartbeat.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM3",
-            "spec": ".ai/spec/spec/hosted-integration/hosted-integration-verification.md",
-            "guidance": ".ai/spec/guidance/hosted-integration/guidance-for-hosted-integration-verification.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/client/hosted-integration-verification.md",
+            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-integration-verification.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM4",
-            "spec": ".ai/spec/spec/content-ingestion/ingestion-cron-and-hash-ledger.md",
-            "guidance": ".ai/spec/guidance/content-ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md",
+            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM5",
-            "spec": ".ai/spec/spec/packaging-runtime/plugin-packaging-and-openclaw-integration.md",
-            "guidance": ".ai/spec/guidance/packaging-runtime/guidance-for-plugin-packaging-and-openclaw-integration.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/config/plugin-packaging.md",
+            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-packaging.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM6",
-            "spec": ".ai/spec/spec/content-ingestion/ingestion-target-profiles-and-agent-mapping.md",
-            "guidance": ".ai/spec/guidance/content-ingestion/guidance-for-ingestion-target-profiles-and-agent-mapping.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md",
+            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         },
         {
             "id": "PM7",
-            "spec": ".ai/spec/spec/conversation-memory/compaction-flush.md",
-            "guidance": ".ai/spec/guidance/conversation-memory/guidance-for-compaction-flush.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/processing/compaction-flush.md",
+            "guidance": ".ai/spec/guidance/processing/guidance-for-compaction-flush.md",
+            "verification": [".ai/spec/spec/requirements-index.md"],
+            "note": "Superseded by PM10"
         },
         {
             "id": "PM8",
-            "spec": ".ai/spec/spec/conversation-memory/watermark-reset-on-truncation.md",
-            "guidance": ".ai/spec/guidance/conversation-memory/guidance-for-watermark-reset-on-truncation.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/capture/watermark-reset-on-truncation.md",
+            "guidance": ".ai/spec/guidance/capture/guidance-for-watermark-reset-on-truncation.md",
+            "verification": [".ai/spec/spec/requirements-index.md"],
+            "note": "Retained as guard within PM10"
         },
         {
             "id": "PM9",
-            "spec": ".ai/spec/spec/conversation-memory/prepend-context-stripping.md",
-            "guidance": ".ai/spec/guidance/conversation-memory/guidance-for-prepend-context-stripping.md",
-            "verification": [
-                ".ai/spec/spec/functionality/requirements-index.md"
-            ]
+            "spec": ".ai/spec/spec/capture/prepend-context-stripping.md",
+            "guidance": ".ai/spec/guidance/capture/guidance-for-prepend-context-stripping.md",
+            "verification": [".ai/spec/spec/requirements-index.md"],
+            "note": "Retained within PM11"
+        },
+        {
+            "id": "PM10",
+            "spec": ".ai/spec/spec/capture/immediate-stack-capture.md",
+            "verification": [".ai/spec/spec/requirements-index.md"],
+            "note": "Supersedes PM1, PM7"
+        },
+        {
+            "id": "PM11",
+            "spec": ".ai/spec/spec/capture/message-sanitization.md",
+            "guidance": ".ai/spec/guidance/capture/guidance-for-message-sanitization.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
+        },
+        {
+            "id": "PM12",
+            "spec": ".ai/spec/spec/capture/session-improvements.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
+        },
+        {
+            "id": "PM13",
+            "spec": ".ai/spec/spec/capture/agent-display-names.md",
+            "verification": [".ai/spec/spec/requirements-index.md"]
         }
     ]
 }

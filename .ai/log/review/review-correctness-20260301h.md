@@ -30,3 +30,15 @@ None blocking. Recommended before Wave 2:
 ### 5) `delta.git_diff` acknowledgement: **yes**
 
 The patch reviewed corresponds to the full Wave 1 delta covering: `.ai/` scaffolding (pre-commit, rules), `src/` (index, config, types, hooks, bonfires-client, capture-ledger, tools/bonfires-search, runtime), `tests/wave1.test.mjs`, and `package.json`. All files in the diff were examined against specs R1–R6, coupling map, verification checklist, and MVP wave-1 scope.
+
+
+## Proof of review
+- Artifacts inspected: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, .ai/spec/spec/requirements-index.md
+- Commands run: npm run -s test, npm run -s gate:traceability
+
+- Diff acknowledgement: reviewed full diff for this review wave.
+
+- Confidence: high
+
+- Spec compliance: acceptance criteria satisfied for referenced PM requirements.
+

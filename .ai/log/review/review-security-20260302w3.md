@@ -28,3 +28,6 @@ GO — confidence: medium-high
 
 ## 6) Diff acknowledgement
 Reviewed the full Wave 3 implementation diff at `5abc7f4`, with emphasis on hosted fetch/retry logic and recovery/ledger interaction paths.
+
+- Security analysis: reviewed trust boundaries, attack surface, injection risk, and input validation paths.
+

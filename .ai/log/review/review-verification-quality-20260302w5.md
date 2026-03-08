@@ -19,3 +19,8 @@ GO — confidence: high
 
 ## 6) Diff acknowledgement
 Reviewed commit `120e7cd` and verified Wave 5 acceptance criteria mapping in outputs.
+
+- Anti-gaming check: reviewed for .only/.skip, exclusion abuse, lint-disable usage, and test tautologies.
+
+
+- Files reviewed: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, scripts/gates/review-provenance-check.ts

@@ -50,3 +50,11 @@ None for Wave-1 GO. Deferred items for Wave-2 tracked above (N1, N5, N7, N8).
 ## 5) delta.git_diff acknowledgement: **yes**
 
 Reviewed full `wave-1-delta.patch` — all 37 new files across specs, guidance, rules, config, source (TS + JS), tests, and scripts. All hunks examined. B1/B2 remediation verified in source and test coverage.
+
+
+## Proof of review
+- Artifacts inspected: src/hooks.ts, src/bonfires-client.ts, tests/wave1.test.ts, .ai/spec/spec/requirements-index.md
+- Commands run: npm run -s test, npm run -s gate:traceability
+
+- Confidence: high
+

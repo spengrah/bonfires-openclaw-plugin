@@ -1,8 +1,8 @@
-import { extractUserMessage } from './hooks.js';
+import { extractUserMessage } from './message-utils.js';
 
 export interface BonfiresClient {
   search(req: { agentId: string; query: string; limit: number }): Promise<{ results: Array<{ summary: string; source: string; score: number }> }>;
-  capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }> }): Promise<{ accepted: number }>;
+  capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }>; agentDisplayName?: string }): Promise<{ accepted: number }>;
   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
   stackSearch?(req: { agentId: string; query: string; limit?: number }): Promise<{ results: any[]; count: number; query: string }>;
   ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
@@ -220,14 +220,14 @@ export class HostedBonfiresClient implements BonfiresClient {
     return { text, userId, chatId, timestamp: new Date().toISOString(), role, username };
   }
 
-  async capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }> }) {
+  async capture(req: { agentId: string; sessionKey: string; sessionId?: string; messages: Array<{ role: string; content: string }>; agentDisplayName?: string }) {
     this.validateAgentId(req.agentId);
     // Only capture conversational messages — filter out toolResult, system, tool_use, etc.
     const conversational = req.messages.filter(m => m.role === 'user' || m.role === 'assistant');
     if (!conversational.length) return { accepted: 0 };
 
-    // Use agentId as the assistant userId
-    const agentName = req.agentId;
+    // Use display name for assistant userId/username, fall back to agentId
+    const agentName = req.agentDisplayName ?? req.agentId;
     // PM12: Use sessionId as chatId, fall back to sessionKey
     const chatId = req.sessionId || req.sessionKey;
 
