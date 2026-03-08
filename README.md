@@ -163,6 +163,29 @@ npm run ingest:bonfires
   - `ingestion-hash-ledger.json`
   - `ingestion-cron-summary-current.json`
 
+## PM14/PM15 production validation snapshot (2026-03-08)
+
+Validated in a live OpenClaw runtime (plugin install + doctor + gateway probe + functional tool calls):
+
+- `bonfires_ingest_link` **blocks private targets as designed**.
+  - Example observed result for `http://localhost:8080/test`:
+    - `classification: "blocked"`
+    - `success: false`
+    - `error: "private/localhost targets are blocked"`
+- `bonfires_ingest_link` **routes public PDF links to `/ingest_pdf`** and can succeed end-to-end.
+  - Example observed result for an ArXiv PDF link:
+    - `classification: "pdf"`
+    - `route: "/ingest_pdf"`
+    - `success: true`
+- Intermittent Bonfires upstream `HTTP 503` responses were observed during some attempts.
+  - This indicates backend availability variance, not a deterministic failure in plugin tool-path wiring.
+
+Operational interpretation:
+
+1. PM15 link-ingestion tool contract is functioning (safety block + expected route/shape).
+2. PM14 deterministic ingestion lane is functioning when upstream is available.
+3. Retry behavior should treat `503` as transient upstream failure.
+
 ## Troubleshooting
 
 - **Plugin not discovered**: run `openclaw plugins doctor`; verify `openclaw.plugin.json` and `openclaw.extensions` entry in `package.json`.
