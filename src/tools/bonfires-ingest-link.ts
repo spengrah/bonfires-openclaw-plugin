@@ -63,7 +63,13 @@ export async function ingestLink(
         metadata,
       });
       const dup = isDuplicateResponse(result);
-      return { url, classification: 'pdf', route: '/ingest_pdf', success: true, duplicate: dup };
+      if (dup) {
+        return { url, classification: 'pdf', route: '/ingest_pdf', success: true, duplicate: true };
+      }
+      if (result.success === false) {
+        return { url, classification: 'pdf', route: '/ingest_pdf', success: false, duplicate: false, error: result.message || 'ingestPdf failed' };
+      }
+      return { url, classification: 'pdf', route: '/ingest_pdf', success: true, duplicate: false };
     }
 
     // For text and HTML, convert to string

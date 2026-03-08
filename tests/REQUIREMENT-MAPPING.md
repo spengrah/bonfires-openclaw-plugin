@@ -133,6 +133,12 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 - `pm15: ingestLink result includes url, classification, route, success, duplicate` → PM15
 - `pm15: isDuplicateResponse works for PM15 context` → PM15
 - `pm15: bonfires_ingest_link tool registers with explicit description` → PM15
+- `pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false` → PM15
+- `pm15: ingestLink PDF duplicate response is treated as success no-op` → PM15
+- `pm15: safeFetch rejects redirect to private/blocked host` → PM15
+- `pm15: ingestLink rejects URL that redirects to localhost` → PM15
+- `pm15: transport-safety DEFAULT_LIMITS includes maxRedirects` → PM15
+- `pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation` → PM15
 - `pm15: plugin registers bonfires_ingest_link tool` → PM15
 
 ## Requirements coverage
