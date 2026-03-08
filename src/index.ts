@@ -4,6 +4,7 @@ import { InMemoryCaptureLedger } from './capture-ledger.js';
 import { handleAgentEnd, handleBeforeAgentStart, handleBeforeCompaction, handleSessionEnd } from './hooks.js';
 import { bonfiresSearchTool } from './tools/bonfires-search.js';
 import { bonfiresStackSearchTool } from './tools/bonfires-stack-search.js';
+import { bonfiresIngestLinkTool } from './tools/bonfires-ingest-link.js';
 import { startStackHeartbeat } from './heartbeat.js';
 import { startIngestionCron } from './ingestion.js';
 
@@ -80,6 +81,17 @@ export default function register(api){
     parameters:{type:'object',properties:{query:{type:'string'},limit:{type:'number',minimum:1,maximum:100}},required:['query']},
     execute: async (_toolCallId, params) => {
       const result = await bonfiresStackSearchTool(params, toolCtx, {cfg, client, logger: api.logger});
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
+    },
+  }));
+
+  api.registerTool((toolCtx) => ({
+    name:'bonfires_ingest_link',
+    label:'Ingest a link into Bonfires',
+    description:'Ingest content from a URL into your knowledge graph. Use this when the user shares a link and explicitly asks to save or ingest it. Always confirm with the user before calling this tool.',
+    parameters:{type:'object',properties:{url:{type:'string',description:'The URL to fetch and ingest'}},required:['url']},
+    execute: async (_toolCallId, params) => {
+      const result = await bonfiresIngestLinkTool(params, toolCtx, {cfg, client, logger: api.logger});
       return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
     },
   }));

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import type { IngestionProfile } from './config.js';
+import { classifyRouteByPath, isDuplicateResponse, type IngestionRoute } from './ingestion-core.js';
 
 type LedgerEntry = { hash: string; pushedAt: string };
 type Ledger = { version: number; entries: Record<string, LedgerEntry> };
@@ -10,7 +11,9 @@ type IngestItem = {
   relativePath: string;
   absPath: string;
   content: string;
+  binaryContent?: Buffer;
   hash: string;
+  route: IngestionRoute;
 };
 
 export type IngestionSummary = {
@@ -25,6 +28,10 @@ export type IngestionSummary = {
 };
 
 function sha256(content: string) {
+  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function sha256Binary(content: Buffer) {
   return `sha256:${createHash('sha256').update(content).digest('hex')}`;
 }
 
@@ -92,6 +99,7 @@ function collectIngestionFiles(rootDir: string): IngestItem[] {
       relativePath: relative(absRoot, absPath),
       content,
       hash: sha256(content),
+      route: 'text' as IngestionRoute,
     };
   });
 }
@@ -161,13 +169,27 @@ function collectProfileFiles(profile: IngestionProfile, profileName: string): In
     if (!profile.includeGlobs.some((g) => globMatch(g, rel))) continue;
 
     try {
-      const content = readFileSync(absPath, 'utf8');
-      result.push({
-        absPath,
-        relativePath: `${profileName}:${rel}`,
-        content,
-        hash: sha256(content),
-      });
+      const route = classifyRouteByPath(absPath);
+      if (route === 'pdf') {
+        const bin = readFileSync(absPath);
+        result.push({
+          absPath,
+          relativePath: `${profileName}:${rel}`,
+          content: '',
+          binaryContent: bin,
+          hash: sha256Binary(bin),
+          route,
+        });
+      } else {
+        const content = readFileSync(absPath, 'utf8');
+        result.push({
+          absPath,
+          relativePath: `${profileName}:${rel}`,
+          content,
+          hash: sha256(content),
+          route,
+        });
+      }
     } catch {
       // Skip files that can't be read
     }
@@ -180,7 +202,10 @@ export async function runIngestionOnce(opts: {
   rootDir: string;
   ledgerPath: string;
   summaryPath: string;
-  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+  client: {
+    ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }>;
+    ingestPdf?: (req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) => Promise<{ success: boolean; documentId?: string; message?: string }>;
+  };
   profiles?: Record<string, IngestionProfile>;
   agentProfiles?: Record<string, string>;
   defaultProfile?: string;
@@ -265,18 +290,43 @@ export async function runIngestionOnce(opts: {
     }
 
     try {
-      if (!opts.client.ingestContent) throw new Error('ingestContent is not available on client');
-      await opts.client.ingestContent({
-        sourcePath: item.relativePath,
-        content: item.content,
-        contentHash: item.hash,
-        metadata: { source: 'ingestion-cron' },
-      });
-      ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
-      summary.ingested += 1;
-      if (hasProfiles) {
-        const pName = item.relativePath.split(':')[0];
-        if (profileStats[pName]) profileStats[pName].ingested += 1;
+      if (item.route === 'pdf') {
+        if (!opts.client.ingestPdf) throw new Error('ingestPdf is not available on client');
+        const result = await opts.client.ingestPdf({
+          sourcePath: item.relativePath,
+          content: item.binaryContent!,
+          contentHash: item.hash,
+          metadata: { source: 'ingestion-cron' },
+        });
+        // PM14-R5: duplicate response is treated as successful no-op
+        if (isDuplicateResponse(result)) {
+          summary.skipped += 1;
+          if (hasProfiles) {
+            const pName = item.relativePath.split(':')[0];
+            if (profileStats[pName]) profileStats[pName].skipped += 1;
+          }
+        } else {
+          ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
+          summary.ingested += 1;
+          if (hasProfiles) {
+            const pName = item.relativePath.split(':')[0];
+            if (profileStats[pName]) profileStats[pName].ingested += 1;
+          }
+        }
+      } else {
+        if (!opts.client.ingestContent) throw new Error('ingestContent is not available on client');
+        await opts.client.ingestContent({
+          sourcePath: item.relativePath,
+          content: item.content,
+          contentHash: item.hash,
+          metadata: { source: 'ingestion-cron' },
+        });
+        ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
+        summary.ingested += 1;
+        if (hasProfiles) {
+          const pName = item.relativePath.split(':')[0];
+          if (profileStats[pName]) profileStats[pName].ingested += 1;
+        }
       }
     } catch (e: any) {
       summary.errors += 1;
@@ -306,7 +356,10 @@ export function startIngestionCron(opts: {
   rootDir: string;
   ledgerPath: string;
   summaryPath: string;
-  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
+  client: {
+    ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }>;
+    ingestPdf?: (req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) => Promise<{ success: boolean; documentId?: string; message?: string }>;
+  };
   logger?: { warn?: (msg: string) => void };
   profiles?: Record<string, IngestionProfile>;
   agentProfiles?: Record<string, string>;

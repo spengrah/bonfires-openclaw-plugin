@@ -6,6 +6,7 @@ export interface BonfiresClient {
   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
   stackSearch?(req: { agentId: string; query: string; limit?: number }): Promise<{ results: any[]; count: number; query: string }>;
   ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
+  ingestPdf?(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }): Promise<{ success: boolean; documentId?: string; message?: string }>;
 }
 
 export class MockBonfiresClient implements BonfiresClient {
@@ -53,6 +54,19 @@ export class MockBonfiresClient implements BonfiresClient {
 
   async ingestContent(_req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
     return { accepted: 1 };
+  }
+
+  ingestPdfCalls: any[] = [];
+  ingestPdfDuplicateHashes: Set<string> = new Set();
+  shouldThrowIngestPdf = false;
+
+  async ingestPdf(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) {
+    this.ingestPdfCalls.push(req);
+    if (this.shouldThrowIngestPdf) throw new Error('mock ingestPdf error');
+    if (this.ingestPdfDuplicateHashes.has(req.contentHash)) {
+      return { success: true, documentId: 'dup-id', message: 'duplicate' };
+    }
+    return { success: true, documentId: 'doc-123', message: 'created' };
   }
 }
 
@@ -295,6 +309,36 @@ export class HostedBonfiresClient implements BonfiresClient {
       count: body.count ?? 0,
       query: body.query ?? req.query,
     };
+  }
+
+  async ingestPdf(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) {
+    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/ingest_pdf?bonfire_id=${encodeURIComponent(this.cfg.bonfireId)}`;
+    const key = process.env[this.cfg.apiKeyEnv];
+    if (!key) throw new Error(`Missing API key env: ${this.cfg.apiKeyEnv}`);
+
+    const timeoutMs = this.cfg.network?.timeoutMs ?? 12000;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const formData = new FormData();
+      formData.append('file', new Blob([new Uint8Array(req.content)], { type: 'application/pdf' }), req.sourcePath);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}` },
+        body: formData,
+        signal: controller.signal,
+      });
+      let body: any = {};
+      try { body = await res.json(); } catch {}
+      if (!res.ok) throw new Error(`Bonfires /ingest_pdf failed: HTTP ${res.status}`);
+      return {
+        success: Boolean(body.success ?? true),
+        documentId: body.document_id,
+        message: body.message,
+      };
+    } finally {
+      clearTimeout(t);
+    }
   }
 
   async ingestContent(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
