@@ -62,6 +62,8 @@ export function validateFetchUrl(url: string): string | null {
 
 /**
  * Safely fetch a URL with transport guards.
+ * Uses manual redirect following to enforce maxRedirects at the application
+ * layer and re-validate each hop against SSRF guards (PM15-R5).
  * Returns the response body as a Buffer and content-type header.
  */
 export async function safeFetch(
@@ -77,26 +79,50 @@ export async function safeFetch(
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
 
   try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'follow',
-    });
+    let currentUrl = url;
+    let res: Response;
+    let hops = 0;
 
-    // Check redirect target safety (final URL after redirects)
-    const finalUrl = res.url || url;
-    if (finalUrl !== url) {
-      const redirectErr = validateFetchUrl(finalUrl);
-      if (redirectErr) throw new Error(`Transport safety: redirect target blocked — ${finalUrl}`);
+    // Application-layer redirect loop: manually follow redirects so we can
+    // validate each intermediate target against SSRF guards.
+    while (true) {
+      res = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+      });
+
+      const isRedirect = res.status >= 300 && res.status < 400;
+      if (!isRedirect) break;
+
+      hops += 1;
+      if (hops > opts.maxRedirects) {
+        throw new Error(`Transport safety: exceeded max redirects (${opts.maxRedirects})`);
+      }
+
+      const location = res.headers.get('location');
+      if (!location) {
+        throw new Error(`Transport safety: redirect ${res.status} with no Location header`);
+      }
+
+      // Resolve relative redirects against the current URL
+      const nextUrl = new URL(location, currentUrl).href;
+      const redirectErr = validateFetchUrl(nextUrl);
+      if (redirectErr) {
+        throw new Error(`Transport safety: redirect target blocked — ${nextUrl}`);
+      }
+
+      currentUrl = nextUrl;
     }
 
-    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+    if (!res!.ok) throw new Error(`HTTP ${res!.status} fetching ${currentUrl}`);
 
-    const contentType = res.headers.get('content-type') || 'application/octet-stream';
+    const contentType = res!.headers.get('content-type') || 'application/octet-stream';
+    const finalUrl = currentUrl;
 
     // Read response with size limit
     const chunks: Uint8Array[] = [];
     let totalSize = 0;
-    const reader = res.body?.getReader();
+    const reader = res!.body?.getReader();
     if (!reader) throw new Error('No response body');
 
     while (true) {

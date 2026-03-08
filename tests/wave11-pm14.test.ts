@@ -36,11 +36,16 @@ test('pm14: classifyRouteByPath routes .pdf to pdf and others to text', () => {
 
 // --- PM14-R5: Duplicate response semantics ---
 
-test('pm14: isDuplicateResponse detects duplicate message (case-insensitive)', () => {
+test('pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)', () => {
   assert.equal(isDuplicateResponse({ success: true, message: 'duplicate' }), true);
   assert.equal(isDuplicateResponse({ success: true, message: 'Duplicate' }), true);
   assert.equal(isDuplicateResponse({ success: true, message: 'DUPLICATE' }), true);
+  // Tolerant: "duplicate content" variant
+  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate content' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: 'Duplicate Content' }), true);
+  // Non-matches
   assert.equal(isDuplicateResponse({ success: true, message: 'created' }), false);
+  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate key error' }), false);
   assert.equal(isDuplicateResponse({ success: true }), false);
   assert.equal(isDuplicateResponse({}), false);
 });

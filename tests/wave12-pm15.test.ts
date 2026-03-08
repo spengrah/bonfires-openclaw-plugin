@@ -205,6 +205,28 @@ test('pm15: isDuplicateResponse works for PM15 context', () => {
   assert.equal(isDuplicateResponse({ success: true, message: 'created' }), false);
 });
 
+// --- Tolerant duplicate-variant matching (PM14-R5, PM15-R7) ---
+
+test('pm15: isDuplicateResponse matches duplicate variants tolerantly', () => {
+  // Exact "duplicate" (various cases)
+  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: 'Duplicate' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: 'DUPLICATE' }), true);
+  // "duplicate content" variant
+  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate content' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: 'Duplicate Content' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: 'DUPLICATE CONTENT' }), true);
+  // Trimmed whitespace
+  assert.equal(isDuplicateResponse({ success: true, message: '  duplicate  ' }), true);
+  assert.equal(isDuplicateResponse({ success: true, message: '  duplicate content  ' }), true);
+  // Non-duplicate messages must not match
+  assert.equal(isDuplicateResponse({ success: true, message: 'created' }), false);
+  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate key error' }), false);
+  assert.equal(isDuplicateResponse({ success: true, message: 'not a duplicate' }), false);
+  assert.equal(isDuplicateResponse({ success: true }), false);
+  assert.equal(isDuplicateResponse({}), false);
+});
+
 // --- PM15-R1: Explicit confirmation model ---
 
 test('pm15: bonfires_ingest_link tool registers with explicit description', async () => {
@@ -287,23 +309,79 @@ test('pm15: ingestLink PDF duplicate response is treated as success no-op', asyn
   }
 });
 
-// --- PM15-R5: Redirect-policy evidence ---
+test('pm15: ingestLink PDF "duplicate content" variant is treated as success no-op', async () => {
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: any, _opts: any) => ({
+    ok: true,
+    url: typeof _url === 'string' ? _url : _url.url,
+    status: 200,
+    headers: new Headers({ 'content-type': 'application/pdf' }),
+    body: {
+      getReader: () => {
+        let done = false;
+        return {
+          read: async () => {
+            if (done) return { done: true, value: undefined };
+            done = true;
+            return { done: false, value: new Uint8Array(Buffer.from('%PDF-1.4 dup2')) };
+          },
+          cancel: async () => {},
+        };
+      },
+    },
+  })) as any;
+
+  try {
+    const client = {
+      ingestPdf: async () => ({ success: true, documentId: 'dup-2', message: 'Duplicate Content' }),
+    } as any;
+    const result = await ingestLink('https://example.com/report2.pdf', client);
+    assert.equal(result.success, true, '"duplicate content" variant should be treated as success');
+    assert.equal(result.duplicate, true, 'duplicate flag should be set for variant');
+    assert.equal(result.route, '/ingest_pdf');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+// --- PM15-R5: Redirect-policy evidence (deterministic app-layer enforcement) ---
+
+/** Helper: build a mock fetch that follows a scripted redirect chain. */
+function mockRedirectChain(chain: { status: number; location?: string; contentType?: string; body?: string }[]) {
+  let callIndex = 0;
+  return (async (_url: any, _opts: any) => {
+    const step = chain[callIndex] ?? chain[chain.length - 1];
+    callIndex++;
+    return {
+      ok: step.status >= 200 && step.status < 300,
+      status: step.status,
+      headers: new Headers({
+        ...(step.location ? { location: step.location } : {}),
+        'content-type': step.contentType || 'text/plain',
+      }),
+      body: {
+        getReader: () => {
+          let done = false;
+          return {
+            read: async () => {
+              if (done || !step.body) return { done: true, value: undefined };
+              done = true;
+              return { done: false, value: new Uint8Array(Buffer.from(step.body)) };
+            },
+            cancel: async () => {},
+          };
+        },
+      },
+    };
+  }) as any;
+}
 
 test('pm15: safeFetch rejects redirect to private/blocked host', async () => {
   const origFetch = globalThis.fetch;
-  // Simulate fetch following a redirect to a private IP
-  globalThis.fetch = (async (_url: any, _opts: any) => ({
-    ok: true,
-    url: 'http://169.254.169.254/latest/meta-data',  // redirect target is SSRF
-    status: 200,
-    headers: new Headers({ 'content-type': 'text/plain' }),
-    body: {
-      getReader: () => ({
-        read: async () => ({ done: true, value: undefined }),
-        cancel: async () => {},
-      }),
-    },
-  })) as any;
+  // Simulate a 302 redirect to a private SSRF target
+  globalThis.fetch = mockRedirectChain([
+    { status: 302, location: 'http://169.254.169.254/latest/meta-data' },
+  ]);
 
   try {
     const { safeFetch: safeFetchFn } = await import('../src/transport-safety.js');
@@ -319,20 +397,76 @@ test('pm15: safeFetch rejects redirect to private/blocked host', async () => {
   }
 });
 
+test('pm15: safeFetch enforces maxRedirects hop limit at app layer', async () => {
+  const origFetch = globalThis.fetch;
+  // 4 consecutive redirects → exceeds default maxRedirects of 3
+  globalThis.fetch = mockRedirectChain([
+    { status: 302, location: 'https://example.com/hop1' },
+    { status: 302, location: 'https://example.com/hop2' },
+    { status: 302, location: 'https://example.com/hop3' },
+    { status: 302, location: 'https://example.com/hop4' }, // exceeds limit
+  ]);
+
+  try {
+    const { safeFetch: safeFetchFn } = await import('../src/transport-safety.js');
+    await assert.rejects(
+      () => safeFetchFn('https://example.com/start'),
+      (err: Error) => {
+        assert.ok(err.message.includes('exceeded max redirects'), 'should enforce hop limit');
+        return true;
+      },
+    );
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('pm15: safeFetch re-validates SSRF at intermediate redirect hop', async () => {
+  const origFetch = globalThis.fetch;
+  // First redirect is fine, second redirect targets private IP
+  globalThis.fetch = mockRedirectChain([
+    { status: 302, location: 'https://cdn.example.com/bounce' },
+    { status: 302, location: 'http://10.0.0.1/internal' },
+  ]);
+
+  try {
+    const { safeFetch: safeFetchFn } = await import('../src/transport-safety.js');
+    await assert.rejects(
+      () => safeFetchFn('https://example.com/start'),
+      (err: Error) => {
+        assert.ok(err.message.includes('redirect target blocked'), 'should block private hop mid-chain');
+        return true;
+      },
+    );
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('pm15: safeFetch follows valid redirects within hop limit', async () => {
+  const origFetch = globalThis.fetch;
+  // 2 redirects then 200 — within the limit of 3
+  globalThis.fetch = mockRedirectChain([
+    { status: 302, location: 'https://cdn.example.com/hop1' },
+    { status: 301, location: 'https://cdn.example.com/final' },
+    { status: 200, body: 'OK content', contentType: 'text/plain' },
+  ]);
+
+  try {
+    const { safeFetch: safeFetchFn } = await import('../src/transport-safety.js');
+    const result = await safeFetchFn('https://example.com/start');
+    assert.equal(result.finalUrl, 'https://cdn.example.com/final');
+    assert.equal(result.body.toString(), 'OK content');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
 test('pm15: ingestLink rejects URL that redirects to localhost', async () => {
   const origFetch = globalThis.fetch;
-  globalThis.fetch = (async (_url: any, _opts: any) => ({
-    ok: true,
-    url: 'http://127.0.0.1:8080/secret',  // redirect to loopback
-    status: 200,
-    headers: new Headers({ 'content-type': 'text/html' }),
-    body: {
-      getReader: () => ({
-        read: async () => ({ done: true, value: undefined }),
-        cancel: async () => {},
-      }),
-    },
-  })) as any;
+  globalThis.fetch = mockRedirectChain([
+    { status: 302, location: 'http://127.0.0.1:8080/secret' },
+  ]);
 
   try {
     const result = await ingestLink('https://legit-site.com/page', {} as any);
@@ -350,9 +484,9 @@ test('pm15: transport-safety DEFAULT_LIMITS includes maxRedirects', async () => 
   const src = readFileSync(join(__dirname, '..', 'src', 'transport-safety.ts'), 'utf8');
   assert.ok(src.includes('maxRedirects'), 'transport-safety must define maxRedirects limit');
   assert.ok(/maxRedirects:\s*\d+/.test(src), 'maxRedirects must have a numeric default');
-  // Note: Node fetch redirect:'follow' delegates redirect counting to the runtime.
-  // The maxRedirects field documents the intended policy bound; safeFetch validates
-  // the final URL post-redirect to enforce SSRF safety regardless of hop count.
+  // safeFetch uses redirect:'manual' and enforces maxRedirects at the application
+  // layer, re-validating each hop against SSRF guards.
+  assert.ok(src.includes("redirect: 'manual'"), 'safeFetch must use manual redirect mode');
 });
 
 // --- PM15-R1: Confirmation boundary evidence ---

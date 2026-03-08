@@ -71,7 +71,13 @@ export function classifyLink(url: string, contentType?: string): ContentClassifi
 /**
  * Check if a Bonfires response indicates a duplicate (PM14-R5, PM15-R7).
  * Duplicate responses are treated as successful no-op.
+ *
+ * Tolerant matching: recognizes "duplicate", "duplicate content", and other
+ * duplicate-indicating variants (case-insensitive, trimmed). Scoped to
+ * messages that start with "duplicate" to keep false-positive risk low.
  */
 export function isDuplicateResponse(response: { success?: boolean; message?: string }): boolean {
-  return response.message?.toLowerCase() === 'duplicate';
+  if (!response.message) return false;
+  const normalized = response.message.trim().toLowerCase();
+  return normalized === 'duplicate' || normalized === 'duplicate content';
 }
