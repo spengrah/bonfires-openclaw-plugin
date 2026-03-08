@@ -1,0 +1,1294 @@
+diff --git a/src/bonfires-client.ts b/src/bonfires-client.ts
+index 700055e..4f5b49d 100644
+--- a/src/bonfires-client.ts
++++ b/src/bonfires-client.ts
+@@ -6,6 +6,7 @@ export interface BonfiresClient {
+   processStack?(req: { agentId: string }): Promise<{ success: boolean; message_count?: number }>;
+   stackSearch?(req: { agentId: string; query: string; limit?: number }): Promise<{ results: any[]; count: number; query: string }>;
+   ingestContent?(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }): Promise<{ accepted: number }>;
++  ingestPdf?(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }): Promise<{ success: boolean; documentId?: string; message?: string }>;
+ }
+ 
+ export class MockBonfiresClient implements BonfiresClient {
+@@ -54,6 +55,19 @@ export class MockBonfiresClient implements BonfiresClient {
+   async ingestContent(_req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
+     return { accepted: 1 };
+   }
++
++  ingestPdfCalls: any[] = [];
++  ingestPdfDuplicateHashes: Set<string> = new Set();
++  shouldThrowIngestPdf = false;
++
++  async ingestPdf(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) {
++    this.ingestPdfCalls.push(req);
++    if (this.shouldThrowIngestPdf) throw new Error('mock ingestPdf error');
++    if (this.ingestPdfDuplicateHashes.has(req.contentHash)) {
++      return { success: true, documentId: 'dup-id', message: 'duplicate' };
++    }
++    return { success: true, documentId: 'doc-123', message: 'created' };
++  }
+ }
+ 
+ export class HostedBonfiresClient implements BonfiresClient {
+@@ -297,6 +311,36 @@ export class HostedBonfiresClient implements BonfiresClient {
+     };
+   }
+ 
++  async ingestPdf(req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) {
++    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/ingest_pdf?bonfire_id=${encodeURIComponent(this.cfg.bonfireId)}`;
++    const key = process.env[this.cfg.apiKeyEnv];
++    if (!key) throw new Error(`Missing API key env: ${this.cfg.apiKeyEnv}`);
++
++    const timeoutMs = this.cfg.network?.timeoutMs ?? 12000;
++    const controller = new AbortController();
++    const t = setTimeout(() => controller.abort(), timeoutMs);
++    try {
++      const formData = new FormData();
++      formData.append('file', new Blob([new Uint8Array(req.content)], { type: 'application/pdf' }), req.sourcePath);
++      const res = await fetch(url, {
++        method: 'POST',
++        headers: { Authorization: `Bearer ${key}` },
++        body: formData,
++        signal: controller.signal,
++      });
++      let body: any = {};
++      try { body = await res.json(); } catch {}
++      if (!res.ok) throw new Error(`Bonfires /ingest_pdf failed: HTTP ${res.status}`);
++      return {
++        success: Boolean(body.success ?? true),
++        documentId: body.document_id,
++        message: body.message,
++      };
++    } finally {
++      clearTimeout(t);
++    }
++  }
++
+   async ingestContent(req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) {
+     const body = await this.fetchJson('/ingest_content', {
+       method: 'POST',
+diff --git a/src/html-extract.ts b/src/html-extract.ts
+new file mode 100644
+index 0000000..769c982
+--- /dev/null
++++ b/src/html-extract.ts
+@@ -0,0 +1,52 @@
++/**
++ * Deterministic HTML extraction (PM15-R4).
++ * Extracts primary readable content from HTML without browser/JS execution.
++ * Produces plain text suitable for ingestion via /ingest_content.
++ */
++
++/**
++ * Strip HTML tags and extract readable text content.
++ * Removes script, style, nav, header, footer, and aside elements first,
++ * then strips remaining tags and normalizes whitespace.
++ *
++ * PM15-R4: Deterministic and testable — no LLM summarization in extraction path.
++ */
++export function extractReadableText(html: string): string {
++  let text = html;
++
++  // Remove elements that don't contribute to readable content
++  const stripElements = ['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript', 'svg', 'iframe'];
++  for (const tag of stripElements) {
++    text = text.replace(new RegExp(`<${tag}[^>]*>[\\s\\S]*?</${tag}>`, 'gi'), '');
++  }
++
++  // Remove HTML comments
++  text = text.replace(/<!--[\s\S]*?-->/g, '');
++
++  // Convert common block elements to newlines for readability
++  text = text.replace(/<\/?(p|div|br|h[1-6]|li|tr|blockquote|pre|hr)[^>]*\/?>/gi, '\n');
++
++  // Strip remaining HTML tags
++  text = text.replace(/<[^>]+>/g, '');
++
++  // Decode common HTML entities
++  text = text
++    .replace(/&amp;/g, '&')
++    .replace(/&lt;/g, '<')
++    .replace(/&gt;/g, '>')
++    .replace(/&quot;/g, '"')
++    .replace(/&#39;/g, "'")
++    .replace(/&nbsp;/g, ' ')
++    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
++    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
++
++  // Normalize whitespace: collapse multiple spaces/tabs, trim lines, collapse blank lines
++  text = text
++    .split('\n')
++    .map(line => line.replace(/[ \t]+/g, ' ').trim())
++    .join('\n')
++    .replace(/\n{3,}/g, '\n\n')
++    .trim();
++
++  return text;
++}
+diff --git a/src/index.ts b/src/index.ts
+index dac385b..9599cbf 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -4,6 +4,7 @@ import { InMemoryCaptureLedger } from './capture-ledger.js';
+ import { handleAgentEnd, handleBeforeAgentStart, handleBeforeCompaction, handleSessionEnd } from './hooks.js';
+ import { bonfiresSearchTool } from './tools/bonfires-search.js';
+ import { bonfiresStackSearchTool } from './tools/bonfires-stack-search.js';
++import { bonfiresIngestLinkTool } from './tools/bonfires-ingest-link.js';
+ import { startStackHeartbeat } from './heartbeat.js';
+ import { startIngestionCron } from './ingestion.js';
+ 
+@@ -84,6 +85,17 @@ export default function register(api){
+     },
+   }));
+ 
++  api.registerTool((toolCtx) => ({
++    name:'bonfires_ingest_link',
++    label:'Ingest a link into Bonfires',
++    description:'Ingest content from a URL into your knowledge graph. Use this when the user shares a link and explicitly asks to save or ingest it. Always confirm with the user before calling this tool.',
++    parameters:{type:'object',properties:{url:{type:'string',description:'The URL to fetch and ingest'}},required:['url']},
++    execute: async (_toolCallId, params) => {
++      const result = await bonfiresIngestLinkTool(params, toolCtx, {cfg, client, logger: api.logger});
++      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
++    },
++  }));
++
+   return {
+     dispose() {
+       stopHeartbeat?.();
+diff --git a/src/ingestion-core.ts b/src/ingestion-core.ts
+new file mode 100644
+index 0000000..c6c710f
+--- /dev/null
++++ b/src/ingestion-core.ts
+@@ -0,0 +1,77 @@
++import { extname } from 'node:path';
++
++/**
++ * Shared ingestion core: deterministic routing logic reused by cron (PM4/PM6)
++ * and link-triggered (PM15) ingestion paths.
++ */
++
++/** Ingestion route: determines which Bonfires endpoint receives the content. */
++export type IngestionRoute = 'pdf' | 'text';
++
++/**
++ * Determine if a file path has a PDF extension (case-insensitive).
++ * PM14-R2: routing decision is deterministic and based on normalized extension.
++ */
++export function isPdfExtension(filePath: string): boolean {
++  return extname(filePath).toLowerCase() === '.pdf';
++}
++
++/**
++ * Classify ingestion route by file path extension.
++ * PM14-R2: .pdf -> 'pdf', everything else -> 'text'.
++ */
++export function classifyRouteByPath(filePath: string): IngestionRoute {
++  return isPdfExtension(filePath) ? 'pdf' : 'text';
++}
++
++/**
++ * Classify ingestion route by content-type header (for link ingestion, PM15-R3).
++ * - application/pdf -> 'pdf'
++ * - text/html -> 'html' (caller handles extraction before routing to 'text')
++ * - text/* and common structured types -> 'text'
++ * - unknown -> null (unsupported)
++ */
++export type ContentClassification = 'pdf' | 'text' | 'html' | null;
++
++export function classifyByContentType(contentType: string): ContentClassification {
++  const ct = contentType.toLowerCase().split(';')[0].trim();
++  if (ct === 'application/pdf') return 'pdf';
++  if (ct === 'text/html') return 'html';
++  if (ct.startsWith('text/')) return 'text';
++  const structuredTypes = [
++    'application/json',
++    'application/yaml',
++    'application/x-yaml',
++    'text/csv',
++    'text/markdown',
++  ];
++  if (structuredTypes.includes(ct)) return 'text';
++  return null;
++}
++
++/**
++ * Classify a link URL for ingestion routing (PM15-R3).
++ * Uses URL path extension first, falls back to content-type header.
++ */
++export function classifyLink(url: string, contentType?: string): ContentClassification {
++  try {
++    const pathname = new URL(url).pathname;
++    if (isPdfExtension(pathname)) return 'pdf';
++    const ext = extname(pathname).toLowerCase();
++    const textExts = ['.md', '.txt', '.json', '.yaml', '.yml', '.csv'];
++    if (textExts.includes(ext)) return 'text';
++    if (ext === '.html' || ext === '.htm') return 'html';
++  } catch {
++    // invalid URL, fall through to content-type
++  }
++  if (contentType) return classifyByContentType(contentType);
++  return null;
++}
++
++/**
++ * Check if a Bonfires response indicates a duplicate (PM14-R5, PM15-R7).
++ * Duplicate responses are treated as successful no-op.
++ */
++export function isDuplicateResponse(response: { success?: boolean; message?: string }): boolean {
++  return response.message?.toLowerCase() === 'duplicate';
++}
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index f0aa744..241ce20 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
+ import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+ import { dirname, extname, join, relative, resolve } from 'node:path';
+ import type { IngestionProfile } from './config.js';
++import { classifyRouteByPath, isDuplicateResponse, type IngestionRoute } from './ingestion-core.js';
+ 
+ type LedgerEntry = { hash: string; pushedAt: string };
+ type Ledger = { version: number; entries: Record<string, LedgerEntry> };
+@@ -10,7 +11,9 @@ type IngestItem = {
+   relativePath: string;
+   absPath: string;
+   content: string;
++  binaryContent?: Buffer;
+   hash: string;
++  route: IngestionRoute;
+ };
+ 
+ export type IngestionSummary = {
+@@ -28,6 +31,10 @@ function sha256(content: string) {
+   return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+ }
+ 
++function sha256Binary(content: Buffer) {
++  return `sha256:${createHash('sha256').update(content).digest('hex')}`;
++}
++
+ function walk(dir: string, out: string[]) {
+   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+     if (entry.isSymbolicLink()) continue;
+@@ -92,6 +99,7 @@ function collectIngestionFiles(rootDir: string): IngestItem[] {
+       relativePath: relative(absRoot, absPath),
+       content,
+       hash: sha256(content),
++      route: 'text' as IngestionRoute,
+     };
+   });
+ }
+@@ -161,13 +169,27 @@ function collectProfileFiles(profile: IngestionProfile, profileName: string): In
+     if (!profile.includeGlobs.some((g) => globMatch(g, rel))) continue;
+ 
+     try {
+-      const content = readFileSync(absPath, 'utf8');
+-      result.push({
+-        absPath,
+-        relativePath: `${profileName}:${rel}`,
+-        content,
+-        hash: sha256(content),
+-      });
++      const route = classifyRouteByPath(absPath);
++      if (route === 'pdf') {
++        const bin = readFileSync(absPath);
++        result.push({
++          absPath,
++          relativePath: `${profileName}:${rel}`,
++          content: '',
++          binaryContent: bin,
++          hash: sha256Binary(bin),
++          route,
++        });
++      } else {
++        const content = readFileSync(absPath, 'utf8');
++        result.push({
++          absPath,
++          relativePath: `${profileName}:${rel}`,
++          content,
++          hash: sha256(content),
++          route,
++        });
++      }
+     } catch {
+       // Skip files that can't be read
+     }
+@@ -180,7 +202,10 @@ export async function runIngestionOnce(opts: {
+   rootDir: string;
+   ledgerPath: string;
+   summaryPath: string;
+-  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++  client: {
++    ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }>;
++    ingestPdf?: (req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) => Promise<{ success: boolean; documentId?: string; message?: string }>;
++  };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
+   defaultProfile?: string;
+@@ -265,18 +290,43 @@ export async function runIngestionOnce(opts: {
+     }
+ 
+     try {
+-      if (!opts.client.ingestContent) throw new Error('ingestContent is not available on client');
+-      await opts.client.ingestContent({
+-        sourcePath: item.relativePath,
+-        content: item.content,
+-        contentHash: item.hash,
+-        metadata: { source: 'ingestion-cron' },
+-      });
+-      ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
+-      summary.ingested += 1;
+-      if (hasProfiles) {
+-        const pName = item.relativePath.split(':')[0];
+-        if (profileStats[pName]) profileStats[pName].ingested += 1;
++      if (item.route === 'pdf') {
++        if (!opts.client.ingestPdf) throw new Error('ingestPdf is not available on client');
++        const result = await opts.client.ingestPdf({
++          sourcePath: item.relativePath,
++          content: item.binaryContent!,
++          contentHash: item.hash,
++          metadata: { source: 'ingestion-cron' },
++        });
++        // PM14-R5: duplicate response is treated as successful no-op
++        if (isDuplicateResponse(result)) {
++          summary.skipped += 1;
++          if (hasProfiles) {
++            const pName = item.relativePath.split(':')[0];
++            if (profileStats[pName]) profileStats[pName].skipped += 1;
++          }
++        } else {
++          ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
++          summary.ingested += 1;
++          if (hasProfiles) {
++            const pName = item.relativePath.split(':')[0];
++            if (profileStats[pName]) profileStats[pName].ingested += 1;
++          }
++        }
++      } else {
++        if (!opts.client.ingestContent) throw new Error('ingestContent is not available on client');
++        await opts.client.ingestContent({
++          sourcePath: item.relativePath,
++          content: item.content,
++          contentHash: item.hash,
++          metadata: { source: 'ingestion-cron' },
++        });
++        ledger.entries[item.relativePath] = { hash: item.hash, pushedAt: new Date().toISOString() };
++        summary.ingested += 1;
++        if (hasProfiles) {
++          const pName = item.relativePath.split(':')[0];
++          if (profileStats[pName]) profileStats[pName].ingested += 1;
++        }
+       }
+     } catch (e: any) {
+       summary.errors += 1;
+@@ -306,7 +356,10 @@ export function startIngestionCron(opts: {
+   rootDir: string;
+   ledgerPath: string;
+   summaryPath: string;
+-  client: { ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }> };
++  client: {
++    ingestContent?: (req: { sourcePath: string; content: string; contentHash: string; metadata?: Record<string, any> }) => Promise<{ accepted: number }>;
++    ingestPdf?: (req: { sourcePath: string; content: Buffer; contentHash: string; metadata?: Record<string, any> }) => Promise<{ success: boolean; documentId?: string; message?: string }>;
++  };
+   logger?: { warn?: (msg: string) => void };
+   profiles?: Record<string, IngestionProfile>;
+   agentProfiles?: Record<string, string>;
+diff --git a/src/tools/bonfires-ingest-link.ts b/src/tools/bonfires-ingest-link.ts
+new file mode 100644
+index 0000000..b1618ae
+--- /dev/null
++++ b/src/tools/bonfires-ingest-link.ts
+@@ -0,0 +1,113 @@
++import { createHash } from 'node:crypto';
++import { classifyLink, isDuplicateResponse } from '../ingestion-core.js';
++import { extractReadableText } from '../html-extract.js';
++import { safeFetch, validateFetchUrl } from '../transport-safety.js';
++import type { BonfiresClient } from '../bonfires-client.js';
++
++export type LinkIngestionResult = {
++  url: string;
++  classification: string;
++  route: string;
++  success: boolean;
++  duplicate: boolean;
++  error?: string;
++};
++
++/**
++ * Ingest a single approved link (PM15-R2).
++ * Fetches content with transport safety guards, classifies, routes to appropriate endpoint.
++ */
++export async function ingestLink(
++  url: string,
++  client: BonfiresClient,
++  _logger?: { warn?: (msg: string) => void },
++): Promise<LinkIngestionResult> {
++  // PM15-R5: validate URL before fetching
++  const urlErr = validateFetchUrl(url);
++  if (urlErr) {
++    return { url, classification: 'blocked', route: 'none', success: false, duplicate: false, error: urlErr };
++  }
++
++  let body: Buffer;
++  let contentType: string;
++  let finalUrl: string;
++  try {
++    ({ body, contentType, finalUrl } = await safeFetch(url));
++  } catch (e: any) {
++    return { url, classification: 'fetch_error', route: 'none', success: false, duplicate: false, error: String(e?.message ?? e) };
++  }
++
++  // PM15-R3: classify by URL extension + content-type
++  const classification = classifyLink(finalUrl, contentType);
++  if (!classification) {
++    return { url, classification: 'unsupported', route: 'none', success: false, duplicate: false, error: `unsupported content type: ${contentType}` };
++  }
++
++  const now = new Date().toISOString();
++  const metadata = {
++    source_url: url,
++    fetched_at: now,
++    content_type: contentType,
++    origin: 'linked_content',
++  };
++
++  try {
++    if (classification === 'pdf') {
++      // PM15-R3: PDF -> /ingest_pdf
++      if (!client.ingestPdf) throw new Error('ingestPdf is not available on client');
++      const hash = `sha256:${createHash('sha256').update(body).digest('hex')}`;
++      const result = await client.ingestPdf({
++        sourcePath: url,
++        content: body,
++        contentHash: hash,
++        metadata,
++      });
++      const dup = isDuplicateResponse(result);
++      return { url, classification: 'pdf', route: '/ingest_pdf', success: true, duplicate: dup };
++    }
++
++    // For text and HTML, convert to string
++    const textContent = body.toString('utf8');
++    let ingestContent: string;
++
++    if (classification === 'html') {
++      // PM15-R4: HTML -> extract readable text -> /ingest_content
++      ingestContent = extractReadableText(textContent);
++      if (!ingestContent.trim()) {
++        return { url, classification: 'html', route: '/ingest_content', success: false, duplicate: false, error: 'HTML extraction produced empty content' };
++      }
++    } else {
++      // PM15-R3: text-like -> /ingest_content
++      ingestContent = textContent;
++    }
++
++    if (!client.ingestContent) throw new Error('ingestContent is not available on client');
++    const hash = `sha256:${createHash('sha256').update(ingestContent).digest('hex')}`;
++    await client.ingestContent({
++      sourcePath: url,
++      content: ingestContent,
++      contentHash: hash,
++      metadata,
++    });
++    return { url, classification, route: '/ingest_content', success: true, duplicate: false };
++  } catch (e: any) {
++    return { url, classification, route: classification === 'pdf' ? '/ingest_pdf' : '/ingest_content', success: false, duplicate: false, error: String(e?.message ?? e) };
++  }
++}
++
++/**
++ * bonfires_ingest_link tool handler (PM15-R2).
++ * Explicit ingestion action for user-approved links.
++ */
++export async function bonfiresIngestLinkTool(
++  params: { url: string },
++  _toolCtx: any,
++  deps: { cfg: any; client: BonfiresClient; logger?: { warn?: (msg: string) => void } },
++) {
++  if (!params.url || typeof params.url !== 'string') {
++    return { success: false, error: 'url parameter is required' };
++  }
++
++  const result = await ingestLink(params.url, deps.client, deps.logger);
++  return result;
++}
+diff --git a/src/transport-safety.ts b/src/transport-safety.ts
+new file mode 100644
+index 0000000..4b572f6
+--- /dev/null
++++ b/src/transport-safety.ts
+@@ -0,0 +1,118 @@
++/**
++ * Transport safety guards for link ingestion (PM15-R5).
++ * Enforces scheme, SSRF, timeout, redirect, and size limits.
++ */
++
++export interface TransportLimits {
++  timeoutMs: number;
++  maxRedirects: number;
++  maxResponseBytes: number;
++}
++
++const DEFAULT_LIMITS: TransportLimits = {
++  timeoutMs: 15_000,
++  maxRedirects: 3,
++  maxResponseBytes: 10 * 1024 * 1024, // 10 MB
++};
++
++/** PM15-R5: Only http/https URLs are allowed. */
++export function isAllowedScheme(url: string): boolean {
++  try {
++    const parsed = new URL(url);
++    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
++  } catch {
++    return false;
++  }
++}
++
++/**
++ * PM15-R5: Block localhost, private-network, and link-local targets.
++ * Checks hostname against known private/reserved ranges.
++ */
++export function isPrivateHost(hostname: string): boolean {
++  const h = hostname.toLowerCase();
++  if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true;
++  if (h === '0.0.0.0' || h.startsWith('0.')) return true;
++  if (h.endsWith('.local') || h.endsWith('.localhost')) return true;
++  // IPv4 private ranges
++  if (/^10\./.test(h)) return true;
++  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
++  if (/^192\.168\./.test(h)) return true;
++  // Link-local
++  if (/^169\.254\./.test(h)) return true;
++  // Metadata endpoints
++  if (h === '169.254.169.254') return true;
++  return false;
++}
++
++/**
++ * Validate a URL for safe fetching.
++ * Returns null on success, or an error reason string.
++ */
++export function validateFetchUrl(url: string): string | null {
++  if (!isAllowedScheme(url)) return 'only http/https URLs are allowed';
++  try {
++    const parsed = new URL(url);
++    if (isPrivateHost(parsed.hostname)) return 'private/localhost targets are blocked';
++  } catch {
++    return 'invalid URL';
++  }
++  return null;
++}
++
++/**
++ * Safely fetch a URL with transport guards.
++ * Returns the response body as a Buffer and content-type header.
++ */
++export async function safeFetch(
++  url: string,
++  limits: Partial<TransportLimits> = {},
++): Promise<{ body: Buffer; contentType: string; finalUrl: string }> {
++  const opts = { ...DEFAULT_LIMITS, ...limits };
++
++  const err = validateFetchUrl(url);
++  if (err) throw new Error(`Transport safety: ${err} — ${url}`);
++
++  const controller = new AbortController();
++  const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
++
++  try {
++    const res = await fetch(url, {
++      signal: controller.signal,
++      redirect: 'follow',
++    });
++
++    // Check redirect target safety (final URL after redirects)
++    const finalUrl = res.url || url;
++    if (finalUrl !== url) {
++      const redirectErr = validateFetchUrl(finalUrl);
++      if (redirectErr) throw new Error(`Transport safety: redirect target blocked — ${finalUrl}`);
++    }
++
++    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
++
++    const contentType = res.headers.get('content-type') || 'application/octet-stream';
++
++    // Read response with size limit
++    const chunks: Uint8Array[] = [];
++    let totalSize = 0;
++    const reader = res.body?.getReader();
++    if (!reader) throw new Error('No response body');
++
++    while (true) {
++      const { done, value } = await reader.read();
++      if (done) break;
++      totalSize += value.byteLength;
++      if (totalSize > opts.maxResponseBytes) {
++        reader.cancel();
++        throw new Error(`Response exceeds max size (${opts.maxResponseBytes} bytes)`);
++      }
++      chunks.push(value);
++    }
++
++    const body = Buffer.concat(chunks);
++    return { body, contentType, finalUrl };
++  } finally {
++    clearTimeout(timer);
++  }
++}
+diff --git a/tests/REQUIREMENT-MAPPING.md b/tests/REQUIREMENT-MAPPING.md
+index 47e717c..fb84e82 100644
+--- a/tests/REQUIREMENT-MAPPING.md
++++ b/tests/REQUIREMENT-MAPPING.md
+@@ -1,6 +1,6 @@
+ # Test-to-Requirement Mapping
+ 
+-Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM13 from post-MVP).
++Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM15 from post-MVP).
+ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ 
+ ## Wave 1 (wave1.test.ts)
+@@ -79,7 +79,7 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ - `hosted stackSearch hits correct endpoint` → PM12
+ - `hosted stackSearch handles empty response` → PM12
+ - `capture ledger injection tracking is in-memory only` → PM12
+-- `plugin register registers both tools` → PM12
++- `plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools` → PM12, PM15
+ 
+ ## Wave 10 (wave10-pm13.test.ts)
+ 
+@@ -90,6 +90,51 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ - `hosted capture uses agentDisplayName for assistant messages` → PM13
+ - `hosted capture falls back to agentId when no agentDisplayName` → PM13
+ 
++## Wave 11 (wave11-pm14.test.ts)
++
++- `pm14: isPdfExtension returns true for .pdf (case-insensitive)` → PM14
++- `pm14: isPdfExtension returns false for non-PDF` → PM14
++- `pm14: classifyRouteByPath routes .pdf to pdf and others to text` → PM14
++- `pm14: isDuplicateResponse detects duplicate message (case-insensitive)` → PM14
++- `pm14: profile with .pdf extension routes PDFs to ingestPdf` → PM14
++- `pm14: PDF with uppercase extension routes correctly` → PM14
++- `pm14: duplicate PDF response counts as skipped, not error` → PM14
++- `pm14: PDF ingest failure does not abort other files` → PM14
++- `pm14: missing ingestPdf on client records error for PDF files` → PM14
++- `pm14: non-PDF ingestion behavior unchanged (text path still works)` → PM14
++- `pm14: successful PDF ingest updates ledger with hash` → PM14
++
++## Wave 12 (wave12-pm15.test.ts)
++
++- `pm15: classifyLink routes .pdf URL to pdf` → PM15
++- `pm15: classifyLink routes text file URLs to text` → PM15
++- `pm15: classifyLink routes .html URL to html` → PM15
++- `pm15: classifyLink falls back to content-type when no extension` → PM15
++- `pm15: classifyLink returns null for unsupported types` → PM15
++- `pm15: classifyByContentType handles charset parameters` → PM15
++- `pm15: isAllowedScheme accepts http and https only` → PM15
++- `pm15: isPrivateHost blocks localhost and loopback` → PM15
++- `pm15: isPrivateHost blocks private RFC1918 ranges` → PM15
++- `pm15: isPrivateHost blocks link-local and metadata endpoints` → PM15
++- `pm15: isPrivateHost allows public hosts` → PM15
++- `pm15: validateFetchUrl rejects non-http schemes` → PM15
++- `pm15: validateFetchUrl rejects private hosts` → PM15
++- `pm15: validateFetchUrl accepts public https URLs` → PM15
++- `pm15: extractReadableText strips script and style elements` → PM15
++- `pm15: extractReadableText strips nav/header/footer/aside` → PM15
++- `pm15: extractReadableText decodes HTML entities` → PM15
++- `pm15: extractReadableText preserves paragraph structure` → PM15
++- `pm15: extractReadableText handles empty/whitespace-only HTML` → PM15
++- `pm15: extractReadableText normalizes excessive whitespace` → PM15
++- `pm15: ingestLink rejects non-http URL` → PM15
++- `pm15: ingestLink rejects localhost URL` → PM15
++- `pm15: ingestLink rejects private IP URL` → PM15
++- `pm15: ingestLink rejects metadata endpoint URL` → PM15
++- `pm15: ingestLink result includes url, classification, route, success, duplicate` → PM15
++- `pm15: isDuplicateResponse works for PM15 context` → PM15
++- `pm15: bonfires_ingest_link tool registers with explicit description` → PM15
++- `pm15: plugin registers bonfires_ingest_link tool` → PM15
++
+ ## Requirements coverage
+ 
+ | ID | Description | Tests |
+@@ -106,3 +151,5 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ | PM11 | Capture message sanitization | wave2, wave9 |
+ | PM12 | Stack search + session improvements | wave9 |
+ | PM13 | Agent display names in stack messages | wave10 |
++| PM14 | PDF ingestion routing | wave11 |
++| PM15 | Linked content ingestion | wave12 |
+diff --git a/tests/wave1.test.ts b/tests/wave1.test.ts
+index 8137a11..027f884 100644
+--- a/tests/wave1.test.ts
++++ b/tests/wave1.test.ts
+@@ -482,7 +482,7 @@ test('plugin register wires hooks and tool', async () => {
+   };
+   register(api);
+   assert.equal(events.length, 4);
+-  assert.equal(toolDefs.length, 2);
++  assert.equal(toolDefs.length, 3);
+   const tools = toolDefs.map(f => f({ agentId: 'agent_primary' }));
+   const searchTool = tools.find(t => t.name === 'bonfires_search');
+   assert.ok(searchTool);
+diff --git a/tests/wave11-pm14.test.ts b/tests/wave11-pm14.test.ts
+new file mode 100644
+index 0000000..375d524
+--- /dev/null
++++ b/tests/wave11-pm14.test.ts
+@@ -0,0 +1,298 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++import { runIngestionOnce } from '../src/ingestion.js';
++import { classifyRouteByPath, isPdfExtension, isDuplicateResponse } from '../src/ingestion-core.js';
++
++function tmpDir() {
++  return mkdtempSync(join(tmpdir(), 'bonfires-pm14-'));
++}
++
++// --- PM14-R2: Deterministic extension-based routing ---
++
++test('pm14: isPdfExtension returns true for .pdf (case-insensitive)', () => {
++  assert.equal(isPdfExtension('doc.pdf'), true);
++  assert.equal(isPdfExtension('doc.PDF'), true);
++  assert.equal(isPdfExtension('doc.Pdf'), true);
++  assert.equal(isPdfExtension('/path/to/report.pdf'), true);
++});
++
++test('pm14: isPdfExtension returns false for non-PDF', () => {
++  assert.equal(isPdfExtension('doc.md'), false);
++  assert.equal(isPdfExtension('doc.txt'), false);
++  assert.equal(isPdfExtension('doc.pdf.bak'), false);
++  assert.equal(isPdfExtension('pdf'), false);
++});
++
++test('pm14: classifyRouteByPath routes .pdf to pdf and others to text', () => {
++  assert.equal(classifyRouteByPath('report.pdf'), 'pdf');
++  assert.equal(classifyRouteByPath('report.PDF'), 'pdf');
++  assert.equal(classifyRouteByPath('notes.md'), 'text');
++  assert.equal(classifyRouteByPath('data.json'), 'text');
++  assert.equal(classifyRouteByPath('readme.txt'), 'text');
++});
++
++// --- PM14-R5: Duplicate response semantics ---
++
++test('pm14: isDuplicateResponse detects duplicate message (case-insensitive)', () => {
++  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate' }), true);
++  assert.equal(isDuplicateResponse({ success: true, message: 'Duplicate' }), true);
++  assert.equal(isDuplicateResponse({ success: true, message: 'DUPLICATE' }), true);
++  assert.equal(isDuplicateResponse({ success: true, message: 'created' }), false);
++  assert.equal(isDuplicateResponse({ success: true }), false);
++  assert.equal(isDuplicateResponse({}), false);
++});
++
++// --- PM14-R2 + PM14-R4: PDF routing in runIngestionOnce ---
++
++test('pm14: profile with .pdf extension routes PDFs to ingestPdf', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'report.pdf'), Buffer.from('%PDF-1.4 fake'));
++    writeFileSync(join(dir, 'docs', 'notes.md'), 'markdown content');
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const textCalls: any[] = [];
++    const pdfCalls: any[] = [];
++    const client = {
++      ingestContent: async (req: any) => { textCalls.push(req); return { accepted: 1 }; },
++      ingestPdf: async (req: any) => { pdfCalls.push(req); return { success: true, documentId: 'doc-1', message: 'created' }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf', '.md'] },
++      },
++    });
++
++    assert.equal(result.scanned, 2);
++    assert.equal(result.ingested, 2);
++    assert.equal(result.errors, 0);
++    assert.equal(pdfCalls.length, 1, 'PDF should route to ingestPdf');
++    assert.equal(textCalls.length, 1, 'MD should route to ingestContent');
++    assert.ok(Buffer.isBuffer(pdfCalls[0].content), 'PDF content should be Buffer');
++    assert.ok(pdfCalls[0].sourcePath.includes('report.pdf'));
++    assert.ok(textCalls[0].sourcePath.includes('notes.md'));
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('pm14: PDF with uppercase extension routes correctly', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'SCAN.PDF'), Buffer.from('%PDF-1.4 upper'));
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const pdfCalls: any[] = [];
++    const client = {
++      ingestContent: async () => ({ accepted: 1 }),
++      ingestPdf: async (req: any) => { pdfCalls.push(req); return { success: true, message: 'created' }; },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.PDF'] },
++      },
++    });
++
++    assert.equal(pdfCalls.length, 1);
++    assert.equal(result.ingested, 1);
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++// --- PM14-R5: Duplicate PDF response treated as success/no-op ---
++
++test('pm14: duplicate PDF response counts as skipped, not error', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'dup.pdf'), Buffer.from('%PDF-1.4 dup'));
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const client = {
++      ingestPdf: async () => ({ success: true, documentId: 'dup-id', message: 'duplicate' }),
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf'] },
++      },
++    });
++
++    assert.equal(result.ingested, 0, 'duplicate should not count as ingested');
++    assert.equal(result.skipped, 1, 'duplicate should count as skipped');
++    assert.equal(result.errors, 0, 'duplicate should not be an error');
++
++    // Ledger should NOT be updated for duplicates (Bonfires is source of truth)
++    const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'));
++    assert.equal(ledger.entries['docs:dup.pdf'], undefined, 'duplicate should not update ledger');
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++// --- PM14-R4: Fail-open and per-file fault isolation ---
++
++test('pm14: PDF ingest failure does not abort other files', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'fail.pdf'), Buffer.from('%PDF fail'));
++    writeFileSync(join(dir, 'docs', 'ok.md'), 'good content');
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const textCalls: any[] = [];
++    const client = {
++      ingestContent: async (req: any) => { textCalls.push(req); return { accepted: 1 }; },
++      ingestPdf: async () => { throw new Error('remote PDF error'); },
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf', '.md'] },
++      },
++    });
++
++    assert.equal(result.errors, 1, 'PDF failure should count as error');
++    assert.equal(result.ingested, 1, 'MD should still succeed');
++    assert.equal(textCalls.length, 1, 'text ingest should still run');
++    assert.ok(result.errorDetails[0].error.includes('remote PDF error'));
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++test('pm14: missing ingestPdf on client records error for PDF files', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'doc.pdf'), Buffer.from('%PDF'));
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const client = {
++      ingestContent: async () => ({ accepted: 1 }),
++      // No ingestPdf method
++    };
++
++    const result = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf'] },
++      },
++    });
++
++    assert.equal(result.errors, 1);
++    assert.match(result.errorDetails[0].error, /ingestPdf is not available/);
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++// --- PM14-R1: No new config keys; existing behavior preserved ---
++
++test('pm14: non-PDF ingestion behavior unchanged (text path still works)', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'memory'), { recursive: true });
++    writeFileSync(join(dir, 'memory', 'note.md'), 'unchanged behavior');
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const calls: any[] = [];
++    const client = {
++      ingestContent: async (req: any) => { calls.push(req); return { accepted: 1 }; },
++    };
++
++    const result = await runIngestionOnce({ rootDir: dir, ledgerPath, summaryPath, client });
++    assert.equal(result.ingested, 1);
++    assert.equal(calls.length, 1);
++    assert.ok(typeof calls[0].content === 'string');
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
++
++// --- PM14-R7: Observability (hash in ledger for successful PDF) ---
++
++test('pm14: successful PDF ingest updates ledger with hash', async () => {
++  const dir = tmpDir();
++  try {
++    mkdirSync(join(dir, 'docs'), { recursive: true });
++    writeFileSync(join(dir, 'docs', 'report.pdf'), Buffer.from('%PDF success'));
++
++    const ledgerPath = join(dir, 'ledger.json');
++    const summaryPath = join(dir, 'summary.json');
++
++    const client = {
++      ingestPdf: async () => ({ success: true, documentId: 'doc-1', message: 'created' }),
++    };
++
++    await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf'] },
++      },
++    });
++
++    const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'));
++    const entry = ledger.entries['docs:report.pdf'];
++    assert.ok(entry, 'ledger should have entry for ingested PDF');
++    assert.ok(entry.hash.startsWith('sha256:'));
++    assert.ok(entry.pushedAt);
++
++    // Second run with same content should skip (hash match)
++    const result2 = await runIngestionOnce({
++      rootDir: dir,
++      ledgerPath,
++      summaryPath,
++      client,
++      profiles: {
++        docs: { rootDir: join(dir, 'docs'), includeGlobs: ['**/*'], excludeGlobs: [], extensions: ['.pdf'] },
++      },
++    });
++    assert.equal(result2.skipped, 1);
++    assert.equal(result2.ingested, 0);
++  } finally {
++    rmSync(dir, { recursive: true, force: true });
++  }
++});
+diff --git a/tests/wave12-pm15.test.ts b/tests/wave12-pm15.test.ts
+new file mode 100644
+index 0000000..a6fa4d7
+--- /dev/null
++++ b/tests/wave12-pm15.test.ts
+@@ -0,0 +1,223 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { join, dirname } from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { classifyLink, classifyByContentType, isDuplicateResponse } from '../src/ingestion-core.js';
++import { isAllowedScheme, isPrivateHost, validateFetchUrl } from '../src/transport-safety.js';
++import { extractReadableText } from '../src/html-extract.js';
++import { ingestLink } from '../src/tools/bonfires-ingest-link.js';
++import { MockBonfiresClient } from '../src/bonfires-client.js';
++
++const __dirname = dirname(fileURLToPath(import.meta.url));
++
++// --- PM15-R3: Link classification + route selection ---
++
++test('pm15: classifyLink routes .pdf URL to pdf', () => {
++  assert.equal(classifyLink('https://example.com/doc.pdf'), 'pdf');
++  assert.equal(classifyLink('https://example.com/doc.PDF'), 'pdf');
++});
++
++test('pm15: classifyLink routes text file URLs to text', () => {
++  assert.equal(classifyLink('https://example.com/readme.md'), 'text');
++  assert.equal(classifyLink('https://example.com/data.json'), 'text');
++  assert.equal(classifyLink('https://example.com/config.yaml'), 'text');
++  assert.equal(classifyLink('https://example.com/data.csv'), 'text');
++  assert.equal(classifyLink('https://example.com/readme.txt'), 'text');
++});
++
++test('pm15: classifyLink routes .html URL to html', () => {
++  assert.equal(classifyLink('https://example.com/page.html'), 'html');
++  assert.equal(classifyLink('https://example.com/page.htm'), 'html');
++});
++
++test('pm15: classifyLink falls back to content-type when no extension', () => {
++  assert.equal(classifyLink('https://example.com/api/doc', 'application/pdf'), 'pdf');
++  assert.equal(classifyLink('https://example.com/page', 'text/html'), 'html');
++  assert.equal(classifyLink('https://example.com/api/data', 'application/json'), 'text');
++  assert.equal(classifyLink('https://example.com/file', 'text/plain'), 'text');
++});
++
++test('pm15: classifyLink returns null for unsupported types', () => {
++  assert.equal(classifyLink('https://example.com/image.png', 'image/png'), null);
++  assert.equal(classifyLink('https://example.com/file'), null);
++});
++
++test('pm15: classifyByContentType handles charset parameters', () => {
++  assert.equal(classifyByContentType('text/html; charset=utf-8'), 'html');
++  assert.equal(classifyByContentType('application/pdf; charset=binary'), 'pdf');
++  assert.equal(classifyByContentType('text/plain; charset=utf-8'), 'text');
++});
++
++// --- PM15-R5: Transport safety guards ---
++
++test('pm15: isAllowedScheme accepts http and https only', () => {
++  assert.equal(isAllowedScheme('https://example.com'), true);
++  assert.equal(isAllowedScheme('http://example.com'), true);
++  assert.equal(isAllowedScheme('ftp://example.com'), false);
++  assert.equal(isAllowedScheme('file:///etc/passwd'), false);
++  assert.equal(isAllowedScheme('data:text/html,<h1>hi</h1>'), false);
++  assert.equal(isAllowedScheme('javascript:alert(1)'), false);
++  assert.equal(isAllowedScheme('not-a-url'), false);
++});
++
++test('pm15: isPrivateHost blocks localhost and loopback', () => {
++  assert.equal(isPrivateHost('localhost'), true);
++  assert.equal(isPrivateHost('127.0.0.1'), true);
++  assert.equal(isPrivateHost('::1'), true);
++  assert.equal(isPrivateHost('[::1]'), true);
++  assert.equal(isPrivateHost('0.0.0.0'), true);
++});
++
++test('pm15: isPrivateHost blocks private RFC1918 ranges', () => {
++  assert.equal(isPrivateHost('10.0.0.1'), true);
++  assert.equal(isPrivateHost('10.255.255.255'), true);
++  assert.equal(isPrivateHost('172.16.0.1'), true);
++  assert.equal(isPrivateHost('172.31.255.255'), true);
++  assert.equal(isPrivateHost('192.168.0.1'), true);
++  assert.equal(isPrivateHost('192.168.255.255'), true);
++});
++
++test('pm15: isPrivateHost blocks link-local and metadata endpoints', () => {
++  assert.equal(isPrivateHost('169.254.169.254'), true);
++  assert.equal(isPrivateHost('169.254.0.1'), true);
++});
++
++test('pm15: isPrivateHost allows public hosts', () => {
++  assert.equal(isPrivateHost('example.com'), false);
++  assert.equal(isPrivateHost('8.8.8.8'), false);
++  assert.equal(isPrivateHost('github.com'), false);
++});
++
++test('pm15: validateFetchUrl rejects non-http schemes', () => {
++  assert.ok(validateFetchUrl('ftp://example.com'));
++  assert.ok(validateFetchUrl('file:///etc/passwd'));
++});
++
++test('pm15: validateFetchUrl rejects private hosts', () => {
++  assert.ok(validateFetchUrl('http://localhost/path'));
++  assert.ok(validateFetchUrl('https://127.0.0.1/path'));
++  assert.ok(validateFetchUrl('https://10.0.0.1/internal'));
++  assert.ok(validateFetchUrl('https://169.254.169.254/latest/meta-data'));
++});
++
++test('pm15: validateFetchUrl accepts public https URLs', () => {
++  assert.equal(validateFetchUrl('https://example.com/page'), null);
++  assert.equal(validateFetchUrl('https://docs.github.com/article.md'), null);
++});
++
++// --- PM15-R4: HTML extraction ---
++
++test('pm15: extractReadableText strips script and style elements', () => {
++  const html = '<html><head><style>body{color:red}</style></head><body><script>alert(1)</script><p>Hello world</p></body></html>';
++  const text = extractReadableText(html);
++  assert.ok(!text.includes('alert'));
++  assert.ok(!text.includes('color:red'));
++  assert.ok(text.includes('Hello world'));
++});
++
++test('pm15: extractReadableText strips nav/header/footer/aside', () => {
++  const html = '<nav>Menu</nav><main><p>Content</p></main><footer>Footer</footer>';
++  const text = extractReadableText(html);
++  assert.ok(!text.includes('Menu'));
++  assert.ok(!text.includes('Footer'));
++  assert.ok(text.includes('Content'));
++});
++
++test('pm15: extractReadableText decodes HTML entities', () => {
++  const html = '<p>A &amp; B &lt; C &gt; D &quot;E&quot; &#39;F&#39;</p>';
++  const text = extractReadableText(html);
++  assert.ok(text.includes('A & B < C > D "E" \'F\''));
++});
++
++test('pm15: extractReadableText preserves paragraph structure', () => {
++  const html = '<p>First paragraph</p><p>Second paragraph</p>';
++  const text = extractReadableText(html);
++  assert.ok(text.includes('First paragraph'));
++  assert.ok(text.includes('Second paragraph'));
++  // Paragraphs should be separated by newlines
++  const lines = text.split('\n').filter(l => l.trim());
++  assert.ok(lines.length >= 2);
++});
++
++test('pm15: extractReadableText handles empty/whitespace-only HTML', () => {
++  assert.equal(extractReadableText('<html><body>   </body></html>'), '');
++  assert.equal(extractReadableText(''), '');
++});
++
++test('pm15: extractReadableText normalizes excessive whitespace', () => {
++  const html = '<p>Too    many     spaces</p>\n\n\n\n\n<p>Next</p>';
++  const text = extractReadableText(html);
++  assert.ok(!text.includes('    '));
++  assert.ok(text.includes('Too many spaces'));
++});
++
++// --- PM15-R2 + PM15-R5: ingestLink with validation ---
++
++test('pm15: ingestLink rejects non-http URL', async () => {
++  const client = new MockBonfiresClient();
++  const result = await ingestLink('ftp://example.com/file.pdf', client);
++  assert.equal(result.success, false);
++  assert.equal(result.classification, 'blocked');
++  assert.ok(result.error?.includes('only http/https'));
++});
++
++test('pm15: ingestLink rejects localhost URL', async () => {
++  const client = new MockBonfiresClient();
++  const result = await ingestLink('http://localhost:8080/secret', client);
++  assert.equal(result.success, false);
++  assert.equal(result.classification, 'blocked');
++  assert.ok(result.error?.includes('private/localhost'));
++});
++
++test('pm15: ingestLink rejects private IP URL', async () => {
++  const client = new MockBonfiresClient();
++  const result = await ingestLink('https://10.0.0.1/internal/doc.pdf', client);
++  assert.equal(result.success, false);
++  assert.equal(result.classification, 'blocked');
++  assert.ok(result.error?.includes('private/localhost'));
++});
++
++test('pm15: ingestLink rejects metadata endpoint URL', async () => {
++  const client = new MockBonfiresClient();
++  const result = await ingestLink('http://169.254.169.254/latest/meta-data', client);
++  assert.equal(result.success, false);
++  assert.equal(result.classification, 'blocked');
++});
++
++// --- PM15-R6: Provenance metadata ---
++
++test('pm15: ingestLink result includes url, classification, route, success, duplicate', async () => {
++  const client = new MockBonfiresClient();
++  // This will fail at fetch (no real server), but tests the result shape
++  const result = await ingestLink('https://example.com/doc.pdf', client);
++  assert.ok('url' in result);
++  assert.ok('classification' in result);
++  assert.ok('route' in result);
++  assert.ok('success' in result);
++  assert.ok('duplicate' in result);
++});
++
++// --- PM15-R7: Idempotency (duplicate handling) ---
++
++test('pm15: isDuplicateResponse works for PM15 context', () => {
++  assert.equal(isDuplicateResponse({ success: true, message: 'duplicate' }), true);
++  assert.equal(isDuplicateResponse({ success: true, message: 'created' }), false);
++});
++
++// --- PM15-R1: Explicit confirmation model ---
++
++test('pm15: bonfires_ingest_link tool registers with explicit description', async () => {
++  const indexSrc = readFileSync(join(__dirname, '..', 'src', 'index.ts'), 'utf8');
++  assert.ok(indexSrc.includes('bonfires_ingest_link'), 'tool should be registered');
++  assert.ok(indexSrc.includes('confirm'), 'tool description should mention confirmation');
++});
++
++// --- Plugin registration includes new tool ---
++
++test('pm15: plugin registers bonfires_ingest_link tool', () => {
++  const indexSrc = readFileSync(join(__dirname, '..', 'src', 'index.ts'), 'utf8');
++  // Count registerTool calls - should be 3 (search, stack_search, ingest_link)
++  const toolRegCalls = (indexSrc.match(/api\.registerTool/g) || []).length;
++  assert.equal(toolRegCalls, 3, 'should register 3 tools');
++});
+diff --git a/tests/wave9-pm12.test.ts b/tests/wave9-pm12.test.ts
+index 007494b..4fe8a9c 100644
+--- a/tests/wave9-pm12.test.ts
++++ b/tests/wave9-pm12.test.ts
+@@ -406,7 +406,7 @@ test('capture ledger injection tracking is in-memory only (PM12)', () => {
+ 
+ // --- PM12: Plugin registration with two tools ---
+ 
+-test('plugin register registers both bonfires_search and bonfires_stack_search tools (PM12)', async () => {
++test('plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)', async () => {
+   const { default: register } = await import('../src/index.js');
+   const events: any[] = [];
+   const toolDefs: any[] = [];
+@@ -419,12 +419,15 @@ test('plugin register registers both bonfires_search and bonfires_stack_search t
+   };
+   register(api);
+   assert.equal(events.length, 4);
+-  assert.equal(toolDefs.length, 2);
++  assert.equal(toolDefs.length, 3);
+ 
+   const searchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_search');
+   const stackSearchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_stack_search');
++  const ingestLinkTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_ingest_link');
+   assert.ok(searchTool);
+   assert.ok(stackSearchTool);
++  assert.ok(ingestLinkTool);
+   assert.ok(searchTool.description.includes('knowledge graph'));
+   assert.ok(stackSearchTool.description.includes('unprocessed'));
++  assert.ok(ingestLinkTool.description.includes('Ingest'));
+ });

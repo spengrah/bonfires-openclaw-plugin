@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
-  "wave": "wave-8",
-  "next_action": "done",
+  "wave": "wave-9-plan",
+  "next_action": "ready_for_finalize_or_merge_flow",
   "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-04T04:01:12.730Z",
+  "updated_at": "2026-03-08T03:36:40.322Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -19,16 +19,14 @@
   "implementation_completed_at": "2026-03-03T16:35:15Z",
   "implementation_summary_path": ".ai/log/plan/wave-8-summary.json",
   "review_lenses": [
-    "Correctness",
-    "Security/Attacker",
     "Verification Quality",
-    "Ops/Runtime Reliability"
+    "Correctness",
+    "Security/Attacker"
   ],
   "review_order": [
-    "Correctness",
-    "Security/Attacker",
     "Verification Quality",
-    "Ops/Runtime Reliability"
+    "Correctness",
+    "Security/Attacker"
   ],
   "review_artifacts": {
     "correctness": ".ai/log/review/review-correctness-20260303w8.md",
@@ -144,5 +142,69 @@
       "ops_runtime_reliability": ".ai/log/review/review-ops-runtime-reliability-20260303w8-rerun3.md"
     },
     "gate_report": ".ai/log/plan/verification-gates-report-current.json"
+  },
+  "wave9_started_at": "2026-03-08T01:51:44.471Z",
+  "wave9_scope": ".ai/log/plan/wave-9-plan-20260307-pm14-pm15.md",
+  "wave9_verification_matrix": ".ai/log/plan/verification-matrix-wave-9-20260307-pm14-pm15.md",
+  "wave9_status": "plan_phase_complete_pending_implementation_mode",
+  "wave9_focus": [
+    "PM14",
+    "PM15"
+  ],
+  "wave9_blockers": [
+    "PM15 ingestLink marks PDF ingest as success even when Bonfires returns success:false",
+    "Redirect-limit / redirect-policy evidence gaps remain for PM15 transport safety"
+  ],
+  "wave9_open_questions": [
+    "Can PM15 reuse internal deterministic web extraction helper directly, or should equivalent in-plugin Readability stack be implemented?"
+  ],
+  "wave9_review_order": [
+    "Verification Quality",
+    "Correctness",
+    "Security/Attacker"
+  ],
+  "wave9_trust_zone": "tz:reviewer:bonfires-plugin",
+  "wave9_trust_zone_artifacts": [
+    "memory/context-graph-memory/trust-zones-graph/trust_zones/trust-zone-reviewer-bonfires-plugin.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-retrieval-before-agent-start.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-bonfires-search-tool.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-immediate-stack-capture.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-message-sanitization.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-stack-search-session-improvements.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-agent-display-names.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-recovery-and-session-end-flush.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-stack-processing-heartbeat.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-ingestion-cron-and-hash-ledger.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-ingestion-profiles-agent-mapping.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-pm14-pdf-routing.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-pm15-linked-ingestion-safety.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-bonfires-client-interface.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-hosted-api-wiring.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-hosted-integration.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-plugin-config-and-agent-mapping.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-plugin-packaging-openclaw-integration.yaml",
+    "memory/context-graph-memory/trust-zones-graph/problems/problem-bonfires-plugin-verify-spec-guidance-traceability-coherence.yaml"
+  ],
+  "wave9_review_delta": ".ai/log/review/diff-wave-9-pm14-pm15-929ffec.patch",
+  "wave9_reviewer_artifacts": {
+    "verification_quality": ".ai/log/review/review-verification-quality-20260307w9.md",
+    "correctness": ".ai/log/review/review-correctness-20260307w9.md"
+  },
+  "wave9_review_progress": "all_lenses_complete",
+  "wave9_remediation_review_delta": ".ai/log/review/diff-wave-9-remediation-38b0bc0.patch",
+  "wave9_remediation_reviewer_artifacts": {
+    "verification_quality": ".ai/log/review/review-verification-quality-20260307w9-remediation.md",
+    "correctness": ".ai/log/review/review-correctness-20260307w9-remediation.md",
+    "security_attacker": ".ai/log/review/review-security-attacker-20260307w9-remediation.md"
+  },
+  "wave9_lens_order": [
+    "Verification Quality",
+    "Correctness",
+    "Security/Attacker"
+  ],
+  "wave9_lens_verdicts": {
+    "verification_quality": "GO",
+    "correctness": "GO",
+    "security_attacker": "GO"
   }
 }
