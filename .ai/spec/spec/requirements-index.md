@@ -82,6 +82,16 @@ Authoritative index for all requirements and their spec/guidance locations.
 - Spec: `ingestion/linked-content-ingestion.md`
 - Guidance: `../../guidance/ingestion/guidance-for-linked-content-ingestion.md`
 
+### PM16 — Approval-gated multi-link ingestion (1C-A)
+- **Planned.** Adds bounded `urls[]` ingestion with approval-bound scope and per-link result summaries.
+- Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
+- Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
+
+### PM17 — Discovery + selected-set approval flow (1C-B)
+- **Planned / feature-flagged.** Adds generic `discover_links` with approve-selected-set-once handoff to Bonfires ingestion.
+- Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
+- Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
+
 ## Client
 
 ### R6 — Bonfires client interface
