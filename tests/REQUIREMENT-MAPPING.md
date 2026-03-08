@@ -1,6 +1,6 @@
 # Test-to-Requirement Mapping
 
-Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM13 from post-MVP).
+Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM15 from post-MVP).
 See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 
 ## Wave 1 (wave1.test.ts)
@@ -79,7 +79,7 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 - `hosted stackSearch hits correct endpoint` → PM12
 - `hosted stackSearch handles empty response` → PM12
 - `capture ledger injection tracking is in-memory only` → PM12
-- `plugin register registers both tools` → PM12
+- `plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools` → PM12, PM15
 
 ## Wave 10 (wave10-pm13.test.ts)
 
@@ -89,6 +89,51 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 - `register passes agentDisplayNames from api.config to agent_end handler` → PM13
 - `hosted capture uses agentDisplayName for assistant messages` → PM13
 - `hosted capture falls back to agentId when no agentDisplayName` → PM13
+
+## Wave 11 (wave11-pm14.test.ts)
+
+- `pm14: isPdfExtension returns true for .pdf (case-insensitive)` → PM14
+- `pm14: isPdfExtension returns false for non-PDF` → PM14
+- `pm14: classifyRouteByPath routes .pdf to pdf and others to text` → PM14
+- `pm14: isDuplicateResponse detects duplicate message (case-insensitive)` → PM14
+- `pm14: profile with .pdf extension routes PDFs to ingestPdf` → PM14
+- `pm14: PDF with uppercase extension routes correctly` → PM14
+- `pm14: duplicate PDF response counts as skipped, not error` → PM14
+- `pm14: PDF ingest failure does not abort other files` → PM14
+- `pm14: missing ingestPdf on client records error for PDF files` → PM14
+- `pm14: non-PDF ingestion behavior unchanged (text path still works)` → PM14
+- `pm14: successful PDF ingest updates ledger with hash` → PM14
+
+## Wave 12 (wave12-pm15.test.ts)
+
+- `pm15: classifyLink routes .pdf URL to pdf` → PM15
+- `pm15: classifyLink routes text file URLs to text` → PM15
+- `pm15: classifyLink routes .html URL to html` → PM15
+- `pm15: classifyLink falls back to content-type when no extension` → PM15
+- `pm15: classifyLink returns null for unsupported types` → PM15
+- `pm15: classifyByContentType handles charset parameters` → PM15
+- `pm15: isAllowedScheme accepts http and https only` → PM15
+- `pm15: isPrivateHost blocks localhost and loopback` → PM15
+- `pm15: isPrivateHost blocks private RFC1918 ranges` → PM15
+- `pm15: isPrivateHost blocks link-local and metadata endpoints` → PM15
+- `pm15: isPrivateHost allows public hosts` → PM15
+- `pm15: validateFetchUrl rejects non-http schemes` → PM15
+- `pm15: validateFetchUrl rejects private hosts` → PM15
+- `pm15: validateFetchUrl accepts public https URLs` → PM15
+- `pm15: extractReadableText strips script and style elements` → PM15
+- `pm15: extractReadableText strips nav/header/footer/aside` → PM15
+- `pm15: extractReadableText decodes HTML entities` → PM15
+- `pm15: extractReadableText preserves paragraph structure` → PM15
+- `pm15: extractReadableText handles empty/whitespace-only HTML` → PM15
+- `pm15: extractReadableText normalizes excessive whitespace` → PM15
+- `pm15: ingestLink rejects non-http URL` → PM15
+- `pm15: ingestLink rejects localhost URL` → PM15
+- `pm15: ingestLink rejects private IP URL` → PM15
+- `pm15: ingestLink rejects metadata endpoint URL` → PM15
+- `pm15: ingestLink result includes url, classification, route, success, duplicate` → PM15
+- `pm15: isDuplicateResponse works for PM15 context` → PM15
+- `pm15: bonfires_ingest_link tool registers with explicit description` → PM15
+- `pm15: plugin registers bonfires_ingest_link tool` → PM15
 
 ## Requirements coverage
 
@@ -106,3 +151,5 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 | PM11 | Capture message sanitization | wave2, wave9 |
 | PM12 | Stack search + session improvements | wave9 |
 | PM13 | Agent display names in stack messages | wave10 |
+| PM14 | PDF ingestion routing | wave11 |
+| PM15 | Linked content ingestion | wave12 |
