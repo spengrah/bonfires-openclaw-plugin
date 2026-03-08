@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
   "wave": "wave-9-plan",
-  "next_action": "ready_for_finalize_or_merge_flow",
+  "next_action": "done",
   "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-08T03:36:40.322Z",
+  "updated_at": "2026-03-08T03:47:51.479Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -146,7 +146,7 @@
   "wave9_started_at": "2026-03-08T01:51:44.471Z",
   "wave9_scope": ".ai/log/plan/wave-9-plan-20260307-pm14-pm15.md",
   "wave9_verification_matrix": ".ai/log/plan/verification-matrix-wave-9-20260307-pm14-pm15.md",
-  "wave9_status": "plan_phase_complete_pending_implementation_mode",
+  "wave9_status": "done",
   "wave9_focus": [
     "PM14",
     "PM15"
