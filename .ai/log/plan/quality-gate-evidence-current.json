@@ -1,16 +1,20 @@
 {
-  "timestamp": "2026-03-08T03:39:56.340Z",
+  "timestamp": "2026-03-08T03:40:31.893Z",
   "status": "PASS",
   "reason": "no critical modules touched",
   "changed_files": [
-    ".ai/spec/BONFIRES-INTEGRATION-SPEC.md",
-    ".ai/spec/guidance/ingestion/guidance-for-linked-content-ingestion.md",
-    ".ai/spec/guidance/ingestion/guidance-for-pdf-ingestion-routing.md",
-    ".ai/spec/spec/README.md",
-    ".ai/spec/spec/ingestion/linked-content-ingestion.md",
-    ".ai/spec/spec/ingestion/pdf-ingestion-routing.md",
-    ".ai/spec/spec/quality/traceability-map.json",
-    ".ai/spec/spec/requirements-index.md"
+    ".ai/log/plan/flanders-state.json",
+    ".ai/log/plan/quality-gate-evidence-current.json",
+    ".ai/log/plan/verification-gates-report-current.json",
+    ".ai/log/plan/verification-matrix-wave-9-20260307-pm14-pm15.md",
+    ".ai/log/plan/wave-9-plan-20260307-pm14-pm15.md",
+    ".ai/log/review/diff-wave-9-pm14-pm15-929ffec.patch",
+    ".ai/log/review/diff-wave-9-remediation-38b0bc0.patch",
+    ".ai/log/review/review-correctness-20260307w9-remediation.md",
+    ".ai/log/review/review-correctness-20260307w9.md",
+    ".ai/log/review/review-security-attacker-20260307w9-remediation.md",
+    ".ai/log/review/review-verification-quality-20260307w9-remediation.md",
+    ".ai/log/review/review-verification-quality-20260307w9.md"
   ],
   "touched_critical": [],
   "modules": []
