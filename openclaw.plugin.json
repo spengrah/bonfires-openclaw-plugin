@@ -69,6 +69,16 @@
         "description": "When true, plugin will throw if hosted API credentials are missing instead of falling back to mock client.",
         "default": false
       },
+      "retrieval": {
+        "type": "object",
+        "properties": {
+          "systemGuidance": {
+            "type": "string",
+            "description": "Stable Bonfires guidance injected into prependSystemContext when configured. Leave unset to preserve legacy prependContext-only behavior."
+          }
+        },
+        "additionalProperties": false
+      },
       "ingestion": {
         "type": "object",
         "properties": {
@@ -107,21 +117,29 @@
                 },
                 "includeGlobs": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Glob patterns for files to include (relative to rootDir). Defaults to ['**/*']."
                 },
                 "excludeGlobs": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Glob patterns for files to exclude. Defaults to ['**/node_modules/**', '**/.git/**', '**/.openclaw/**']."
                 },
                 "extensions": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "File extensions to include. Defaults to ['.md']."
                 }
               },
-              "required": ["rootDir"]
+              "required": [
+                "rootDir"
+              ]
             }
           },
           "agentProfiles": {
@@ -134,6 +152,19 @@
           "defaultProfile": {
             "type": "string",
             "description": "Default profile name used when an agent has no explicit mapping in agentProfiles."
+          },
+          "approval": {
+            "type": "object",
+            "properties": {
+              "maxUrlsPerRun": {
+                "type": "number",
+                "description": "Maximum number of explicitly approved URLs that may be executed in one session-bound ingestion run.",
+                "default": 10,
+                "minimum": 1,
+                "maximum": 10
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false
@@ -142,9 +173,29 @@
         "type": "string",
         "minLength": 1,
         "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Empty/whitespace values are normalized to .bonfires-state/."
+      },
+      "discovery": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable public-web link discovery for later user approval.",
+            "default": false
+          },
+          "maxCandidates": {
+            "type": "number",
+            "description": "Maximum discovery candidates returned per query.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 25
+          }
+        },
+        "additionalProperties": false
       }
     },
-    "required": ["agents"],
+    "required": [
+      "agents"
+    ],
     "additionalProperties": false
   }
 }

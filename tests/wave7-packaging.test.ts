@@ -27,14 +27,24 @@ test('wave7: openclaw.plugin.json configSchema requires agents', () => {
 test('wave7: openclaw.plugin.json configSchema lists all config fields', () => {
   const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
   const props = Object.keys(manifest.configSchema.properties);
-  for (const field of ['baseUrl', 'apiKeyEnv', 'bonfireId', 'agents', 'search', 'processing', 'network', 'strictHostedMode', 'ingestion', 'stateDir']) {
+  for (const field of ['baseUrl', 'apiKeyEnv', 'bonfireId', 'agents', 'search', 'processing', 'network', 'strictHostedMode', 'retrieval', 'ingestion', 'stateDir']) {
     assert.ok(props.includes(field), `missing config field: ${field}`);
   }
 });
 
+
+
+test('wave7: openclaw.plugin.json exposes retrieval.systemGuidance', () => {
+  const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
+  const retrieval = manifest.configSchema.properties.retrieval;
+  assert.equal(retrieval.type, 'object');
+  assert.equal(retrieval.additionalProperties, false);
+  assert.equal(retrieval.properties.systemGuidance.type, 'string');
+});
+
 test('wave7: openclaw.plugin.json nested objects set additionalProperties false', () => {
   const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
-  const nested = ['search', 'processing', 'network', 'ingestion'];
+  const nested = ['search', 'processing', 'network', 'retrieval', 'ingestion'];
   for (const key of nested) {
     assert.equal(manifest.configSchema.properties[key].additionalProperties, false, `${key} missing additionalProperties:false`);
   }

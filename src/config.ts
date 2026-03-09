@@ -14,6 +14,15 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
   if (!Number.isFinite(maxResults) || maxResults < 1) throw new Error('search.maxResults must be a finite number >= 1');
   if (!Number.isFinite(intervalMinutes) || intervalMinutes < 1) throw new Error('processing.intervalMinutes must be a finite number >= 1');
   const stateDir = String(cfg.stateDir ?? '.bonfires-state').trim() || '.bonfires-state';
+  const discoveryEnabled = Boolean(cfg.discovery?.enabled ?? false);
+  const discoveryMaxCandidates = Number(cfg.discovery?.maxCandidates ?? 10);
+  if (!Number.isFinite(discoveryMaxCandidates) || discoveryMaxCandidates < 1 || discoveryMaxCandidates > 25) {
+    throw new Error('discovery.maxCandidates must be a finite number between 1 and 25');
+  }
+  const ingestionApprovalMaxUrlsPerRun = Number(cfg.ingestion?.approval?.maxUrlsPerRun ?? 10);
+  if (!Number.isFinite(ingestionApprovalMaxUrlsPerRun) || ingestionApprovalMaxUrlsPerRun < 1 || ingestionApprovalMaxUrlsPerRun > 10) {
+    throw new Error('ingestion.approval.maxUrlsPerRun must be a finite number between 1 and 10');
+  }
 
   // Parse ingestion profiles (PM6-R1)
   const profiles: Record<string, IngestionProfile> = {};
@@ -77,6 +86,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
     );
   }
 
+  // PM18: system-context placement for stable guidance
+  const systemGuidance: string | undefined =
+    typeof cfg.retrieval?.systemGuidance === 'string' && cfg.retrieval.systemGuidance.trim()
+      ? cfg.retrieval.systemGuidance.trim()
+      : undefined;
+
+
   const out = {
     baseUrl: String(cfg.baseUrl ?? process.env.BONFIRES_BASE_URL ?? 'https://tnt-v2.api.bonfires.ai/'),
     apiKeyEnv: String(cfg.apiKeyEnv ?? process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY'),
@@ -87,12 +103,20 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
     stateDir,
+    retrieval: { systemGuidance },
+    discovery: {
+      enabled: discoveryEnabled,
+      maxCandidates: discoveryMaxCandidates,
+    },
     ingestion: {
       enabled: Boolean(cfg.ingestion?.enabled ?? false),
       everyMinutes: Number(cfg.ingestion?.everyMinutes ?? 1440),
       rootDir: String(cfg.ingestion?.rootDir ?? process.cwd()),
       ledgerPath: String(cfg.ingestion?.ledgerPath ?? `${stateDir}/ingestion-hash-ledger.json`),
       summaryPath: String(cfg.ingestion?.summaryPath ?? `${stateDir}/ingestion-cron-summary-current.json`),
+      approval: {
+        maxUrlsPerRun: ingestionApprovalMaxUrlsPerRun,
+      },
       profiles,
       agentProfiles,
       defaultProfile,

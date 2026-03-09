@@ -1,0 +1,123 @@
+diff --git a/openclaw.plugin.json b/openclaw.plugin.json
+index 3d5436d..d54cfe7 100644
+--- a/openclaw.plugin.json
++++ b/openclaw.plugin.json
+@@ -69,6 +69,16 @@
+         "description": "When true, plugin will throw if hosted API credentials are missing instead of falling back to mock client.",
+         "default": false
+       },
++      "retrieval": {
++        "type": "object",
++        "properties": {
++          "systemGuidance": {
++            "type": "string",
++            "description": "Stable Bonfires guidance injected into prependSystemContext when configured. Leave unset to preserve legacy prependContext-only behavior."
++          }
++        },
++        "additionalProperties": false
++      },
+       "ingestion": {
+         "type": "object",
+         "properties": {
+@@ -107,21 +117,29 @@
+                 },
+                 "includeGlobs": {
+                   "type": "array",
+-                  "items": { "type": "string" },
++                  "items": {
++                    "type": "string"
++                  },
+                   "description": "Glob patterns for files to include (relative to rootDir). Defaults to ['**/*']."
+                 },
+                 "excludeGlobs": {
+                   "type": "array",
+-                  "items": { "type": "string" },
++                  "items": {
++                    "type": "string"
++                  },
+                   "description": "Glob patterns for files to exclude. Defaults to ['**/node_modules/**', '**/.git/**', '**/.openclaw/**']."
+                 },
+                 "extensions": {
+                   "type": "array",
+-                  "items": { "type": "string" },
++                  "items": {
++                    "type": "string"
++                  },
+                   "description": "File extensions to include. Defaults to ['.md']."
+                 }
+               },
+-              "required": ["rootDir"]
++              "required": [
++                "rootDir"
++              ]
+             }
+           },
+           "agentProfiles": {
+@@ -144,7 +162,9 @@
+         "description": "Directory for plugin runtime state files (heartbeat state, capture ledger). Empty/whitespace values are normalized to .bonfires-state/."
+       }
+     },
+-    "required": ["agents"],
++    "required": [
++      "agents"
++    ],
+     "additionalProperties": false
+   }
+ }
+diff --git a/src/config.ts b/src/config.ts
+index 69b10a0..ff56112 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -77,6 +77,13 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+     );
+   }
+ 
++  // PM18: system-context placement for stable guidance
++  const systemGuidance: string | undefined =
++    typeof cfg.retrieval?.systemGuidance === 'string' && cfg.retrieval.systemGuidance.trim()
++      ? cfg.retrieval.systemGuidance.trim()
++      : undefined;
++
++
+   const out = {
+     baseUrl: String(cfg.baseUrl ?? process.env.BONFIRES_BASE_URL ?? 'https://tnt-v2.api.bonfires.ai/'),
+     apiKeyEnv: String(cfg.apiKeyEnv ?? process.env.BONFIRES_API_KEY_ENV ?? 'DELVE_API_KEY'),
+@@ -87,6 +94,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
+     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
+     stateDir,
++    retrieval: { systemGuidance },
+     ingestion: {
+       enabled: Boolean(cfg.ingestion?.enabled ?? false),
+       everyMinutes: Number(cfg.ingestion?.everyMinutes ?? 1440),
+diff --git a/tests/wave7-packaging.test.ts b/tests/wave7-packaging.test.ts
+index c7b74e3..12f5257 100644
+--- a/tests/wave7-packaging.test.ts
++++ b/tests/wave7-packaging.test.ts
+@@ -27,14 +27,24 @@ test('wave7: openclaw.plugin.json configSchema requires agents', () => {
+ test('wave7: openclaw.plugin.json configSchema lists all config fields', () => {
+   const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
+   const props = Object.keys(manifest.configSchema.properties);
+-  for (const field of ['baseUrl', 'apiKeyEnv', 'bonfireId', 'agents', 'search', 'processing', 'network', 'strictHostedMode', 'ingestion', 'stateDir']) {
++  for (const field of ['baseUrl', 'apiKeyEnv', 'bonfireId', 'agents', 'search', 'processing', 'network', 'strictHostedMode', 'retrieval', 'ingestion', 'stateDir']) {
+     assert.ok(props.includes(field), `missing config field: ${field}`);
+   }
+ });
+ 
++
++
++test('wave7: openclaw.plugin.json exposes retrieval.systemGuidance', () => {
++  const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
++  const retrieval = manifest.configSchema.properties.retrieval;
++  assert.equal(retrieval.type, 'object');
++  assert.equal(retrieval.additionalProperties, false);
++  assert.equal(retrieval.properties.systemGuidance.type, 'string');
++});
++
+ test('wave7: openclaw.plugin.json nested objects set additionalProperties false', () => {
+   const manifest = JSON.parse(readFileSync('openclaw.plugin.json', 'utf8'));
+-  const nested = ['search', 'processing', 'network', 'ingestion'];
++  const nested = ['search', 'processing', 'network', 'retrieval', 'ingestion'];
+   for (const key of nested) {
+     assert.equal(manifest.configSchema.properties[key].additionalProperties, false, `${key} missing additionalProperties:false`);
+   }

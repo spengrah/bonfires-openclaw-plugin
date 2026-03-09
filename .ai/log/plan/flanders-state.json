@@ -1,10 +1,10 @@
 {
   "project_slug": "bonfires-plugin",
-  "wave": "wave-9-plan",
-  "next_action": "done",
+  "wave": "wave-10-plan",
+  "next_action": "awaiting_implementation_go",
   "last_reviewer_verdict": "GO",
   "blockers": [],
-  "updated_at": "2026-03-08T03:47:51.479Z",
+  "updated_at": "2026-03-08T19:36:58.229Z",
   "spec_review_session_label": "specrev:bonfires-plugin:wave-1:20260301e:r1-local",
   "spec_review_iteration": 1,
   "spec_review_session_key": "agent:claude:acp:f1042db3-c4b1-4bc7-86e1-134755ae8ddb",
@@ -206,5 +206,191 @@
     "verification_quality": "GO",
     "correctness": "GO",
     "security_attacker": "GO"
-  }
+  },
+  "wave10_started_at": "2026-03-08T19:36:58.229Z",
+  "wave10_scope": ".ai/log/plan/wave-10-plan-phase1-system-context-20260308.md",
+  "wave10_verification_matrix": ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md",
+  "wave10_review_support": ".ai/log/plan/review-support-wave-10-phase1-system-context-20260308.md",
+  "wave10_focus": [
+    "PM18",
+    "PM19"
+  ],
+  "wave10_review_order": [
+    "Verification Quality",
+    "Correctness",
+    "Security/Attacker"
+  ],
+  "wave11_started_at": "2026-03-08T22:05:00Z",
+  "wave11_scope": ".ai/log/plan/wave-9-plan-1c-ab-20260308.md",
+  "wave11_focus": [
+    "PM16",
+    "PM17"
+  ],
+  "wave11_review_order": [
+    "Verification Quality",
+    "Correctness",
+    "Security/Attacker"
+  ],
+  "wave11_trust_zone": "tz:reviewer:bonfires-plugin",
+  "wave11_review_delta": ".ai/log/review/delta-pm16-pm17-planning-c541802.patch",
+  "wave11_reviewer_envelopes": {
+    "verification_quality": ".ai/log/review/reviewer-envelope-pm16-pm17-verification-quality-20260308.json",
+    "correctness": ".ai/log/review/reviewer-envelope-pm16-pm17-correctness-20260308.json",
+    "security_attacker": ".ai/log/review/reviewer-envelope-pm16-pm17-security-20260308.json"
+  },
+  "wave11_review_progress": "correctness_in_flight",
+  "wave11_review_runs": {
+    "verification_quality": {
+      "label": "review:bp:vq:pm16pm17:20260308a",
+      "session_key": "agent:main:subagent:58247e1a-d6dd-4c84-9143-3a8b91356c73",
+      "run_id": "4dfc5a05-06e4-431d-ae63-869b6b1a8794",
+      "rerun_label": "review:bp:vq:pm16pm17:20260308b",
+      "rerun_session_key": "agent:main:subagent:113a2a3b-9b25-4b7c-b82b-a8a2b3d08955",
+      "rerun_run_id": "c23e6501-49d3-42f1-b0c5-650bbdca4662",
+      "rerun_verdict": "GO"
+    }
+  },
+  "wave11_vq_rerun_envelope": ".ai/log/review/reviewer-envelope-pm16-pm17-verification-quality-rerun-20260308.json",
+  "wave11_vq_rerun": {
+    "label": "review:bp:vq:pm16pm17:20260308b",
+    "session_key": "agent:main:subagent:113a2a3b-9b25-4b7c-b82b-a8a2b3d08955",
+    "run_id": "c23e6501-49d3-42f1-b0c5-650bbdca4662"
+  },
+  "wave11_correctness_run": {
+    "label": "review:bp:cor:pm16pm17:20260308a",
+    "session_key": "agent:main:subagent:86287087-f85e-4d19-91e4-44f9b7c0b49f",
+    "run_id": "edec463d-52cf-4a5a-9d47-fd346edbea26"
+  },
+  "wave11_impl_run": {
+    "label": "impl:bp:pm16pm17:20260308a",
+    "session_key": "agent:main:subagent:0909e76d-016d-4d68-9c2e-73a5b35c86ab",
+    "run_id": "bb603981-bb09-4417-a4f1-a7c3a0f6f536"
+  },
+  "wave11_impl_delta": ".ai/log/review/delta-pm16-pm17-implementation-20260308.patch",
+  "wave11_review_progress": "verification_quality_impl_in_flight",
+  "wave11_impl_test_summary": {
+    "targeted": "node --import tsx --test tests/wave14-pm16-pm17.test.ts tests/wave12-pm15.test.ts tests/wave9-pm12.test.ts tests/wave1.test.ts",
+    "tests": 151,
+    "pass": 151,
+    "fail": 0
+  },
+  "wave11_vq_remediation_run": {
+    "label": "fix:bp:vq-pm16pm17:20260308a",
+    "session_key": "agent:main:subagent:9ec8d9d5-3d11-4952-9923-52c172eaeafc",
+    "run_id": "0d42e590-177b-4908-95b6-c11deb9325ac"
+  },
+  "wave11_impl_rerun_delta": ".ai/log/review/delta-pm16-pm17-implementation-rerun-20260308.patch",
+  "wave11_review_progress": "correctness_impl_in_flight",
+  "wave11_vq_remediation_test_summary": {
+    "targeted": "node --import tsx --test tests/wave14-pm16-pm17.test.ts",
+    "tests": 13,
+    "pass": 13,
+    "fail": 0
+  },
+  "wave11_vq_impl_rerun_artifact": ".ai/log/review/review-verification-quality-20260308-pm16-pm17-implementation-rerun.md",
+  "wave11_correctness_impl_artifact": ".ai/log/review/review-correctness-20260308-pm16-pm17-implementation.md",
+  "wave11_last_reviewer_verdict": "GO",
+  "wave11_review_progress": "complete_user_validated",
+  "wave11_completion_note": "PM16/PM17 accepted as complete under clarified product policy that session-scoped approved URLs may be ingested later in the same session; strict turn-local single-use semantics are not required.",
+  "wave12_started_at": "2026-03-08T22:57:00Z",
+  "wave12_scope": "PM16/PM17 Option 1 approval-token remediation",
+  "wave12_focus": [
+    "PM16",
+    "PM17"
+  ],
+  "wave12_review_order": [
+    "Security/Attacker"
+  ],
+  "wave12_trust_zone": "tz:reviewer:bonfires-plugin",
+  "wave12_selected_option": "option1_session_local_approval_token",
+  "wave12_plan_delta": ".ai/log/review/delta-pm16-pm17-option1-security-remediation-20260308.patch",
+  "wave12_remediation_run": {
+    "label": "fix:bp:sec-pm16pm17opt1:20260308a",
+    "session_key": "agent:main:subagent:fba3c482-dc6b-4723-b6aa-c871d846d1c9",
+    "run_id": "e47e8cb1-1cdf-4a21-a26d-680ffa14e9d9"
+  },
+  "wave12_option1_delta": ".ai/log/review/delta-pm16-pm17-option1-security-implementation-20260308.patch",
+  "wave12_targeted_test_summary": {
+    "targeted": "node --import tsx --test tests/wave14-pm16-pm17.test.ts",
+    "tests": 13,
+    "pass": 13,
+    "fail": 0
+  },
+  "wave12_security_rerun_verdict": "NO_GO",
+  "wave12_security_rerun_artifact_envelope": ".ai/log/review/reviewer-envelope-pm16-pm17-security-option1-implementation-20260308.json",
+  "wave12_disposition": "accepted_residual_review_disagreement",
+  "wave12_disposition_note": "Security rerun required stricter turn-local/single-use provenance than product policy. Spencer clarified that session-scoped previously seen and approved URLs are acceptable to ingest later in the same session, so no further security remediation or rerun is required.",
+  "wave12_review_progress": "closed_no_further_rerun",
+  "next_action": "pm18_pm23_ready_for_implementation",
+  "wave10_planning_status": "planning_ready_for_implementation_pending_baseline_revalidation",
+  "wave11_planning_status": "planning_ready_for_implementation_pending_baseline_revalidation",
+  "wave11_locked_design_assumptions": [
+    "afterTurn hard-replaces active agent_end episodic writeback with no mixed-mode",
+    "assemble hard-replaces active before_agent_start dynamic retrieval when enabled",
+    "dynamic retrieval remains default-off until intentionally enabled",
+    "PM18/PM19-owned prependSystemContext stable guidance remains distinct from PM22/PM23 retrieval responsibilities",
+    "legacy hook code may remain in-tree, but inactive"
+  ],
+  "wave13_started_at": "2026-03-08T23:43:00Z",
+  "wave13_scope": ".ai/log/plan/wave-10-plan-phase1-system-context-20260308.md",
+  "wave13_focus": [
+    "PM18",
+    "PM19"
+  ],
+  "wave13_review_order": [
+    "Verification Quality",
+    "Correctness",
+    "Security/Attacker"
+  ],
+  "wave13_trust_zone": "tz:reviewer:bonfires-plugin",
+  "wave13_impl_run": {
+    "label": "impl:bp:pm18pm19:20260308a",
+    "session_key": "agent:claude:acp:dded2570-5afd-4357-8294-d935e40db172",
+    "run_id": "df9f7953-3980-4ec5-ba6c-fee2eddf3872",
+    "disposition": "stalled_acp_runtime"
+  },
+  "wave13_impl_retry_run": {
+    "label": "impl:bp:pm18pm19:20260308b",
+    "session_key": "agent:main:subagent:c333fe6d-4b02-4412-9ca7-8138614700c7",
+    "run_id": "0765e381-3f7d-40be-b01f-44919dbb8b43",
+    "runtime": "subagent"
+  },
+  "wave13_impl_delta": ".ai/log/review/delta-pm18-pm19-implementation-20260308.patch",
+  "wave13_vq_run": {
+    "label": "review:bp:vq:pm18pm19:20260308a",
+    "session_key": "agent:main:subagent:504f96a1-efe2-44c6-91b3-19d4e7d312ff",
+    "run_id": "d4cd4126-acc3-48bb-8fde-17d01560387e",
+    "verdict": "NO_GO"
+  },
+  "wave13_vq_artifact": ".ai/log/review/review-verification-quality-20260308-pm18-pm19.md",
+  "wave13_vq_remediation_run": {
+    "label": "fix:bp:vq-pm18pm19:20260308a",
+    "session_key": "agent:main:subagent:59491819-6702-4f3d-b6c7-584fa133e5b0",
+    "run_id": "a09e2cdf-36b5-4d2d-9a10-2813acda9056"
+  },
+  "wave13_impl_rerun_delta": ".ai/log/review/delta-pm18-pm19-implementation-rerun-20260308.patch",
+  "wave13_vq_rerun": {
+    "label": "review:bp:vq:pm18pm19:20260308b",
+    "session_key": "agent:main:subagent:6074349c-30f4-4881-8c8c-beab43d6a879",
+    "run_id": "dce41e3f-2172-4d52-8d46-d2b2b824ce39",
+    "verdict": "CONDITIONAL_GO"
+  },
+  "wave13_vq_rerun_artifact": ".ai/log/review/review-verification-quality-20260308-pm18-pm19-rerun.md",
+  "wave13_correctness_run": {
+    "label": "review:bp:cor:pm18pm19:20260308a",
+    "session_key": "agent:main:subagent:4e7534f9-cb5f-4e28-a298-839d0754fbe5",
+    "run_id": "93799265-a258-4b84-b89d-f467bbc91645",
+    "verdict": "GO"
+  },
+  "wave13_correctness_artifact": ".ai/log/review/review-correctness-20260308-pm18-pm19.md",
+  "wave13_security_run": {
+    "label": "review:bp:sec:pm18pm19:20260308a",
+    "session_key": "agent:main:subagent:525d1d62-5222-4207-80e4-18ef2c081cda",
+    "run_id": "7014fb1b-cd3c-4ad1-ab97-2dc8cce3d481",
+    "verdict": "GO"
+  },
+  "wave13_security_artifact": ".ai/log/review/review-security-20260308-pm18-pm19.md",
+  "wave13_last_reviewer_verdict": "GO",
+  "wave13_review_progress": "complete_ready_for_commit",
+  "next_action": "commit_pm18_pm19_then_start_pm20_pm23"
 }
