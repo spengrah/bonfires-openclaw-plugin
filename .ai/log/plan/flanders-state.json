@@ -392,5 +392,5 @@
   "wave13_security_artifact": ".ai/log/review/review-security-20260308-pm18-pm19.md",
   "wave13_last_reviewer_verdict": "GO",
   "wave13_review_progress": "complete_ready_for_commit",
-  "next_action": "commit_pm18_pm19_then_start_pm20_pm23"
+  "next_action": "done"
 }
