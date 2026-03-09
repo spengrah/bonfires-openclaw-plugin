@@ -479,10 +479,12 @@ test('plugin register wires hooks and tool', async () => {
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
     registerTool: (factory) => { toolDefs.push(factory); },
+    registerContextEngine: () => {},
   };
   register(api);
-  assert.equal(events.length, 4);
-  assert.equal(toolDefs.length, 3);
+  assert.equal(events.length, 2);
+  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
+  assert.ok(toolDefs.length >= 3);
   const tools = toolDefs.map(f => f({ agentId: 'agent_primary' }));
   const searchTool = tools.find(t => t.name === 'bonfires_search');
   assert.ok(searchTool);
@@ -497,9 +499,11 @@ test('plugin register fallback path works when resolvePath missing', async () =>
     logger: { warn: () => {} },
     on: (name, fn) => events.push([name, fn]),
     registerTool: () => {},
+    registerContextEngine: () => {},
   };
   register(api);
-  assert.equal(events.length, 4);
+  assert.equal(events.length, 2);
+  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
 });
 
 test('plugin register supports functional recovery source and enabled ingestion config', async () => {
@@ -516,7 +520,8 @@ test('plugin register supports functional recovery source and enabled ingestion 
     registerTool: () => {},
   };
   register(api);
-  assert.equal(events.length, 4);
+  assert.equal(events.length, 2);
+  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
 });
 
 test('plugin register throws when pluginConfig is missing required mappings', async () => {

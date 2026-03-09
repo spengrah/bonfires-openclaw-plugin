@@ -1,0 +1,40 @@
+{
+  "tz_id": "tz:reviewer:bonfires-plugin",
+  "project_slug": "bonfires-plugin",
+  "review_lens": "Security/Attacker",
+  "delta": {
+    "git_diff": ".ai/log/review/delta-pm16-pm17-implementation-rerun-20260308.patch",
+    "artifacts": [
+      ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      ".ai/log/plan/wave-9-plan-1c-ab-20260308.md",
+      ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+      ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md",
+      ".ai/spec/spec/requirements-index.md",
+      ".ai/spec/spec/quality/traceability-map.json",
+      "tests/REQUIREMENT-MAPPING.md",
+      "src/config.ts",
+      "src/hooks.ts",
+      "src/index.ts",
+      "src/tools/bonfires-ingest-links.ts",
+      "src/tools/discover-links.ts",
+      "src/tools/bonfires-ingest-link.ts",
+      "src/transport-safety.ts",
+      "tests/wave14-pm16-pm17.test.ts",
+      "tests/wave12-pm15.test.ts",
+      ".ai/log/review/review-verification-quality-20260308-pm16-pm17-implementation-rerun.md",
+      ".ai/log/review/review-correctness-20260308-pm16-pm17-implementation.md"
+    ]
+  },
+  "focus_problems": [
+    "problem:bonfires-plugin:verify-pm16-approval-gated-multi-link-ingestion",
+    "problem:bonfires-plugin:verify-pm17-discovery-selected-set-approval",
+    "problem:bonfires-plugin:verify-spec-guidance-traceability-coherence"
+  ],
+  "notes": "Security/Attacker review for PM16/PM17 implementation after Verification Quality GO and Correctness GO. Focus on approval-scope bypass risks, prompt/parameter abuse, discovery misuse, SSRF or transport-safety regressions, schema weaknesses, and whether the implementation preserves fail-closed safety boundaries under attacker-controlled inputs.",
+  "session_policy": {
+    "fresh_session_per_lens": true,
+    "sequence_index": 3,
+    "sequence_total": 3
+  }
+}

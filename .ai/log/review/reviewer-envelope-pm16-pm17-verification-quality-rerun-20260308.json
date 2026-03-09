@@ -1,0 +1,30 @@
+{
+  "tz_id": "tz:reviewer:bonfires-plugin",
+  "project_slug": "bonfires-plugin",
+  "review_lens": "Verification Quality",
+  "delta": {
+    "git_diff": ".ai/log/review/delta-pm16-pm17-planning-c541802.patch",
+    "artifacts": [
+      ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/spec/requirements-index.md",
+      ".ai/log/plan/wave-9-plan-1c-ab-20260308.md",
+      ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+      ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md",
+      ".ai/log/plan/pm14-pm15-production-validation-20260308.md",
+      ".ai/log/review/review-verification-quality-20260307w9-remediation.md",
+      ".ai/log/review/review-correctness-20260307w9-remediation.md"
+    ]
+  },
+  "focus_problems": [
+    "problem:bonfires-plugin:verify-pm16-approval-gated-multi-link-ingestion",
+    "problem:bonfires-plugin:verify-pm17-discovery-selected-set-approval",
+    "problem:bonfires-plugin:verify-spec-guidance-traceability-coherence"
+  ],
+  "notes": "Rerun after remediation of prior VQ blockers. Check that the PM16/PM17 planning package now cites concrete PM14/PM15 precondition evidence and that the verification matrix contains clear pass/fail review checks for default-off gating, approval-bound ingestion, and non-blocking hook behavior.",
+  "session_policy": {
+    "fresh_session_per_lens": true,
+    "sequence_index": 1,
+    "sequence_total": 2
+  }
+}

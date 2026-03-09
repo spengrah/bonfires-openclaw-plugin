@@ -1,177 +1,251 @@
 {
-    "version": 6,
-    "requirements": [
-        {
-            "id": "R1",
-            "spec": ".ai/spec/spec/retrieval/before-agent-start.md",
-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-before-agent-start.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ]
-        },
-        {
-            "id": "R2",
-            "spec": ".ai/spec/spec/retrieval/bonfires-search-tool.md",
-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ]
-        },
-        {
-            "id": "R3",
-            "spec": ".ai/spec/spec/capture/agent-end-capture-legacy.md",
-            "guidance": ".ai/spec/guidance/capture/guidance-for-agent-end-capture.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ],
-            "note": "Superseded by PM10"
-        },
-        {
-            "id": "R4",
-            "spec": ".ai/spec/spec/processing/recovery-and-session-end.md",
-            "guidance": ".ai/spec/guidance/processing/guidance-for-recovery-and-session-end.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ]
-        },
-        {
-            "id": "R5",
-            "spec": ".ai/spec/spec/config/plugin-config-and-agent-mapping.md",
-            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-config-and-agent-mapping.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ]
-        },
-        {
-            "id": "R6",
-            "spec": ".ai/spec/spec/client/bonfires-client-interface.md",
-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
-            "verification": [
-                ".ai/spec/spec/quality/verification-checklist.md"
-            ]
-        }
-    ],
-    "functionality_requirements": [
-        {
-            "id": "PM1",
-            "spec": ".ai/spec/spec/client/hosted-api-wiring.md",
-            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-api-wiring.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM2",
-            "spec": ".ai/spec/spec/processing/stack-processing-heartbeat.md",
-            "guidance": ".ai/spec/guidance/processing/guidance-for-stack-processing-heartbeat.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM3",
-            "spec": ".ai/spec/spec/client/hosted-integration-verification.md",
-            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-integration-verification.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM4",
-            "spec": ".ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md",
-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM5",
-            "spec": ".ai/spec/spec/config/plugin-packaging.md",
-            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-packaging.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM6",
-            "spec": ".ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md",
-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM7",
-            "spec": ".ai/spec/spec/processing/compaction-flush.md",
-            "guidance": ".ai/spec/guidance/processing/guidance-for-compaction-flush.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ],
-            "note": "Superseded by PM10"
-        },
-        {
-            "id": "PM8",
-            "spec": ".ai/spec/spec/capture/watermark-reset-on-truncation.md",
-            "guidance": ".ai/spec/guidance/capture/guidance-for-watermark-reset-on-truncation.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ],
-            "note": "Retained as guard within PM10"
-        },
-        {
-            "id": "PM9",
-            "spec": ".ai/spec/spec/capture/prepend-context-stripping.md",
-            "guidance": ".ai/spec/guidance/capture/guidance-for-prepend-context-stripping.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ],
-            "note": "Retained within PM11"
-        },
-        {
-            "id": "PM10",
-            "spec": ".ai/spec/spec/capture/immediate-stack-capture.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ],
-            "note": "Supersedes PM1, PM7"
-        },
-        {
-            "id": "PM11",
-            "spec": ".ai/spec/spec/capture/message-sanitization.md",
-            "guidance": ".ai/spec/guidance/capture/guidance-for-message-sanitization.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM12",
-            "spec": ".ai/spec/spec/capture/session-improvements.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM13",
-            "spec": ".ai/spec/spec/capture/agent-display-names.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM14",
-            "spec": ".ai/spec/spec/ingestion/pdf-ingestion-routing.md",
-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-pdf-ingestion-routing.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        },
-        {
-            "id": "PM15",
-            "spec": ".ai/spec/spec/ingestion/linked-content-ingestion.md",
-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-linked-content-ingestion.md",
-            "verification": [
-                ".ai/spec/spec/requirements-index.md"
-            ]
-        }
-    ]
+  "version": 9,
+  "requirements": [
+    {
+      "id": "R1",
+      "spec": ".ai/spec/spec/retrieval/before-agent-start.md",
+      "guidance": ".ai/spec/guidance/retrieval/guidance-for-before-agent-start.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ]
+    },
+    {
+      "id": "R2",
+      "spec": ".ai/spec/spec/retrieval/bonfires-search-tool.md",
+      "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ]
+    },
+    {
+      "id": "R3",
+      "spec": ".ai/spec/spec/capture/agent-end-capture-legacy.md",
+      "guidance": ".ai/spec/guidance/capture/guidance-for-agent-end-capture.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ],
+      "note": "Superseded by PM10"
+    },
+    {
+      "id": "R4",
+      "spec": ".ai/spec/spec/processing/recovery-and-session-end.md",
+      "guidance": ".ai/spec/guidance/processing/guidance-for-recovery-and-session-end.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ]
+    },
+    {
+      "id": "R5",
+      "spec": ".ai/spec/spec/config/plugin-config-and-agent-mapping.md",
+      "guidance": ".ai/spec/guidance/config/guidance-for-plugin-config-and-agent-mapping.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ]
+    },
+    {
+      "id": "R6",
+      "spec": ".ai/spec/spec/client/bonfires-client-interface.md",
+      "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+      "verification": [
+        ".ai/spec/spec/quality/verification-checklist.md"
+      ]
+    }
+  ],
+  "functionality_requirements": [
+    {
+      "id": "PM1",
+      "spec": ".ai/spec/spec/client/hosted-api-wiring.md",
+      "guidance": ".ai/spec/guidance/client/guidance-for-hosted-api-wiring.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM2",
+      "spec": ".ai/spec/spec/processing/stack-processing-heartbeat.md",
+      "guidance": ".ai/spec/guidance/processing/guidance-for-stack-processing-heartbeat.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM3",
+      "spec": ".ai/spec/spec/client/hosted-integration-verification.md",
+      "guidance": ".ai/spec/guidance/client/guidance-for-hosted-integration-verification.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM4",
+      "spec": ".ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM5",
+      "spec": ".ai/spec/spec/config/plugin-packaging.md",
+      "guidance": ".ai/spec/guidance/config/guidance-for-plugin-packaging.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM6",
+      "spec": ".ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM7",
+      "spec": ".ai/spec/spec/processing/compaction-flush.md",
+      "guidance": ".ai/spec/guidance/processing/guidance-for-compaction-flush.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ],
+      "note": "Superseded by PM10"
+    },
+    {
+      "id": "PM8",
+      "spec": ".ai/spec/spec/capture/watermark-reset-on-truncation.md",
+      "guidance": ".ai/spec/guidance/capture/guidance-for-watermark-reset-on-truncation.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ],
+      "note": "Retained as guard within PM10"
+    },
+    {
+      "id": "PM9",
+      "spec": ".ai/spec/spec/capture/prepend-context-stripping.md",
+      "guidance": ".ai/spec/guidance/capture/guidance-for-prepend-context-stripping.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ],
+      "note": "Retained within PM11"
+    },
+    {
+      "id": "PM10",
+      "spec": ".ai/spec/spec/capture/immediate-stack-capture.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ],
+      "note": "Supersedes PM1, PM7"
+    },
+    {
+      "id": "PM11",
+      "spec": ".ai/spec/spec/capture/message-sanitization.md",
+      "guidance": ".ai/spec/guidance/capture/guidance-for-message-sanitization.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM12",
+      "spec": ".ai/spec/spec/capture/session-improvements.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM13",
+      "spec": ".ai/spec/spec/capture/agent-display-names.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM14",
+      "spec": ".ai/spec/spec/ingestion/pdf-ingestion-routing.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-pdf-ingestion-routing.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM15",
+      "spec": ".ai/spec/spec/ingestion/linked-content-ingestion.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-linked-content-ingestion.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md"
+      ]
+    },
+    {
+      "id": "PM16",
+      "spec": ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+        ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md"
+      ]
+    },
+    {
+      "id": "PM17",
+      "spec": ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      "guidance": ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+        ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md"
+      ]
+    },
+    {
+      "id": "PM18",
+      "spec": ".ai/spec/spec/retrieval/system-context-injection-and-prompt-policy-fallback.md",
+      "guidance": ".ai/spec/guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md"
+      ]
+    },
+    {
+      "id": "PM19",
+      "spec": ".ai/spec/spec/retrieval/system-context-injection-and-prompt-policy-fallback.md",
+      "guidance": ".ai/spec/guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md"
+      ]
+    },
+    {
+      "id": "PM20",
+      "spec": ".ai/spec/spec/context-engine/after-turn-episodic-memory-writeback.md",
+      "guidance": ".ai/spec/guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
+      ]
+    },
+    {
+      "id": "PM21",
+      "spec": ".ai/spec/spec/context-engine/after-turn-episodic-memory-writeback.md",
+      "guidance": ".ai/spec/guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
+      ]
+    },
+    {
+      "id": "PM22",
+      "spec": ".ai/spec/spec/context-engine/assemble-delve-retrieval.md",
+      "guidance": ".ai/spec/guidance/context-engine/guidance-for-assemble-delve-retrieval.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
+      ]
+    },
+    {
+      "id": "PM23",
+      "spec": ".ai/spec/spec/context-engine/assemble-delve-retrieval.md",
+      "guidance": ".ai/spec/guidance/context-engine/guidance-for-assemble-delve-retrieval.md",
+      "verification": [
+        ".ai/spec/spec/requirements-index.md",
+        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
+      ]
+    }
+  ]
 }

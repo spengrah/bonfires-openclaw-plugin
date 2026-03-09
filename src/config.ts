@@ -91,6 +91,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
     typeof cfg.retrieval?.systemGuidance === 'string' && cfg.retrieval.systemGuidance.trim()
       ? cfg.retrieval.systemGuidance.trim()
       : undefined;
+  const enableDynamicRetrieval = Boolean(cfg.retrieval?.enableDynamicRetrieval ?? false);
 
 
   const out = {
@@ -103,7 +104,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
     stateDir,
-    retrieval: { systemGuidance },
+    retrieval: { systemGuidance, enableDynamicRetrieval },
     discovery: {
       enabled: discoveryEnabled,
       maxCandidates: discoveryMaxCandidates,

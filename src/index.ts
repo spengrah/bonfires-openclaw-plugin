@@ -1,16 +1,18 @@
 import { parseConfig } from './config.js';
 import { createBonfiresClient } from './bonfires-client.js';
 import { InMemoryCaptureLedger } from './capture-ledger.js';
-import { handleAgentEnd, handleBeforeAgentStart, handleBeforeCompaction, handleSessionEnd } from './hooks.js';
+import { handleBeforeCompaction, handleSessionEnd } from './hooks.js';
 import { bonfiresSearchTool } from './tools/bonfires-search.js';
 import { bonfiresStackSearchTool } from './tools/bonfires-stack-search.js';
 import { bonfiresIngestLinkTool } from './tools/bonfires-ingest-link.js';
+import { bonfiresIngestLinksTool } from './tools/bonfires-ingest-links.js';
+import { prepareIngestApprovalTool } from './tools/prepare-ingest-approval.js';
+import { discoverLinksTool } from './tools/discover-links.js';
 import { startStackHeartbeat } from './heartbeat.js';
 import { startIngestionCron } from './ingestion.js';
+import { createBonfiresContextEngine } from './context-engine.js';
 
 export default function register(api){
-
-
   const cfg=parseConfig(api.pluginConfig ?? {}, { logger: api.logger });
   const client=createBonfiresClient(cfg, api.logger);
   const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
@@ -52,14 +54,12 @@ export default function register(api){
     defaultProfile,
   });
 
-  // Build agent display name map from OpenClaw agent config (PM13)
   const agentDisplayNames: Record<string, string> = {};
   for (const a of (api.config?.agents?.list ?? [])) {
     if (a.id && a.name) agentDisplayNames[a.id] = a.name;
   }
 
-  api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,ledger,logger:api.logger}));
-  api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
+  api.registerContextEngine?.('bonfires', () => createBonfiresContextEngine({ cfg, client, ledger, logger: api.logger, agentDisplayNames, defaultAgentId: Object.keys(cfg.agents)[0] }));
   api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
   api.on('before_compaction',(event,ctx)=>handleBeforeCompaction(event,ctx,{cfg,client,ledger,logger:api.logger}));
 
@@ -92,6 +92,68 @@ export default function register(api){
     parameters:{type:'object',properties:{url:{type:'string',description:'The URL to fetch and ingest'}},required:['url']},
     execute: async (_toolCallId, params) => {
       const result = await bonfiresIngestLinkTool(params, toolCtx, {cfg, client, logger: api.logger});
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
+    },
+  }));
+
+  api.registerTool((toolCtx) => ({
+    name:'bonfires_prepare_ingest_approval',
+    label:'Prepare an approval token for Bonfires link ingestion',
+    description:'Mint a session-bound approval token for an exact user-approved URL set already observed in this session. Use this after the user explicitly approves specific shared or discovered URLs and before calling bonfires_ingest_links.',
+    parameters:{
+      type:'object',
+      properties:{
+        approvalContext:{
+          type:'object',
+          properties:{
+            approvedByUser:{type:'boolean',const:true},
+            approvedUrls:{type:'array',items:{type:'string'},minItems:1,maxItems:10},
+          },
+          required:['approvedByUser','approvedUrls'],
+          additionalProperties:false,
+        },
+      },
+      required:['approvalContext'],
+      additionalProperties:false,
+    },
+    execute: async (_toolCallId, params) => {
+      const result = await prepareIngestApprovalTool(params, toolCtx, {cfg});
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
+    },
+  }));
+
+  api.registerTool((toolCtx) => ({
+    name:'bonfires_ingest_links',
+    label:'Ingest approved links into Bonfires',
+    description:'Ingest multiple links into your knowledge graph, but only after the user explicitly approves the exact URL set and you mint a session-bound approval token with bonfires_prepare_ingest_approval. Only pass approvalContext.approvalToken to execute ingestion.',
+    parameters:{
+      type:'object',
+      properties:{
+        approvalContext:{
+          type:'object',
+          properties:{
+            approvalToken:{type:'string',minLength:1},
+          },
+          required:['approvalToken'],
+          additionalProperties:false,
+        },
+      },
+      required:['approvalContext'],
+      additionalProperties:false,
+    },
+    execute: async (_toolCallId, params) => {
+      const result = await bonfiresIngestLinksTool(params, toolCtx, {cfg, client, logger: api.logger});
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
+    },
+  }));
+
+  api.registerTool((toolCtx) => ({
+    name:'discover_links',
+    label:'Discover links for later approval',
+    description:'Discover public-web links relevant to a query. This tool is feature-flagged and returns untrusted candidates that still require the user to approve a selected set and mint an approval token before any Bonfires ingestion.',
+    parameters:{type:'object',properties:{query:{type:'string'},maxCandidates:{type:'number',minimum:1,maximum:25}},required:['query'],additionalProperties:false},
+    execute: async (_toolCallId, params) => {
+      const result = await discoverLinksTool(params, toolCtx, {cfg, logger: api.logger});
       return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
     },
   }));

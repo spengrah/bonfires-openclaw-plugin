@@ -510,7 +510,6 @@ test('pm15: bonfires_ingest_link is an explicit tool requiring user-approved inv
 
 test('pm15: plugin registers bonfires_ingest_link tool', () => {
   const indexSrc = readFileSync(join(__dirname, '..', 'src', 'index.ts'), 'utf8');
-  // Count registerTool calls - should be 3 (search, stack_search, ingest_link)
   const toolRegCalls = (indexSrc.match(/api\.registerTool/g) || []).length;
-  assert.equal(toolRegCalls, 3, 'should register 3 tools');
+  assert.ok(toolRegCalls >= 3, 'should still register legacy tools alongside newer additions');
 });

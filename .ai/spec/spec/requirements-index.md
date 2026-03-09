@@ -12,6 +12,36 @@ Authoritative index for all requirements and their spec/guidance locations.
 - Spec: `retrieval/bonfires-search-tool.md`
 - Guidance: `../../guidance/retrieval/guidance-for-bonfires-search-tool.md`
 
+### PM18 — System-context placement for stable Bonfires guidance (Phase 1)
+- **Planned.** Uses OpenClaw v2026.3.7 prompt-system-context fields for stable guidance text while preserving backward-compatible defaults.
+- Spec: `retrieval/system-context-injection-and-prompt-policy-fallback.md`
+- Guidance: `../../guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md`
+
+### PM19 — Prompt-policy-aware fail-open context injection (Phase 1)
+- **Planned.** Ensures no-op degradation when prompt mutation is constrained by policy (for example, `allowPromptInjection=false`).
+- Spec: `retrieval/system-context-injection-and-prompt-policy-fallback.md`
+- Guidance: `../../guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md`
+
+### PM20 — ContextEngine `afterTurn()` episodic memory writeback (Phase X)
+- **Planned.** Migrates Bonfires episodic/stack writeback toward native post-turn ContextEngine lifecycle without changing explicit content-ingestion lanes.
+- Spec: `context-engine/after-turn-episodic-memory-writeback.md`
+- Guidance: `../../guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md`
+
+### PM21 — Writeback migration boundary / content-ingestion non-goal (Phase X)
+- **Planned.** Keeps explicit document/PDF/link ingestion outside ContextEngine writeback migration scope and prevents duplicate writeback during transition.
+- Spec: `context-engine/after-turn-episodic-memory-writeback.md`
+- Guidance: `../../guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md`
+
+### PM22 — ContextEngine `assemble()` Bonfires retrieval integration (Phase Y)
+- **Planned.** Migrates Bonfires turn-time retrieval toward native pre-turn ContextEngine assembly when recall is intentionally re-enabled.
+- Spec: `context-engine/assemble-delve-retrieval.md`
+- Guidance: `../../guidance/context-engine/guidance-for-assemble-delve-retrieval.md`
+
+### PM23 — Retrieval migration boundary / compatibility defaults (Phase Y)
+- **Planned.** Keeps per-turn recall opt-in/off by default and avoids duplicate retrieval injection during mixed rollout.
+- Spec: `context-engine/assemble-delve-retrieval.md`
+- Guidance: `../../guidance/context-engine/guidance-for-assemble-delve-retrieval.md`
+
 ## Capture
 
 ### R3 — agent_end capture (legacy)
@@ -83,12 +113,12 @@ Authoritative index for all requirements and their spec/guidance locations.
 - Guidance: `../../guidance/ingestion/guidance-for-linked-content-ingestion.md`
 
 ### PM16 — Approval-gated multi-link ingestion (1C-A)
-- **Planned.** Adds bounded `urls[]` ingestion with approval-bound scope and per-link result summaries.
+- **Active.** Adds approval-gated multi-link ingestion with approval-bound scope and per-link result summaries.
 - Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
 - Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
 
 ### PM17 — Discovery + selected-set approval flow (1C-B)
-- **Planned / feature-flagged.** Adds generic `discover_links` with approve-selected-set-once handoff to Bonfires ingestion.
+- **Active / feature-flagged off by default.** Adds generic `discover_links` with approve-selected-set-once handoff to Bonfires ingestion.
 - Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
 - Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
 

@@ -410,16 +410,21 @@ test('plugin register registers bonfires_search, bonfires_stack_search, and bonf
   const { default: register } = await import('../src/index.js');
   const events: any[] = [];
   const toolDefs: any[] = [];
+  const engines: any[] = [];
   const api = {
     pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
     resolvePath: (p: string) => p,
     logger: { warn: () => {} },
     on: (name: string, fn: any) => events.push([name, fn]),
     registerTool: (factory: any) => { toolDefs.push(factory); },
+    registerContextEngine: (id: string, factory: any) => { engines.push([id, factory]); },
   };
   register(api);
-  assert.equal(events.length, 4);
-  assert.equal(toolDefs.length, 3);
+  assert.equal(events.length, 2);
+  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
+  assert.equal(engines.length, 1);
+  assert.equal(engines[0][0], 'bonfires');
+  assert.ok(toolDefs.length >= 3);
 
   const searchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_search');
   const stackSearchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_stack_search');

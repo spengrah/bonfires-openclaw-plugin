@@ -1,0 +1,38 @@
+{
+  "tz_id": "tz:reviewer:bonfires-plugin",
+  "project_slug": "bonfires-plugin",
+  "review_lens": "Verification Quality",
+  "delta": {
+    "git_diff": ".ai/log/review/delta-pm16-pm17-implementation-20260308.patch",
+    "artifacts": [
+      ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      ".ai/log/plan/wave-9-plan-1c-ab-20260308.md",
+      ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+      ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md",
+      ".ai/spec/spec/requirements-index.md",
+      ".ai/spec/spec/quality/traceability-map.json",
+      "tests/REQUIREMENT-MAPPING.md",
+      "src/config.ts",
+      "src/hooks.ts",
+      "src/index.ts",
+      "src/tools/bonfires-ingest-links.ts",
+      "src/tools/discover-links.ts",
+      "tests/wave14-pm16-pm17.test.ts",
+      "tests/wave1.test.ts",
+      "tests/wave12-pm15.test.ts",
+      "tests/wave9-pm12.test.ts"
+    ]
+  },
+  "focus_problems": [
+    "problem:bonfires-plugin:verify-pm16-approval-gated-multi-link-ingestion",
+    "problem:bonfires-plugin:verify-pm17-discovery-selected-set-approval",
+    "problem:bonfires-plugin:verify-spec-guidance-traceability-coherence"
+  ],
+  "notes": "Implementation review for PM16/PM17 after planning-contract remediation. Evaluate verification quality of the actual code + tests, traceability updates, tool registration coverage, and whether the implementation evidence is sufficient before moving to Correctness.",
+  "session_policy": {
+    "fresh_session_per_lens": true,
+    "sequence_index": 1,
+    "sequence_total": 3
+  }
+}

@@ -5,8 +5,9 @@ Status: Plan phase (no implementation yet)
 
 ## Objectives
 1. Define PM16/PM17 spec/guidance package with explicit approval model.
-2. Preserve responsiveness by avoiding blocking fetch/ingest in `before_agent_start`.
-3. Gate implementation on PM14/PM15 production validation.
+2. Revise the approval model to Option 1: turn-local approval-token mediation for executable ingestion.
+3. Preserve responsiveness by avoiding blocking fetch/ingest in `before_agent_start`.
+4. Gate implementation on PM14/PM15 production validation.
 
 ## Scope
 - In scope:
@@ -21,6 +22,11 @@ Status: Plan phase (no implementation yet)
 1. PM14 production install + smoke validation PASS
 2. PM15 production install + safety validation PASS
 
+### Precondition evidence (must be cited for kickoff)
+1. `.ai/log/plan/pm14-pm15-production-validation-20260308.md` -> `GO` for live PM14/PM15 expected behavior.
+2. `.ai/log/review/review-verification-quality-20260307w9-remediation.md` -> `GO`.
+3. `.ai/log/review/review-correctness-20260307w9-remediation.md` -> `GO`.
+
 ## Deliverables (this wave)
 1. Spec: `spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md`
 2. Guidance: `spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
@@ -30,8 +36,20 @@ Status: Plan phase (no implementation yet)
 ## Risks to derisk before implementation
 1. Latency regression from accidental heavy hook path.
 2. Approval leakage (ingesting URLs not explicitly approved).
-3. Drift from PM15 reusable safety path.
-4. Feature-flag bypass for discovery.
+3. Missing approval provenance binding between approval and execution.
+4. Drift from PM15 reusable safety path.
+5. Feature-flag bypass for discovery.
+
+## Option 1 remediation decision (locked)
+1. Use a turn-local approval token as the executable handoff boundary for PM16/PM17.
+2. `bonfires_ingest_links` must no longer trust caller-supplied raw approved URL lists as executable authority.
+3. Discovery and user-provided-link approval flows may still present URLs to the model/user, but execution must be token-resolved server/tool-side.
+4. Minimum enforcement scope for this remediation wave:
+   - session-bound token resolution
+   - turn-local provenance binding
+   - rejection of missing/expired/unverifiable tokens
+   - rejection of direct executable `urls` / raw `approvedUrls` bypass input
+5. Review sequence after remediation remains fail-fast: Security/Attacker is the critical acceptance lens for this delta.
 
 ## Go/No-Go for implementation start
 - GO only if:

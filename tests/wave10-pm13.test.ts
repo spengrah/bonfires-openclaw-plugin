@@ -49,27 +49,26 @@ test('handleSessionEnd passes agentDisplayName from deps (PM13)', async () => {
 
 // --- PM13: register() builds agentDisplayNames from api.config.agents.list ---
 
-test('register passes agentDisplayNames from api.config to agent_end handler (PM13)', async () => {
+test('register passes agentDisplayNames from api.config to bonfires context engine factory (PM13)', async () => {
   // Dynamic import to get a fresh evaluation for coverage
   const { default: register } = await import('../src/index.js');
   const events: [string, Function][] = [];
+  const engines: [string, Function][] = [];
   const api = {
     pluginConfig: { agents: { main: 'a1' }, apiKeyEnv: 'NO_SUCH_ENV' },
     resolvePath: (p: string) => p,
     logger: { warn: () => {} },
     on: (name: string, fn: Function) => events.push([name, fn]),
     registerTool: () => {},
+    registerContextEngine: (id: string, factory: Function) => engines.push([id, factory]),
     config: { agents: { list: [{ id: 'main', name: 'Lyle' }] } },
   };
   register(api);
-  const agentEndHandler = events.find(([name]) => name === 'agent_end')![1];
-  // Invoke the handler — it will call capture on the MockBonfiresClient internally
-  // The handler is wired to use MockBonfiresClient (NO_SUCH_ENV means no real API key)
-  await agentEndHandler(
-    { messages: [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'hello' }] },
-    { agentId: 'main', sessionKey: 'sk1', sessionId: 'sid1' },
-  );
-  // If we get here without error, the display name map was built and used
+  assert.equal(events.find(([name]) => name === 'agent_end'), undefined);
+  assert.equal(engines.length, 1);
+  const engine = engines[0][1]();
+  const ctx: any = { messages: [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'hello' }], sessionId: 'sid1', sessionFile: '/tmp/sid1.jsonl', prePromptMessageCount: 0 };
+  await engine.afterTurn(ctx);
   assert.ok(true);
 });
 

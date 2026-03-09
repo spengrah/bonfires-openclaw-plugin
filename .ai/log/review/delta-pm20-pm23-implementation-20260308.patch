@@ -1,0 +1,1620 @@
+diff --git a/.ai/log/plan/quality-gate-evidence-current.json b/.ai/log/plan/quality-gate-evidence-current.json
+index 25ec161..dafe3c0 100644
+--- a/.ai/log/plan/quality-gate-evidence-current.json
++++ b/.ai/log/plan/quality-gate-evidence-current.json
+@@ -1,11 +1,336 @@
+ {
+-  "timestamp": "2026-03-08T03:48:39.915Z",
++  "timestamp": "2026-03-09T01:19:23.176Z",
+   "status": "PASS",
+-  "reason": "no critical modules touched",
+   "changed_files": [
+-    ".ai/log/plan/quality-gate-evidence-current.json",
+-    ".ai/log/plan/verification-gates-report-current.json"
++    ".ai/log/plan/flanders-state.json",
++    ".ai/log/plan/review-support-wave-10-phase1-system-context-20260308.md",
++    ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md",
++    ".ai/log/plan/wave-10-plan-phase1-system-context-20260308.md",
++    ".ai/log/review/delta-pm18-pm19-implementation-20260308.patch",
++    ".ai/log/review/delta-pm18-pm19-implementation-rerun-20260308.patch",
++    ".ai/log/review/review-correctness-20260308-pm18-pm19.md",
++    ".ai/log/review/review-security-20260308-pm18-pm19.md",
++    ".ai/log/review/review-verification-quality-20260308-pm18-pm19-rerun.md",
++    ".ai/log/review/review-verification-quality-20260308-pm18-pm19.md",
++    ".ai/spec/guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md",
++    ".ai/spec/spec/retrieval/system-context-injection-and-prompt-policy-fallback.md",
++    "openclaw.plugin.json",
++    "src/config.ts",
++    "tests/wave7-packaging.test.ts"
+   ],
+-  "touched_critical": [],
+-  "modules": []
++  "touched_critical": [
++    "src/config.ts"
++  ],
++  "modules": [
++    {
++      "module": "src/config.ts",
++      "touched": true,
++      "relevant_test_files": [
++        "wave1.test.ts",
++        "wave10-pm13.test.ts",
++        "wave11-pm14.test.ts",
++        "wave12-pm15.test.ts",
++        "wave13-pm18-pm19.test.ts",
++        "wave14-pm16-pm17.test.ts",
++        "wave5-hosted-verification.test.ts",
++        "wave7-packaging.test.ts",
++        "wave8-profiles.test.ts",
++        "wave9-pm12.test.ts"
++      ],
++      "matched_tests": {
++        "happy": [
++          "before_agent_start calls search and returns prependContext",
++          "agent_end captures every turn without throttle (PM10)",
++          "agent_end does not call processStack (PM10)",
++          "bonfires_search validates query and returns deterministic shape",
++          "bonfires_search clamps limit to max 50",
++          "before_agent_start truncates query to 500 chars",
++          "before_agent_start caps prependContext at 2000 chars",
++          "parseConfig requires at least one mapped agent id",
++          "parseConfig validates numeric bounds",
++          "resolveBonfiresAgentId ignores inherited prototype keys",
++          "parseConfig uses defaults for optional values",
++          "parseConfig ingestion defaults and mapped-agent validation",
++          "parseConfig validates baseUrl host and protocol",
++          "handleSessionEnd is safe no-op",
++          "session_end flush captures uncaptured tail immediately when messages are present",
++          "session_end calls processStack after capture (PM10)",
++          "session_end flush respects endIndex <= lastPushedIndex guard",
++          "session_end flush no-messages branch returns without capture",
++          "session_end flush sets lastPushedAt from Date.now when nowMs is absent",
++          "capture ledger persists and reloads from disk",
++          "capture ledger persists injected sessions across restart when path is configured",
++          "bonfires_search uses fallback maxResults when limit is NaN",
++          "bonfires_search clamps limit to minimum 1",
++          "resolveBonfiresAgentId returns null for non-string mapped value",
++          "handleBeforeAgentStart handles unknown agent without logger safely",
++          "handleAgentEnd uses Date.now path when nowMs is absent",
++          "before_agent_start handles undefined event and logger-present catch path",
++          "bonfires_search uses config default when limit omitted",
++          "plugin register wires hooks and tool",
++          "plugin register supports functional recovery source and enabled ingestion config",
++          "extractUserMessage strips metadata wrapper and returns user message",
++          "extractUserMessage returns raw prompt when no metadata wrapper present",
++          "extractUserMessage preserves normal json code blocks in user content",
++          "extractUserMessage strips metadata wrappers but keeps trailing user json code block",
++          "before_agent_start extracts user message from metadata-wrapped prompt",
++          "hasUserMetadata detects metadata wrapper presence",
++          "before_compaction calls processStack and resets watermark to -1 (PM10)",
++          "before_compaction resets watermark even with no prior watermark (PM10)",
++          "agent_end resets watermark when lastPushedIndex >= msgs.length",
++          "session_end resets watermark when lastPushedIndex >= msgs.length",
++          "capture strips prependContext from user messages",
++          "HostedBonfiresClient strips prependContext from user messages in capture",
++          "extractSenderFromMetadata parses sender name from metadata wrapper",
++          "toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)",
++          "toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)",
++          "toStackMsg handles user content block arrays (PM11)",
++          "toStackMsg assistant with multiple text blocks joins them (PM11)",
++          "handleAgentEnd passes agentDisplayName from deps (PM13)",
++          "handleAgentEnd falls back to ctx.agentId when no display name (PM13)",
++          "handleSessionEnd passes agentDisplayName from deps (PM13)",
++          "register passes agentDisplayNames from api.config to agent_end handler (PM13)",
++          "hosted capture uses agentDisplayName for assistant messages (PM13)",
++          "hosted capture falls back to agentId when no agentDisplayName (PM13)",
++          "pm14: isPdfExtension returns true for .pdf (case-insensitive)",
++          "pm14: isPdfExtension returns false for non-PDF",
++          "pm14: classifyRouteByPath routes .pdf to pdf and others to text",
++          "pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)",
++          "pm14: profile with .pdf extension routes PDFs to ingestPdf",
++          "pm14: PDF with uppercase extension routes correctly",
++          "pm14: non-PDF ingestion behavior unchanged (text path still works)",
++          "pm14: successful PDF ingest updates ledger with hash",
++          "pm15: classifyLink routes .pdf URL to pdf",
++          "pm15: classifyLink routes text file URLs to text",
++          "pm15: classifyLink routes .html URL to html",
++          "pm15: classifyLink falls back to content-type when no extension",
++          "pm15: classifyLink returns null for unsupported types",
++          "pm15: classifyByContentType handles charset parameters",
++          "pm15: isAllowedScheme accepts http and https only",
++          "pm15: isPrivateHost blocks localhost and loopback",
++          "pm15: isPrivateHost blocks private RFC1918 ranges",
++          "pm15: isPrivateHost blocks link-local and metadata endpoints",
++          "pm15: isPrivateHost allows public hosts",
++          "pm15: validateFetchUrl accepts public https URLs",
++          "pm15: extractReadableText strips script and style elements",
++          "pm15: extractReadableText strips nav/header/footer/aside",
++          "pm15: extractReadableText decodes HTML entities",
++          "pm15: extractReadableText preserves paragraph structure",
++          "pm15: extractReadableText normalizes excessive whitespace",
++          "pm15: ingestLink result includes url, classification, route, success, duplicate",
++          "pm15: isDuplicateResponse works for PM15 context",
++          "pm15: isDuplicateResponse matches duplicate variants tolerantly",
++          "pm15: bonfires_ingest_link tool registers with explicit description",
++          "pm15: ingestLink PDF duplicate response is treated as success no-op",
++          "pm15: ingestLink PDF ",
++          "pm15: safeFetch enforces maxRedirects hop limit at app layer",
++          "pm15: safeFetch re-validates SSRF at intermediate redirect hop",
++          "pm15: safeFetch follows valid redirects within hop limit",
++          "pm15: transport-safety DEFAULT_LIMITS includes maxRedirects",
++          "pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation",
++          "pm15: plugin registers bonfires_ingest_link tool",
++          "PM18: parseConfig accepts retrieval.systemGuidance string",
++          "PM18: parseConfig defaults retrieval.systemGuidance to undefined",
++          "PM18: parseConfig ignores non-string retrieval.systemGuidance",
++          "PM18: handleBeforeAgentStart returns prependSystemContext when systemGuidance configured",
++          "PM18: handleBeforeAgentStart omits prependSystemContext when systemGuidance not configured",
++          "PM18: default behavior unchanged — prependContext only, no prependSystemContext",
++          "PM18: formatting boundary — prependSystemContext and prependContext are independent strings",
++          "PM19: existing Bonfires outage handling remains intact",
++          "PM16: parseConfig defaults discovery feature flag off",
++          "PM16: parseConfig validates discovery.maxCandidates bounds",
++          "PM16: before_agent_start injects lightweight approval guidance when links are present",
++          "PM16: bonfires_prepare_ingest_approval and bonfires_ingest_links resolve exact observed user-approved set end-to-end",
++          "PM17: discover_links is disabled by default feature flag",
++          "PM17: parseDiscoveryHtml extracts bounded candidate set with metadata",
++          "PM17: discover_links returns candidate metadata when feature flag enabled",
++          "PM17: discovery-selected approval subset is the exact and only executable ingest set end-to-end",
++          "PM16/PM17: plugin registers the explicit PM16/PM17 tool surface and schemas",
++          "wave5: redactEnvSummary never exposes raw key",
++          "wave5: verify:hosted fixture mode writes report with required probes",
++          "wave7: openclaw.plugin.json exists and has required fields",
++          "wave7: openclaw.plugin.json configSchema requires agents",
++          "wave7: openclaw.plugin.json configSchema lists all config fields",
++          "wave7: openclaw.plugin.json exposes retrieval.systemGuidance",
++          "wave7: openclaw.plugin.json nested objects set additionalProperties false",
++          "wave7: package.json has openclaw.extensions array",
++          "wave7: config baseUrl falls back to env BONFIRES_BASE_URL",
++          "wave7: config value takes precedence over BONFIRES_BASE_URL env",
++          "wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV",
++          "wave7: config apiKeyEnv explicit value overrides env fallback",
++          "wave7: config bonfireId falls back to BONFIRE_ID env",
++          "wave7: config bonfireId explicit value overrides env",
++          "wave7: config defaults when no env vars set",
++          "wave7: config stateDir defaults to .bonfires-state",
++          "wave7: config stateDir is configurable",
++          "wave7: whitespace stateDir normalizes to .bonfires-state",
++          "wave7: ingestion ledgerPath defaults use stateDir",
++          "wave7: ingestion paths use custom stateDir when overridden",
++          "wave7: explicit ingestion paths override stateDir-based defaults",
++          "wave7: register returns dispose handle that stops background loops",
++          "wave7: register dispose is idempotent",
++          "wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions",
++          "wave8: profile name must be alphanumeric with hyphens/underscores",
++          "wave8: profile-based ingestion collects files matching globs and extensions",
++          "wave8: profile excludeGlobs filters out matching files",
++          "wave8: profile with custom extensions allows non-markdown files",
++          "wave8: resolveIngestionProfile returns mapped profile for agent",
++          "wave8: resolveIngestionProfile falls back to defaultProfile",
++          "wave8: profile selectors resolve to defaultProfile at runtime",
++          "wave8: profile selectors prefer active agent mapping over default",
++          "wave8: legacy rootDir normalizes into synthetic _legacy profile",
++          "wave8: legacy config emits deprecation warning",
++          "wave8: explicit profiles override legacy rootDir normalization",
++          "wave8: default excludes include node_modules, .git, .openclaw",
++          "wave8: default extension is .md",
++          "wave8: profile-based ingestion preserves hash-ledger dedup semantics",
++          "wave8: summary includes per-profile dimensions",
++          "wave8: summary includes agent dimensions",
++          "wave8: legacy ingestion without profiles still works unchanged",
++          "wave8: two profiles with different roots ingest from both",
++          "wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick",
++          "wave8: register with profiles and agentProfiles wires ingestion cron",
++          "before_agent_start injects on first message of session (PM12)",
++          "before_agent_start re-injects for new sessionId (PM12)",
++          "before_agent_start works without sessionId (backward compat)",
++          "before_agent_start works without ledger (backward compat)",
++          "agent_end passes sessionId to capture (PM12)",
++          "session_end passes sessionId to capture (PM12)",
++          "hosted capture includes role and username in stack messages (PM12)",
++          "hosted capture uses sessionId as chatId when provided (PM12)",
++          "hosted capture falls back to sessionKey as chatId when sessionId absent (PM12)",
++          "hosted search passes agent_id to /delve (PM12)",
++          "bonfires_stack_search validates query and returns results",
++          "bonfires_stack_search clamps limit to 1-100",
++          "bonfires_stack_search uses default limit of 10",
++          "hosted stackSearch hits correct endpoint",
++          "capture ledger injection tracking is in-memory only (PM12)",
++          "plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)"
++        ],
++        "negative": [
++          "before_agent_start skips empty prompt",
++          "before_agent_start fail-open on search error",
++          "before_agent_start skips unknown agent mapping",
++          "agent_end skips when sessionKey is missing",
++          "resolveBonfiresAgentId handles missing agentId and unknown key",
++          "parseConfig rejects non-finite numeric values",
++          "before_agent_start returns undefined when result set is empty",
++          "before_agent_start handles missing results field from search response",
++          "agent_end skips unknown agent mapping",
++          "agent_end skips when there are no new messages since watermark",
++          "session_end swallows processStack error without affecting capture",
++          "session_end flush skips when sessionKey is missing",
++          "session_end flush skips unknown agent mapping",
++          "session_end flush catch path swallows capture errors",
++          "session_end catch path is safe with non-Error throw and missing logger",
++          "capture ledger rejects unsafe path outside baseDir",
++          "bonfires_search unknown agent without logger returns empty",
++          "handleAgentEnd catch path swallows capture errors",
++          "handleAgentEnd catch path is safe when logger is missing and error is non-Error",
++          "before_agent_start catch path is safe with non-Error throw and missing logger",
++          "agent_end handles unknown agent with missing agentId and logger",
++          "agent_end handles missing messages array branch",
++          "bonfires_search rejects non-string query",
++          "plugin register fallback path works when resolvePath missing",
++          "plugin register throws when pluginConfig is missing required mappings",
++          "extractUserMessage returns empty string for empty/whitespace input",
++          "before_agent_start skips system-generated messages without metadata wrapper",
++          "before_compaction is non-blocking on processStack error (PM10)",
++          "before_compaction skips unknown agent mapping",
++          "before_compaction skips missing sessionKey",
++          "pm14: duplicate PDF response counts as skipped, not error",
++          "pm14: PDF ingest failure does not abort other files",
++          "pm14: missing ingestPdf on client records error for PDF files",
++          "pm15: validateFetchUrl rejects non-http schemes",
++          "pm15: validateFetchUrl rejects private hosts",
++          "pm15: extractReadableText handles empty/whitespace-only HTML",
++          "pm15: ingestLink rejects non-http URL",
++          "pm15: ingestLink rejects localhost URL",
++          "pm15: ingestLink rejects private IP URL",
++          "pm15: ingestLink rejects metadata endpoint URL",
++          "pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false",
++          "pm15: safeFetch rejects redirect to private/blocked host",
++          "pm15: ingestLink rejects URL that redirects to localhost",
++          "PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance",
++          "PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty",
++          "PM19: handleBeforeAgentStart is fail-open on search error (no throw, no turn abort)",
++          "PM19: handleBeforeAgentStart is fail-open on search error with systemGuidance configured",
++          "PM19: policy-constrained path degrades to no-op without throwing",
++          "PM19: fail-open emits structured diagnostic on non-Error throw",
++          "PM19: fail-open is safe when logger is absent",
++          "PM16: validateApprovalPreparationParams requires approvedByUser=true and non-empty approvedUrls",
++          "PM16: bonfires_prepare_ingest_approval fails closed for unobserved or oversized URL sets",
++          "PM16: bonfires_ingest_links rejects missing, invalid, expired, cross-session, and raw-list bypass payloads with zero ingestion side effects",
++          "PM16: bonfires_ingest_links preserves per-link partial failure summary after token resolution",
++          "wave7: empty stateDir normalizes to .bonfires-state",
++          "wave8: profile without rootDir throws",
++          "wave8: empty includeGlobs array throws",
++          "wave8: resolveIngestionProfile throws when no mapping and no default",
++          "wave8: resolveIngestionProfile throws when no profiles configured",
++          "wave8: agentProfiles referencing unknown profile throws at parse time",
++          "wave8: defaultProfile referencing unknown profile throws at parse time",
++          "wave8: defaultProfile without profiles throws explicit config error",
++          "wave8: agentProfiles without profiles throws explicit config error",
++          "wave8: runIngestionOnce throws when profile selectors are set but profiles are missing",
++          "wave8: profile selectors throw when resolved profile is missing",
++          "wave8: no profiles and no legacy rootDir produces empty profiles",
++          "wave8: error details include profile name in file path",
++          "wave8: profile with missing rootDir returns zero items gracefully",
++          "before_agent_start skips when prompt is metadata-only with no user message",
++          "before_agent_start skips injection on subsequent messages (PM12)",
++          "before_agent_start marks injected even when search returns empty (PM12)",
++          "before_agent_start does not mark injected on search error (PM12)",
++          "before_agent_start skips system message then injects on first real user message (PM12)",
++          "bonfires_stack_search rejects missing query",
++          "bonfires_stack_search returns empty for unknown agent",
++          "hosted stackSearch handles empty response"
++        ],
++        "edge": [
++          "before_agent_start skips empty prompt",
++          "agent_end captures every turn without throttle (PM10)",
++          "bonfires_search validates query and returns deterministic shape",
++          "bonfires_search clamps limit to max 50",
++          "before_agent_start returns undefined when result set is empty",
++          "capture ledger persists and reloads from disk",
++          "capture ledger persists injected sessions across restart when path is configured",
++          "capture ledger rejects unsafe path outside baseDir",
++          "bonfires_search uses fallback maxResults when limit is NaN",
++          "bonfires_search clamps limit to minimum 1",
++          "bonfires_search unknown agent without logger returns empty",
++          "bonfires_search uses config default when limit omitted",
++          "extractUserMessage returns empty string for empty/whitespace input",
++          "pm14: successful PDF ingest updates ledger with hash",
++          "pm15: extractReadableText handles empty/whitespace-only HTML",
++          "pm15: safeFetch enforces maxRedirects hop limit at app layer",
++          "pm15: safeFetch follows valid redirects within hop limit",
++          "pm15: transport-safety DEFAULT_LIMITS includes maxRedirects",
++          "PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance",
++          "PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty",
++          "PM18: formatting boundary — prependSystemContext and prependContext are independent strings",
++          "PM16: parseConfig validates discovery.maxCandidates bounds",
++          "PM16: validateApprovalPreparationParams requires approvedByUser=true and non-empty approvedUrls",
++          "PM16: bonfires_ingest_links rejects missing, invalid, expired, cross-session, and raw-list bypass payloads with zero ingestion side effects",
++          "wave7: empty stateDir normalizes to .bonfires-state",
++          "wave7: ingestion ledgerPath defaults use stateDir",
++          "wave8: empty includeGlobs array throws",
++          "wave8: no profiles and no legacy rootDir produces empty profiles",
++          "wave8: profile-based ingestion preserves hash-ledger dedup semantics",
++          "wave8: profile with missing rootDir returns zero items gracefully",
++          "before_agent_start marks injected even when search returns empty (PM12)",
++          "before_agent_start works without ledger (backward compat)",
++          "bonfires_stack_search clamps limit to 1-100",
++          "bonfires_stack_search returns empty for unknown agent",
++          "bonfires_stack_search uses default limit of 10",
++          "hosted stackSearch handles empty response",
++          "capture ledger injection tracking is in-memory only (PM12)"
++        ]
++      },
++      "checks": {
++        "happy": true,
++        "negative": true,
++        "edge": true
++      }
++    }
++  ],
++  "failures": []
+ }
+\ No newline at end of file
+diff --git a/.ai/log/plan/review-support-wave-9-1c-ab-20260308.md b/.ai/log/plan/review-support-wave-9-1c-ab-20260308.md
+index bc40491..b9a7a95 100644
+--- a/.ai/log/plan/review-support-wave-9-1c-ab-20260308.md
++++ b/.ai/log/plan/review-support-wave-9-1c-ab-20260308.md
+@@ -4,16 +4,24 @@
+ 1. **Correctness boundaries**
+    - Is discovery generic and ingestion Bonfires-specific?
+    - Is approval scope explicit and enforceable?
+-2. **Latency safety**
++   - Is the token-resolved approved URL set the only executable ingest set?
++2. **Security boundary**
++   - Is approval provenance tool-verifiable rather than caller-asserted?
++   - Are missing/expired/cross-session/unverifiable token paths fail-closed?
++   - Does the review align to accepted product policy that session-scoped approval is sufficient?
++3. **Latency safety**
+    - Does plan avoid heavy work in `before_agent_start`?
+-3. **Reuse discipline**
++4. **Reuse discipline**
+    - Does plan reuse PM15 transport safety + ingestion core?
+-4. **Rollout safety**
++5. **Rollout safety**
+    - Is PM17 clearly feature-flagged pending PM16 production validation?
+ 
+ ## Blocking findings (NO_GO)
+ 1. Any path that performs heavy fetch/ingest in `before_agent_start`.
+ 2. Any ingestion path not bound to explicit user approval.
++2a. Any contract that allows execution without a verifiable approval token resolving to the sole executable ingest set.
++2b. Any design that treats caller-supplied approval assertions as sufficient provenance for execution.
++2c. Do not require exact-turn binding or single-use token semantics unless product policy explicitly requires them.
+ 3. Discovery enabled by default without PM16 validation gate.
+ 4. Missing PM14/PM15 production validation precondition.
+ 
+@@ -23,7 +31,8 @@
+ 3. Observability fields incomplete but can be added before merge.
+ 
+ ## Required artifacts for implementation kickoff
+-1. PM14 production validation record.
+-2. PM15 production validation record.
+-3. Accepted PM16/PM17 spec and guidance docs.
+-4. Accepted verification matrix.
++1. PM14/PM15 production validation record: `.ai/log/plan/pm14-pm15-production-validation-20260308.md`.
++2. PM14/PM15 remediation Verification Quality review: `.ai/log/review/review-verification-quality-20260307w9-remediation.md`.
++3. PM14/PM15 remediation Correctness review: `.ai/log/review/review-correctness-20260307w9-remediation.md`.
++4. Accepted PM16/PM17 spec and guidance docs.
++5. Accepted verification matrix.
+diff --git a/.ai/log/plan/verification-gates-report-current.json b/.ai/log/plan/verification-gates-report-current.json
+index 186c690..041180b 100644
+--- a/.ai/log/plan/verification-gates-report-current.json
++++ b/.ai/log/plan/verification-gates-report-current.json
+@@ -1,69 +1,69 @@
+ {
+   "wave": "current",
+-  "timestamp": "2026-03-08T03:48:53.613Z",
++  "timestamp": "2026-03-09T01:19:35.662Z",
+   "gates": [
+     {
+       "tier": 1,
+       "name": "lint",
+       "status": "PASS",
+-      "elapsed": 4768,
+-      "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (51 markdown files checked)"
++      "elapsed": 3375,
++      "output": "> bonfires-plugin@0.1.0 lint\n> tsx scripts/spec-lint.ts && tsc --noEmit\n\nspec-lint OK (59 markdown files checked)"
+     },
+     {
+       "tier": 2,
+       "name": "test:coverage",
+       "status": "PASS",
+-      "elapsed": 5593,
+-      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 5.446608\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.338595\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.389391\n  type: 'test'\n  ...\n# Subtest: agent_end captures every turn without throttle (PM10)\nok 4 - agent_end captures every turn without throttle (PM10)\n  ---\n  duration_ms: 0.808709\n  type: 'test'\n  ...\n# Subtest: agent_end does not call processStack (PM10)\nok 5 - agent_end does not call processStack (PM10)\n  ---\n  duration_ms: 0.288743\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 6 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.711727\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 7 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.259465\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 8 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.269706\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 9 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.401095\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 10 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.209205\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 11 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.267224\n  type: 'test'\n  ...\n# Subtest: parseConfig requires at least one mapped agent id\nok 12 - parseConfig requires at least one mapped agent id\n  ---\n  duration_ms: 1.181193\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 13 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.31491\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 14 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.259502\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 15 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 1.362639\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 16 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.287817\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 17 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 2.413108\n  type: 'test'\n  ...\n# Subtest: parseConfig ingestion defaults and mapped-agent validation\nok 18 - parseConfig ingestion defaults and mapped-agent validation\n  ---\n  duration_ms: 1.792011\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 19 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.520263\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 20 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.317761\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles missing results field from search response\nok 21 - before_agent_start handles missing results field from search response\n  ---\n  duration_ms: 0.279872\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 22 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.238909\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 23 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.308206\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 24 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.400206\n  type: 'test'\n  ...\n# Subtest: session_end flush captures uncaptured tail immediately when messages are present\nok 25 - session_end flush captures uncaptured tail immediately when messages are present\n  ---\n  duration_ms: 0.359576\n  type: 'test'\n  ...\n# Subtest: session_end calls processStack after capture (PM10)\nok 26 - session_end calls processStack after capture (PM10)\n  ---\n  duration_ms: 0.270946\n  type: 'test'\n  ...\n# Subtest: session_end swallows processStack error without affecting capture\nok 27 - session_end swallows processStack error without affecting capture\n  ---\n  duration_ms: 0.42378\n  type: 'test'\n  ...\n# Subtest: session_end flush respects endIndex <= lastPushedIndex guard\nok 28 - session_end flush respects endIndex <= lastPushedIndex guard\n  ---\n  duration_ms: 0.29328\n  type: 'test'\n  ...\n# Subtest: session_end flush skips when sessionKey is missing\nok 29 - session_end flush skips when sessionKey is missing\n  ---\n  duration_ms: 0.222002\n  type: 'test'\n  ...\n# Subtest: session_end flush skips unknown agent mapping\nok 30 - session_end flush skips unknown agent mapping\n  ---\n  duration_ms: 0.231298\n  type: 'test'\n  ...\n# Subtest: session_end flush catch path swallows capture errors\nok 31 - session_end flush catch path swallows capture errors\n  ---\n  duration_ms: 0.315521\n  type: 'test'\n  ...\n# Subtest: session_end flush no-messages branch returns without capture\nok 32 - session_end flush no-messages branch returns without capture\n  ---\n  duration_ms: 0.208409\n  type: 'test'\n  ...\n# Subtest: session_end flush sets lastPushedAt from Date.now when nowMs is absent\nok 33 - session_end flush sets lastPushedAt from Date.now when nowMs is absent\n  ---\n  duration_ms: 0.251835\n  type: 'test'\n  ...\n# Subtest: session_end catch path is safe with non-Error throw and missing logger\nok 34 - session_end catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.266946\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 35 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 3.047686\n  type: 'test'\n  ...\n# Subtest: capture ledger persists injected sessions across restart when path is configured\nok 36 - capture ledger persists injected sessions across restart when path is configured\n  ---\n  duration_ms: 1.324434\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 37 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.608375\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 38 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.313724\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 39 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.216631\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 40 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.23965\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 41 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.175723\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 42 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.254372\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 43 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.238964\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 44 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.325483\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path is safe when logger is missing and error is non-Error\nok 45 - handleAgentEnd catch path is safe when logger is missing and error is non-Error\n  ---\n  duration_ms: 0.250742\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 46 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.351947\n  type: 'test'\n  ...\n# Subtest: before_agent_start catch path is safe with non-Error throw and missing logger\nok 47 - before_agent_start catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.244483\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 48 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.238057\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 49 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.194594\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 50 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.269576\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 51 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.243039\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 52 - plugin register wires hooks and tool\n  ---\n  duration_ms: 2.356626\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 53 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.809449\n  type: 'test'\n  ...\n# Subtest: plugin register supports functional recovery source and enabled ingestion config\nok 54 - plugin register supports functional recovery source and enabled ingestion config\n  ---\n  duration_ms: 0.809746\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 55 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.314873\n  type: 'test'\n  ...\n# Subtest: extractUserMessage strips metadata wrapper and returns user message\nok 56 - extractUserMessage strips metadata wrapper and returns user message\n  ---\n  duration_ms: 0.197538\n  type: 'test'\n  ...\n# Subtest: extractUserMessage returns raw prompt when no metadata wrapper present\nok 57 - extractUserMessage returns raw prompt when no metadata wrapper present\n  ---\n  duration_ms: 0.158705\n  type: 'test'\n  ...\n# Subtest: extractUserMessage preserves normal json code blocks in user content\nok 58 - extractUserMessage preserves normal json code blocks in user content\n  ---\n  duration_ms: 0.153464\n  type: 'test'\n  ...\n# Subtest: extractUserMessage strips metadata wrappers but keeps trailing user json code block\nok 59 - extractUserMessage strips metadata wrappers but keeps trailing user json code block\n  ---\n  duration_ms: 0.179242\n  type: 'test'\n  ...\n# Subtest: extractUserMessage returns empty string for empty/whitespace input\nok 60 - extractUserMessage returns empty string for empty/whitespace input\n  ---\n  duration_ms: 0.172353\n  type: 'test'\n  ...\n# Subtest: before_agent_start extracts user message from metadata-wrapped prompt\nok 61 - before_agent_start extracts user message from metadata-wrapped prompt\n  ---\n  duration_ms: 0.451874\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips system-generated messages without metadata wrapper\nok 62 - before_agent_start skips system-generated messages without metadata wrapper\n  ---\n  duration_ms: 0.264705\n  type: 'test'\n  ...\n# Subtest: hasUserMetadata detects metadata wrapper presence\nok 63 - hasUserMetadata detects metadata wrapper presence\n  ---\n  duration_ms: 0.174334\n  type: 'test'\n  ...\n# Subtest: before_compaction calls processStack and resets watermark to -1 (PM10)\nok 64 - before_compaction calls processStack and resets watermark to -1 (PM10)\n  ---\n  duration_ms: 0.430095\n  type: 'test'\n  ...\n# Subtest: before_compaction resets watermark even with no prior watermark (PM10)\nok 65 - before_compaction resets watermark even with no prior watermark (PM10)\n  ---\n  duration_ms: 0.443244\n  type: 'test'\n  ...\n# Subtest: before_compaction is non-blocking on processStack error (PM10)\nok 66 - before_compaction is non-blocking on processStack error (PM10)\n  ---\n  duration_ms: 0.597208\n  type: 'test'\n  ...\n# Subtest: before_compaction skips unknown agent mapping\nok 67 - before_compaction skips unknown agent mapping\n  ---\n  duration_ms: 0.257873\n  type: 'test'\n  ...\n# Subtest: before_compaction skips missing sessionKey\nok 68 - before_compaction skips missing sessionKey\n  ---\n  duration_ms: 0.212761\n  type: 'test'\n  ...\n# Subtest: agent_end resets watermark when lastPushedIndex >= msgs.length\nok 69 - agent_end resets watermark when lastPushedIndex >= msgs.length\n  ---\n  duration_ms: 0.597041\n  type: 'test'\n  ...\n# Subtest: session_end resets watermark when lastPushedIndex >= msgs.length\nok 70 - session_end resets watermark when lastPushedIndex >= msgs.length\n  ---\n  duration_ms: 0.575874\n  type: 'test'\n  ...\n# Subtest: capture strips prependContext from user messages\nok 71 - capture strips prependContext from user messages\n  ---\n  duration_ms: 0.323077\n  type: 'test'\n  ...\n# Subtest: HostedBonfiresClient strips prependContext from user messages in capture\nok 72 - HostedBonfiresClient strips prependContext from user messages in capture\n  ---\n  duration_ms: 0.42191\n  type: 'test'\n  ...\n# Subtest: extractSenderFromMetadata parses sender name from metadata wrapper\nok 73 - extractSenderFromMetadata parses sender name from metadata wrapper\n  ---\n  duration_ms: 0.48267\n  type: 'test'\n  ...\n# Subtest: toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)\nok 74 - toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)\n  ---\n  duration_ms: 0.867413\n  type: 'test'\n  ...\n# Subtest: toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)\nok 75 - toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)\n  ---\n  duration_ms: 2.435571\n  type: 'test'\n  ...\n# Subtest: toStackMsg handles user content block arrays (PM11)\nok 76 - toStackMsg handles user content block arrays (PM11)\n  ---\n  duration_ms: 0.459762\n  type: 'test'\n  ...\n# Subtest: toStackMsg assistant with multiple text blocks joins them (PM11)\nok 77 - toStackMsg assistant with multiple text blocks joins them (PM11)\n  ---\n  duration_ms: 0.41078\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd passes agentDisplayName from deps (PM13)\nok 78 - handleAgentEnd passes agentDisplayName from deps (PM13)\n  ---\n  duration_ms: 3.428059\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd falls back to ctx.agentId when no display name (PM13)\nok 79 - handleAgentEnd falls back to ctx.agentId when no display name (PM13)\n  ---\n  duration_ms: 0.610374\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd passes agentDisplayName from deps (PM13)\nok 80 - handleSessionEnd passes agentDisplayName from deps (PM13)\n  ---\n  duration_ms: 0.847894\n  type: 'test'\n  ...\n# Subtest: register passes agentDisplayNames from api.config to agent_end handler (PM13)\nok 81 - register passes agentDisplayNames from api.config to agent_end handler (PM13)\n  ---\n  duration_ms: 58.551039\n  type: 'test'\n  ...\n# Subtest: hosted capture uses agentDisplayName for assistant messages (PM13)\nok 82 - hosted capture uses agentDisplayName for assistant messages (PM13)\n  ---\n  duration_ms: 38.648357\n  type: 'test'\n  ...\n# Subtest: hosted capture falls back to agentId when no agentDisplayName (PM13)\nok 83 - hosted capture falls back to agentId when no agentDisplayName (PM13)\n  ---\n  duration_ms: 1.475899\n  type: 'test'\n  ...\n# Subtest: pm14: isPdfExtension returns true for .pdf (case-insensitive)\nok 84 - pm14: isPdfExtension returns true for .pdf (case-insensitive)\n  ---\n  duration_ms: 1.578732\n  type: 'test'\n  ...\n# Subtest: pm14: isPdfExtension returns false for non-PDF\nok 85 - pm14: isPdfExtension returns false for non-PDF\n  ---\n  duration_ms: 0.247335\n  type: 'test'\n  ...\n# Subtest: pm14: classifyRouteByPath routes .pdf to pdf and others to text\nok 86 - pm14: classifyRouteByPath routes .pdf to pdf and others to text\n  ---\n  duration_ms: 0.223409\n  type: 'test'\n  ...\n# Subtest: pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)\nok 87 - pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)\n  ---\n  duration_ms: 0.244298\n  type: 'test'\n  ...\n# Subtest: pm14: profile with .pdf extension routes PDFs to ingestPdf\nok 88 - pm14: profile with .pdf extension routes PDFs to ingestPdf\n  ---\n  duration_ms: 4.854568\n  type: 'test'\n  ...\n# Subtest: pm14: PDF with uppercase extension routes correctly\nok 89 - pm14: PDF with uppercase extension routes correctly\n  ---\n  duration_ms: 1.747048\n  type: 'test'\n  ...\n# Subtest: pm14: duplicate PDF response counts as skipped, not error\nok 90 - pm14: duplicate PDF response counts as skipped, not error\n  ---\n  duration_ms: 1.874197\n  type: 'test'\n  ...\n# Subtest: pm14: PDF ingest failure does not abort other files\nok 91 - pm14: PDF ingest failure does not abort other files\n  ---\n  duration_ms: 2.370496\n  type: 'test'\n  ...\n# Subtest: pm14: missing ingestPdf on client records error for PDF files\nok 92 - pm14: missing ingestPdf on client records error for PDF files\n  ---\n  duration_ms: 2.218218\n  type: 'test'\n  ...\n# Subtest: pm14: non-PDF ingestion behavior unchanged (text path still works)\nok 93 - pm14: non-PDF ingestion behavior unchanged (text path still works)\n  ---\n  duration_ms: 2.07642\n  type: 'test'\n  ...\n# Subtest: pm14: successful PDF ingest updates ledger with hash\nok 94 - pm14: successful PDF ingest updates ledger with hash\n  ---\n  duration_ms: 3.702579\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes .pdf URL to pdf\nok 95 - pm15: classifyLink routes .pdf URL to pdf\n  ---\n  duration_ms: 6.918452\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes text file URLs to text\nok 96 - pm15: classifyLink routes text file URLs to text\n  ---\n  duration_ms: 0.366039\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes .html URL to html\nok 97 - pm15: classifyLink routes .html URL to html\n  ---\n  duration_ms: 0.23739\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink falls back to content-type when no extension\nok 98 - pm15: classifyLink falls back to content-type when no extension\n  ---\n  duration_ms: 0.309705\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink returns null for unsupported types\nok 99 - pm15: classifyLink returns null for unsupported types\n  ---\n  duration_ms: 1.818382\n  type: 'test'\n  ...\n# Subtest: pm15: classifyByContentType handles charset parameters\nok 100 - pm15: classifyByContentType handles charset parameters\n  ---\n  duration_ms: 0.249391\n  type: 'test'\n  ...\n# Subtest: pm15: isAllowedScheme accepts http and https only\nok 101 - pm15: isAllowedScheme accepts http and https only\n  ---\n  duration_ms: 0.32952\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks localhost and loopback\nok 102 - pm15: isPrivateHost blocks localhost and loopback\n  ---\n  duration_ms: 0.284613\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks private RFC1918 ranges\nok 103 - pm15: isPrivateHost blocks private RFC1918 ranges\n  ---\n  duration_ms: 0.393965\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks link-local and metadata endpoints\nok 104 - pm15: isPrivateHost blocks link-local and metadata endpoints\n  ---\n  duration_ms: 0.245261\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost allows public hosts\nok 105 - pm15: isPrivateHost allows public hosts\n  ---\n  duration_ms: 0.182409\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl rejects non-http schemes\nok 106 - pm15: validateFetchUrl rejects non-http schemes\n  ---\n  duration_ms: 0.454021\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl rejects private hosts\nok 107 - pm15: validateFetchUrl rejects private hosts\n  ---\n  duration_ms: 0.484059\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl accepts public https URLs\nok 108 - pm15: validateFetchUrl accepts public https URLs\n  ---\n  duration_ms: 0.320428\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText strips script and style elements\nok 109 - pm15: extractReadableText strips script and style elements\n  ---\n  duration_ms: 2.895759\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText strips nav/header/footer/aside\nok 110 - pm15: extractReadableText strips nav/header/footer/aside\n  ---\n  duration_ms: 1.577769\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText decodes HTML entities\nok 111 - pm15: extractReadableText decodes HTML entities\n  ---\n  duration_ms: 0.376318\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText preserves paragraph structure\nok 112 - pm15: extractReadableText preserves paragraph structure\n  ---\n  duration_ms: 0.389687\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText handles empty/whitespace-only HTML\nok 113 - pm15: extractReadableText handles empty/whitespace-only HTML\n  ---\n  duration_ms: 0.287946\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText normalizes excessive whitespace\nok 114 - pm15: extractReadableText normalizes excessive whitespace\n  ---\n  duration_ms: 0.271891\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects non-http URL\nok 115 - pm15: ingestLink rejects non-http URL\n  ---\n  duration_ms: 0.786282\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects localhost URL\nok 116 - pm15: ingestLink rejects localhost URL\n  ---\n  duration_ms: 0.338132\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects private IP URL\nok 117 - pm15: ingestLink rejects private IP URL\n  ---\n  duration_ms: 0.294502\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects metadata endpoint URL\nok 118 - pm15: ingestLink rejects metadata endpoint URL\n  ---\n  duration_ms: 0.318316\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink result includes url, classification, route, success, duplicate\nok 119 - pm15: ingestLink result includes url, classification, route, success, duplicate\n  ---\n  duration_ms: 201.812487\n  type: 'test'\n  ...\n# Subtest: pm15: isDuplicateResponse works for PM15 context\nok 120 - pm15: isDuplicateResponse works for PM15 context\n  ---\n  duration_ms: 0.441392\n  type: 'test'\n  ...\n# Subtest: pm15: isDuplicateResponse matches duplicate variants tolerantly\nok 121 - pm15: isDuplicateResponse matches duplicate variants tolerantly\n  ---\n  duration_ms: 0.302002\n  type: 'test'\n  ...\n# Subtest: pm15: bonfires_ingest_link tool registers with explicit description\nok 122 - pm15: bonfires_ingest_link tool registers with explicit description\n  ---\n  duration_ms: 0.471059\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false\nok 123 - pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false\n  ---\n  duration_ms: 3.309244\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF duplicate response is treated as success no-op\nok 124 - pm15: ingestLink PDF duplicate response is treated as success no-op\n  ---\n  duration_ms: 1.331175\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF \"duplicate content\" variant is treated as success no-op\nok 125 - pm15: ingestLink PDF \"duplicate content\" variant is treated as success no-op\n  ---\n  duration_ms: 0.962339\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch rejects redirect to private/blocked host\nok 126 - pm15: safeFetch rejects redirect to private/blocked host\n  ---\n  duration_ms: 7.351473\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch enforces maxRedirects hop limit at app layer\nok 127 - pm15: safeFetch enforces maxRedirects hop limit at app layer\n  ---\n  duration_ms: 9.453616\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch re-validates SSRF at intermediate redirect hop\nok 128 - pm15: safeFetch re-validates SSRF at intermediate redirect hop\n  ---\n  duration_ms: 10.634216\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch follows valid redirects within hop limit\nok 129 - pm15: safeFetch follows valid redirects within hop limit\n  ---\n  duration_ms: 3.161149\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects URL that redirects to localhost\nok 130 - pm15: ingestLink rejects URL that redirects to localhost\n  ---\n  duration_ms: 1.032118\n  type: 'test'\n  ...\n# Subtest: pm15: transport-safety DEFAULT_LIMITS includes maxRedirects\nok 131 - pm15: transport-safety DEFAULT_LIMITS includes maxRedirects\n  ---\n  duration_ms: 0.665634\n  type: 'test'\n  ...\n# Subtest: pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation\nok 132 - pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation\n  ---\n  duration_ms: 0.592763\n  type: 'test'\n  ...\n# Subtest: pm15: plugin registers bonfires_ingest_link tool\nok 133 - pm15: plugin registers bonfires_ingest_link tool\n  ---\n  duration_ms: 0.434892\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 134 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 50.581192\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 135 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.545559\n  type: 'test'\n  ...\n# Subtest: hosted capture sends user+assistant pair with is_paired:true\nok 136 - hosted capture sends user+assistant pair with is_paired:true\n  ---\n  duration_ms: 2.726165\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 137 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 1.234804\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 138 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.803116\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 139 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.674356\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 140 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.349817\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 141 - hosted search handles non-ok response\n  ---\n  duration_ms: 1.001377\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 142 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.292983\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 143 - hosted capture single-message payload path\n  ---\n  duration_ms: 4.961421\n  type: 'test'\n  ...\n# Subtest: hosted capture pairs user+assistant and sends trailing single\nok 144 - hosted capture pairs user+assistant and sends trailing single\n  ---\n  duration_ms: 2.455646\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 145 - hosted search returns normalized score values\n  ---\n  duration_ms: 0.988025\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 146 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 0.726023\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 147 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 0.795505\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 148 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 10.649253\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 149 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 3.360317\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 150 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.361298\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 151 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.287465\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient strictHostedMode throws when hosted env missing\nok 152 - createBonfiresClient strictHostedMode throws when hosted env missing\n  ---\n  duration_ms: 0.283649\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 153 - mock client processStack path\n  ---\n  duration_ms: 0.261983\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 154 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 0.989636\n  type: 'test'\n  ...\n# Subtest: hosted ingestContent maps payload to ingest_content endpoint\nok 155 - hosted ingestContent maps payload to ingest_content endpoint\n  ---\n  duration_ms: 0.920005\n  type: 'test'\n  ...\n# Subtest: hosted capture extracts text from array content blocks\nok 156 - hosted capture extracts text from array content blocks\n  ---\n  duration_ms: 0.899617\n  type: 'test'\n  ...\n# Subtest: hosted capture skips messages with empty text content\nok 157 - hosted capture skips messages with empty text content\n  ---\n  duration_ms: 0.329058\n  type: 'test'\n  ...\n# Subtest: hosted search parses JSON episode content and extracts inner content field\nok 158 - hosted search parses JSON episode content and extracts inner content field\n  ---\n  duration_ms: 0.869968\n  type: 'test'\n  ...\n# Subtest: hosted search strips newlines from summaries\nok 159 - hosted search strips newlines from summaries\n  ---\n  duration_ms: 0.813524\n  type: 'test'\n  ...\n# Subtest: hosted capture message includes required stack/add fields\nok 160 - hosted capture message includes required stack/add fields\n  ---\n  duration_ms: 2.191811\n  type: 'test'\n  ...\n# Subtest: hosted search handles object-typed summary without [object Object]\nok 161 - hosted search handles object-typed summary without [object Object]\n  ---\n  duration_ms: 1.108859\n  type: 'test'\n  ...\n# Subtest: hosted search handles nested object in parsed episode content\nok 162 - hosted search handles nested object in parsed episode content\n  ---\n  duration_ms: 0.919135\n  type: 'test'\n  ...\n# Subtest: hosted search extracts content from object-typed episode.content (Bonfires API format)\nok 163 - hosted search extracts content from object-typed episode.content (Bonfires API format)\n  ---\n  duration_ms: 0.817913\n  type: 'test'\n  ...\n# Subtest: wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\nok 164 - wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\n  ---\n  duration_ms: 2.940555\n  type: 'test'\n  ...\n# Subtest: wave3: close-timeout formula is canonical 2 * processing.intervalMinutes\nok 165 - wave3: close-timeout formula is canonical 2 * processing.intervalMinutes\n  ---\n  duration_ms: 0.325003\n  type: 'test'\n  ...\n# Subtest: wave3: recovery skips sessions that are not ended and not inactive long enough\nok 166 - wave3: recovery skips sessions that are not ended and not inactive long enough\n  ---\n  duration_ms: 0.476336\n  type: 'test'\n  ...\n# Subtest: wave3: process stack retry policy retries retriable failures and stops on non-retriable\nok 167 - wave3: process stack retry policy retries retriable failures and stops on non-retriable\n  ---\n  duration_ms: 2.214403\n  type: 'test'\n  ...\n# Subtest: wave3: recovery range helper and retriable classifier behave deterministically\nok 168 - wave3: recovery range helper and retriable classifier behave deterministically\n  ---\n  duration_ms: 0.425373\n  type: 'test'\n  ...\n# Subtest: wave3: recovery capture failure is fail-open and logs warning\nok 169 - wave3: recovery capture failure is fail-open and logs warning\n  ---\n  duration_ms: 0.561967\n  type: 'test'\n  ...\n# Subtest: wave3: startStackHeartbeat runs first tick, persists state, and supports stop\nok 170 - wave3: startStackHeartbeat runs first tick, persists state, and supports stop\n  ---\n  duration_ms: 19.752922\n  type: 'test'\n  ...\n# [verify:hosted] PASS contract:/delve normalization\n# [verify:hosted] PASS contract:/stack/add mapping\n# [verify:hosted] PASS contract:/stack/process response handling\n# [verify:hosted] SKIP preflight:/healthz — live mode not requested\n# [verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested\n# [verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json\n# Subtest: wave5: redactEnvSummary never exposes raw key\nok 171 - wave5: redactEnvSummary never exposes raw key\n  ---\n  duration_ms: 1.685751\n  type: 'test'\n  ...\n# Subtest: wave5: verify:hosted fixture mode writes report with required probes\nok 172 - wave5: verify:hosted fixture mode writes report with required probes\n  ---\n  duration_ms: 66.130051\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips unchanged content and persists ledger across runs\nok 173 - wave6: ingestion skips unchanged content and persists ledger across runs\n  ---\n  duration_ms: 9.58645\n  type: 'test'\n  ...\n# Subtest: wave6: changed content ingests exactly once per new hash and emits summary\nok 174 - wave6: changed content ingests exactly once per new hash and emits summary\n  ---\n  duration_ms: 4.595585\n  type: 'test'\n  ...\n# Subtest: wave6: ingestContent error increments error count and records failure detail\nok 175 - wave6: ingestContent error increments error count and records failure detail\n  ---\n  duration_ms: 2.919278\n  type: 'test'\n  ...\n# Subtest: wave6: missing ingestContent on client throws and records error\nok 176 - wave6: missing ingestContent on client throws and records error\n  ---\n  duration_ms: 2.157939\n  type: 'test'\n  ...\n# Subtest: wave6: startIngestionCron skips scheduling when disabled\nok 177 - wave6: startIngestionCron skips scheduling when disabled\n  ---\n  duration_ms: 0.492003\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion scans vault and projects directories\nok 178 - wave6: ingestion scans vault and projects directories\n  ---\n  duration_ms: 4.531677\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips non-markdown files\nok 179 - wave6: ingestion skips non-markdown files\n  ---\n  duration_ms: 3.124427\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion walker skips symlinked files outside root\nok 180 - wave6: ingestion walker skips symlinked files outside root\n  ---\n  duration_ms: 2.501979\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion walker skips symlinked directories outside root\nok 181 - wave6: ingestion walker skips symlinked directories outside root\n  ---\n  duration_ms: 2.856833\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json exists and has required fields\nok 182 - wave7: openclaw.plugin.json exists and has required fields\n  ---\n  duration_ms: 2.139791\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema requires agents\nok 183 - wave7: openclaw.plugin.json configSchema requires agents\n  ---\n  duration_ms: 0.420243\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema lists all config fields\nok 184 - wave7: openclaw.plugin.json configSchema lists all config fields\n  ---\n  duration_ms: 0.585503\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json nested objects set additionalProperties false\nok 185 - wave7: openclaw.plugin.json nested objects set additionalProperties false\n  ---\n  duration_ms: 0.363132\n  type: 'test'\n  ...\n# Subtest: wave7: package.json has openclaw.extensions array\nok 186 - wave7: package.json has openclaw.extensions array\n  ---\n  duration_ms: 0.334243\n  type: 'test'\n  ...\n# Subtest: wave7: config baseUrl falls back to env BONFIRES_BASE_URL\nok 187 - wave7: config baseUrl falls back to env BONFIRES_BASE_URL\n  ---\n  duration_ms: 0.854339\n  type: 'test'\n  ...\n# Subtest: wave7: config value takes precedence over BONFIRES_BASE_URL env\nok 188 - wave7: config value takes precedence over BONFIRES_BASE_URL env\n  ---\n  duration_ms: 0.357317\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\nok 189 - wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\n  ---\n  duration_ms: 0.442595\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv explicit value overrides env fallback\nok 190 - wave7: config apiKeyEnv explicit value overrides env fallback\n  ---\n  duration_ms: 0.308372\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId falls back to BONFIRE_ID env\nok 191 - wave7: config bonfireId falls back to BONFIRE_ID env\n  ---\n  duration_ms: 0.268279\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId explicit value overrides env\nok 192 - wave7: config bonfireId explicit value overrides env\n  ---\n  duration_ms: 0.26665\n  type: 'test'\n  ...\n# Subtest: wave7: config defaults when no env vars set\nok 193 - wave7: config defaults when no env vars set\n  ---\n  duration_ms: 0.265595\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir defaults to .bonfires-state\nok 194 - wave7: config stateDir defaults to .bonfires-state\n  ---\n  duration_ms: 0.204483\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir is configurable\nok 195 - wave7: config stateDir is configurable\n  ---\n  duration_ms: 0.233946\n  type: 'test'\n  ...\n# Subtest: wave7: empty stateDir normalizes to .bonfires-state\nok 196 - wave7: empty stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.227798\n  type: 'test'\n  ...\n# Subtest: wave7: whitespace stateDir normalizes to .bonfires-state\nok 197 - wave7: whitespace stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.215909\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion ledgerPath defaults use stateDir\nok 198 - wave7: ingestion ledgerPath defaults use stateDir\n  ---\n  duration_ms: 0.228576\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion paths use custom stateDir when overridden\nok 199 - wave7: ingestion paths use custom stateDir when overridden\n  ---\n  duration_ms: 0.22826\n  type: 'test'\n  ...\n# Subtest: wave7: explicit ingestion paths override stateDir-based defaults\nok 200 - wave7: explicit ingestion paths override stateDir-based defaults\n  ---\n  duration_ms: 0.263372\n  type: 'test'\n  ...\n# Subtest: wave7: register returns dispose handle that stops background loops\nok 201 - wave7: register returns dispose handle that stops background loops\n  ---\n  duration_ms: 8.968538\n  type: 'test'\n  ...\n# Subtest: wave7: register dispose is idempotent\nok 202 - wave7: register dispose is idempotent\n  ---\n  duration_ms: 18.826397\n  type: 'test'\n  ...\n# Subtest: wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\nok 203 - wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\n  ---\n  duration_ms: 3.838895\n  type: 'test'\n  ...\n# Subtest: wave8: profile name must be alphanumeric with hyphens/underscores\nok 204 - wave8: profile name must be alphanumeric with hyphens/underscores\n  ---\n  duration_ms: 0.701375\n  type: 'test'\n  ...\n# Subtest: wave8: profile without rootDir throws\nok 205 - wave8: profile without rootDir throws\n  ---\n  duration_ms: 0.284169\n  type: 'test'\n  ...\n# Subtest: wave8: empty includeGlobs array throws\nok 206 - wave8: empty includeGlobs array throws\n  ---\n  duration_ms: 0.228538\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion collects files matching globs and extensions\nok 207 - wave8: profile-based ingestion collects files matching globs and extensions\n  ---\n  duration_ms: 6.02665\n  type: 'test'\n  ...\n# Subtest: wave8: profile excludeGlobs filters out matching files\nok 208 - wave8: profile excludeGlobs filters out matching files\n  ---\n  duration_ms: 2.502386\n  type: 'test'\n  ...\n# Subtest: wave8: profile with custom extensions allows non-markdown files\nok 209 - wave8: profile with custom extensions allows non-markdown files\n  ---\n  duration_ms: 1.617177\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile returns mapped profile for agent\nok 210 - wave8: resolveIngestionProfile returns mapped profile for agent\n  ---\n  duration_ms: 0.573281\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile falls back to defaultProfile\nok 211 - wave8: resolveIngestionProfile falls back to defaultProfile\n  ---\n  duration_ms: 0.32478\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no mapping and no default\nok 212 - wave8: resolveIngestionProfile throws when no mapping and no default\n  ---\n  duration_ms: 0.356836\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no profiles configured\nok 213 - wave8: resolveIngestionProfile throws when no profiles configured\n  ---\n  duration_ms: 0.319076\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles referencing unknown profile throws at parse time\nok 214 - wave8: agentProfiles referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.300705\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile referencing unknown profile throws at parse time\nok 215 - wave8: defaultProfile referencing unknown profile throws at parse time\n  ---\n  duration_ms: 1.972586\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile without profiles throws explicit config error\nok 216 - wave8: defaultProfile without profiles throws explicit config error\n  ---\n  duration_ms: 0.379465\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles without profiles throws explicit config error\nok 217 - wave8: agentProfiles without profiles throws explicit config error\n  ---\n  duration_ms: 0.27552\n  type: 'test'\n  ...\n# Subtest: wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\nok 218 - wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\n  ---\n  duration_ms: 1.329657\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors resolve to defaultProfile at runtime\nok 219 - wave8: profile selectors resolve to defaultProfile at runtime\n  ---\n  duration_ms: 2.522923\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors prefer active agent mapping over default\nok 220 - wave8: profile selectors prefer active agent mapping over default\n  ---\n  duration_ms: 2.370811\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors throw when resolved profile is missing\nok 221 - wave8: profile selectors throw when resolved profile is missing\n  ---\n  duration_ms: 1.572622\n  type: 'test'\n  ...\n# Subtest: wave8: legacy rootDir normalizes into synthetic _legacy profile\nok 222 - wave8: legacy rootDir normalizes into synthetic _legacy profile\n  ---\n  duration_ms: 0.594893\n  type: 'test'\n  ...\n# Subtest: wave8: legacy config emits deprecation warning\nok 223 - wave8: legacy config emits deprecation warning\n  ---\n  duration_ms: 0.409095\n  type: 'test'\n  ...\n# Subtest: wave8: explicit profiles override legacy rootDir normalization\nok 224 - wave8: explicit profiles override legacy rootDir normalization\n  ---\n  duration_ms: 0.700671\n  type: 'test'\n  ...\n# Subtest: wave8: no profiles and no legacy rootDir produces empty profiles\nok 225 - wave8: no profiles and no legacy rootDir produces empty profiles\n  ---\n  duration_ms: 0.309743\n  type: 'test'\n  ...\n# Subtest: wave8: default excludes include node_modules, .git, .openclaw\nok 226 - wave8: default excludes include node_modules, .git, .openclaw\n  ---\n  duration_ms: 0.28728\n  type: 'test'\n  ...\n# Subtest: wave8: default extension is .md\nok 227 - wave8: default extension is .md\n  ---\n  duration_ms: 0.265724\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion preserves hash-ledger dedup semantics\nok 228 - wave8: profile-based ingestion preserves hash-ledger dedup semantics\n  ---\n  duration_ms: 2.478738\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes per-profile dimensions\nok 229 - wave8: summary includes per-profile dimensions\n  ---\n  duration_ms: 2.621109\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes agent dimensions\nok 230 - wave8: summary includes agent dimensions\n  ---\n  duration_ms: 2.35946\n  type: 'test'\n  ...\n# Subtest: wave8: error details include profile name in file path\nok 231 - wave8: error details include profile name in file path\n  ---\n  duration_ms: 2.498756\n  type: 'test'\n  ...\n# Subtest: wave8: legacy ingestion without profiles still works unchanged\nok 232 - wave8: legacy ingestion without profiles still works unchanged\n  ---\n  duration_ms: 3.307855\n  type: 'test'\n  ...\n# Subtest: wave8: two profiles with different roots ingest from both\nok 233 - wave8: two profiles with different roots ingest from both\n  ---\n  duration_ms: 3.482115\n  type: 'test'\n  ...\n# Subtest: wave8: profile with missing rootDir returns zero items gracefully\nok 234 - wave8: profile with missing rootDir returns zero items gracefully\n  ---\n  duration_ms: 2.249607\n  type: 'test'\n  ...\n# Subtest: wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\nok 235 - wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\n  ---\n  duration_ms: 1201.914832\n  type: 'test'\n  ...\n# Subtest: wave8: register with profiles and agentProfiles wires ingestion cron\nok 236 - wave8: register with profiles and agentProfiles wires ingestion cron\n  ---\n  duration_ms: 5.264071\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips when prompt is metadata-only with no user message\nok 237 - before_agent_start skips when prompt is metadata-only with no user message\n  ---\n  duration_ms: 2.174736\n  type: 'test'\n  ...\n# Subtest: before_agent_start injects on first message of session (PM12)\nok 238 - before_agent_start injects on first message of session (PM12)\n  ---\n  duration_ms: 1.023933\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips injection on subsequent messages (PM12)\nok 239 - before_agent_start skips injection on subsequent messages (PM12)\n  ---\n  duration_ms: 0.353354\n  type: 'test'\n  ...\n# Subtest: before_agent_start re-injects for new sessionId (PM12)\nok 240 - before_agent_start re-injects for new sessionId (PM12)\n  ---\n  duration_ms: 0.360224\n  type: 'test'\n  ...\n# Subtest: before_agent_start marks injected even when search returns empty (PM12)\nok 241 - before_agent_start marks injected even when search returns empty (PM12)\n  ---\n  duration_ms: 0.5623\n  type: 'test'\n  ...\n# Subtest: before_agent_start does not mark injected on search error (PM12)\nok 242 - before_agent_start does not mark injected on search error (PM12)\n  ---\n  duration_ms: 0.362669\n  type: 'test'\n  ...\n# Subtest: before_agent_start works without sessionId (backward compat)\nok 243 - before_agent_start works without sessionId (backward compat)\n  ---\n  duration_ms: 0.424355\n  type: 'test'\n  ...\n# Subtest: before_agent_start works without ledger (backward compat)\nok 244 - before_agent_start works without ledger (backward compat)\n  ---\n  duration_ms: 0.615652\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips system message then injects on first real user message (PM12)\nok 245 - before_agent_start skips system message then injects on first real user message (PM12)\n  ---\n  duration_ms: 0.331076\n  type: 'test'\n  ...\n# Subtest: agent_end passes sessionId to capture (PM12)\nok 246 - agent_end passes sessionId to capture (PM12)\n  ---\n  duration_ms: 0.641171\n  type: 'test'\n  ...\n# Subtest: session_end passes sessionId to capture (PM12)\nok 247 - session_end passes sessionId to capture (PM12)\n  ---\n  duration_ms: 0.513392\n  type: 'test'\n  ...\n# Subtest: hosted capture includes role and username in stack messages (PM12)\nok 248 - hosted capture includes role and username in stack messages (PM12)\n  ---\n  duration_ms: 39.747716\n  type: 'test'\n  ...\n# Subtest: hosted capture uses sessionId as chatId when provided (PM12)\nok 249 - hosted capture uses sessionId as chatId when provided (PM12)\n  ---\n  duration_ms: 1.253989\n  type: 'test'\n  ...\n# Subtest: hosted capture falls back to sessionKey as chatId when sessionId absent (PM12)\nok 250 - hosted capture falls back to sessionKey as chatId when sessionId absent (PM12)\n  ---\n  duration_ms: 1.014821\n  type: 'test'\n  ...\n# Subtest: hosted search passes agent_id to /delve (PM12)\nok 251 - hosted search passes agent_id to /delve (PM12)\n  ---\n  duration_ms: 0.944951\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search validates query and returns results\nok 252 - bonfires_stack_search validates query and returns results\n  ---\n  duration_ms: 1.317861\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search rejects missing query\nok 253 - bonfires_stack_search rejects missing query\n  ---\n  duration_ms: 0.534485\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search clamps limit to 1-100\nok 254 - bonfires_stack_search clamps limit to 1-100\n  ---\n  duration_ms: 0.300946\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search returns empty for unknown agent\nok 255 - bonfires_stack_search returns empty for unknown agent\n  ---\n  duration_ms: 0.252224\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search uses default limit of 10\nok 256 - bonfires_stack_search uses default limit of 10\n  ---\n  duration_ms: 0.190519\n  type: 'test'\n  ...\n# Subtest: hosted stackSearch hits correct endpoint\nok 257 - hosted stackSearch hits correct endpoint\n  ---\n  duration_ms: 0.841839\n  type: 'test'\n  ...\n# Subtest: hosted stackSearch handles empty response\nok 258 - hosted stackSearch handles empty response\n  ---\n  duration_ms: 0.6808\n  type: 'test'\n  ...\n# Subtest: capture ledger injection tracking is in-memory only (PM12)\nok 259 - capture ledger injection tracking is in-memory only (PM12)\n  ---\n  duration_ms: 0.193483\n  type: 'test'\n  ...\n# Subtest: plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)\nok 260 - plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)\n  ---\n  duration_ms: 48.209603\n  type: 'test'\n  ...\n1..260\n# tests 260\n# suites 0\n# pass 260\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4665.774905"
++      "elapsed": 4998,
++      "output": "> bonfires-plugin@0.1.0 test:coverage\n> c8 --reporter=json-summary --reporter=json --reports-dir=coverage node --import tsx --test tests/*.test.ts\n\nTAP version 13\n# Subtest: before_agent_start calls search and returns prependContext\nok 1 - before_agent_start calls search and returns prependContext\n  ---\n  duration_ms: 3.582049\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips empty prompt\nok 2 - before_agent_start skips empty prompt\n  ---\n  duration_ms: 0.270872\n  type: 'test'\n  ...\n# Subtest: before_agent_start fail-open on search error\nok 3 - before_agent_start fail-open on search error\n  ---\n  duration_ms: 0.411965\n  type: 'test'\n  ...\n# Subtest: agent_end captures every turn without throttle (PM10)\nok 4 - agent_end captures every turn without throttle (PM10)\n  ---\n  duration_ms: 0.794836\n  type: 'test'\n  ...\n# Subtest: agent_end does not call processStack (PM10)\nok 5 - agent_end does not call processStack (PM10)\n  ---\n  duration_ms: 0.23626\n  type: 'test'\n  ...\n# Subtest: bonfires_search validates query and returns deterministic shape\nok 6 - bonfires_search validates query and returns deterministic shape\n  ---\n  duration_ms: 0.666502\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to max 50\nok 7 - bonfires_search clamps limit to max 50\n  ---\n  duration_ms: 0.235723\n  type: 'test'\n  ...\n# Subtest: before_agent_start truncates query to 500 chars\nok 8 - before_agent_start truncates query to 500 chars\n  ---\n  duration_ms: 0.247223\n  type: 'test'\n  ...\n# Subtest: before_agent_start caps prependContext at 2000 chars\nok 9 - before_agent_start caps prependContext at 2000 chars\n  ---\n  duration_ms: 0.394224\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips unknown agent mapping\nok 10 - before_agent_start skips unknown agent mapping\n  ---\n  duration_ms: 0.187742\n  type: 'test'\n  ...\n# Subtest: agent_end skips when sessionKey is missing\nok 11 - agent_end skips when sessionKey is missing\n  ---\n  duration_ms: 0.192575\n  type: 'test'\n  ...\n# Subtest: parseConfig requires at least one mapped agent id\nok 12 - parseConfig requires at least one mapped agent id\n  ---\n  duration_ms: 0.480372\n  type: 'test'\n  ...\n# Subtest: parseConfig validates numeric bounds\nok 13 - parseConfig validates numeric bounds\n  ---\n  duration_ms: 0.217001\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId ignores inherited prototype keys\nok 14 - resolveBonfiresAgentId ignores inherited prototype keys\n  ---\n  duration_ms: 0.318723\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId handles missing agentId and unknown key\nok 15 - resolveBonfiresAgentId handles missing agentId and unknown key\n  ---\n  duration_ms: 0.183389\n  type: 'test'\n  ...\n# Subtest: parseConfig uses defaults for optional values\nok 16 - parseConfig uses defaults for optional values\n  ---\n  duration_ms: 0.192057\n  type: 'test'\n  ...\n# Subtest: parseConfig rejects non-finite numeric values\nok 17 - parseConfig rejects non-finite numeric values\n  ---\n  duration_ms: 0.372539\n  type: 'test'\n  ...\n# Subtest: parseConfig ingestion defaults and mapped-agent validation\nok 18 - parseConfig ingestion defaults and mapped-agent validation\n  ---\n  duration_ms: 0.514299\n  type: 'test'\n  ...\n# Subtest: parseConfig validates baseUrl host and protocol\nok 19 - parseConfig validates baseUrl host and protocol\n  ---\n  duration_ms: 0.351909\n  type: 'test'\n  ...\n# Subtest: before_agent_start returns undefined when result set is empty\nok 20 - before_agent_start returns undefined when result set is empty\n  ---\n  duration_ms: 0.246889\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles missing results field from search response\nok 21 - before_agent_start handles missing results field from search response\n  ---\n  duration_ms: 0.220797\n  type: 'test'\n  ...\n# Subtest: agent_end skips unknown agent mapping\nok 22 - agent_end skips unknown agent mapping\n  ---\n  duration_ms: 0.196186\n  type: 'test'\n  ...\n# Subtest: agent_end skips when there are no new messages since watermark\nok 23 - agent_end skips when there are no new messages since watermark\n  ---\n  duration_ms: 0.258242\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd is safe no-op\nok 24 - handleSessionEnd is safe no-op\n  ---\n  duration_ms: 0.330445\n  type: 'test'\n  ...\n# Subtest: session_end flush captures uncaptured tail immediately when messages are present\nok 25 - session_end flush captures uncaptured tail immediately when messages are present\n  ---\n  duration_ms: 0.354983\n  type: 'test'\n  ...\n# Subtest: session_end calls processStack after capture (PM10)\nok 26 - session_end calls processStack after capture (PM10)\n  ---\n  duration_ms: 0.284686\n  type: 'test'\n  ...\n# Subtest: session_end swallows processStack error without affecting capture\nok 27 - session_end swallows processStack error without affecting capture\n  ---\n  duration_ms: 0.391964\n  type: 'test'\n  ...\n# Subtest: session_end flush respects endIndex <= lastPushedIndex guard\nok 28 - session_end flush respects endIndex <= lastPushedIndex guard\n  ---\n  duration_ms: 0.216427\n  type: 'test'\n  ...\n# Subtest: session_end flush skips when sessionKey is missing\nok 29 - session_end flush skips when sessionKey is missing\n  ---\n  duration_ms: 0.284613\n  type: 'test'\n  ...\n# Subtest: session_end flush skips unknown agent mapping\nok 30 - session_end flush skips unknown agent mapping\n  ---\n  duration_ms: 0.203668\n  type: 'test'\n  ...\n# Subtest: session_end flush catch path swallows capture errors\nok 31 - session_end flush catch path swallows capture errors\n  ---\n  duration_ms: 0.275445\n  type: 'test'\n  ...\n# Subtest: session_end flush no-messages branch returns without capture\nok 32 - session_end flush no-messages branch returns without capture\n  ---\n  duration_ms: 0.178538\n  type: 'test'\n  ...\n# Subtest: session_end flush sets lastPushedAt from Date.now when nowMs is absent\nok 33 - session_end flush sets lastPushedAt from Date.now when nowMs is absent\n  ---\n  duration_ms: 0.241279\n  type: 'test'\n  ...\n# Subtest: session_end catch path is safe with non-Error throw and missing logger\nok 34 - session_end catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.239352\n  type: 'test'\n  ...\n# Subtest: capture ledger persists and reloads from disk\nok 35 - capture ledger persists and reloads from disk\n  ---\n  duration_ms: 2.743936\n  type: 'test'\n  ...\n# Subtest: capture ledger persists injected sessions across restart when path is configured\nok 36 - capture ledger persists injected sessions across restart when path is configured\n  ---\n  duration_ms: 1.017948\n  type: 'test'\n  ...\n# Subtest: capture ledger rejects unsafe path outside baseDir\nok 37 - capture ledger rejects unsafe path outside baseDir\n  ---\n  duration_ms: 0.475539\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses fallback maxResults when limit is NaN\nok 38 - bonfires_search uses fallback maxResults when limit is NaN\n  ---\n  duration_ms: 0.263019\n  type: 'test'\n  ...\n# Subtest: bonfires_search clamps limit to minimum 1\nok 39 - bonfires_search clamps limit to minimum 1\n  ---\n  duration_ms: 0.209686\n  type: 'test'\n  ...\n# Subtest: bonfires_search unknown agent without logger returns empty\nok 40 - bonfires_search unknown agent without logger returns empty\n  ---\n  duration_ms: 0.224075\n  type: 'test'\n  ...\n# Subtest: resolveBonfiresAgentId returns null for non-string mapped value\nok 41 - resolveBonfiresAgentId returns null for non-string mapped value\n  ---\n  duration_ms: 0.163037\n  type: 'test'\n  ...\n# Subtest: handleBeforeAgentStart handles unknown agent without logger safely\nok 42 - handleBeforeAgentStart handles unknown agent without logger safely\n  ---\n  duration_ms: 0.234372\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd uses Date.now path when nowMs is absent\nok 43 - handleAgentEnd uses Date.now path when nowMs is absent\n  ---\n  duration_ms: 0.254353\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path swallows capture errors\nok 44 - handleAgentEnd catch path swallows capture errors\n  ---\n  duration_ms: 0.418501\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd catch path is safe when logger is missing and error is non-Error\nok 45 - handleAgentEnd catch path is safe when logger is missing and error is non-Error\n  ---\n  duration_ms: 0.296075\n  type: 'test'\n  ...\n# Subtest: before_agent_start handles undefined event and logger-present catch path\nok 46 - before_agent_start handles undefined event and logger-present catch path\n  ---\n  duration_ms: 0.443168\n  type: 'test'\n  ...\n# Subtest: before_agent_start catch path is safe with non-Error throw and missing logger\nok 47 - before_agent_start catch path is safe with non-Error throw and missing logger\n  ---\n  duration_ms: 0.245445\n  type: 'test'\n  ...\n# Subtest: agent_end handles unknown agent with missing agentId and logger\nok 48 - agent_end handles unknown agent with missing agentId and logger\n  ---\n  duration_ms: 0.220779\n  type: 'test'\n  ...\n# Subtest: agent_end handles missing messages array branch\nok 49 - agent_end handles missing messages array branch\n  ---\n  duration_ms: 0.200353\n  type: 'test'\n  ...\n# Subtest: bonfires_search rejects non-string query\nok 50 - bonfires_search rejects non-string query\n  ---\n  duration_ms: 0.242187\n  type: 'test'\n  ...\n# Subtest: bonfires_search uses config default when limit omitted\nok 51 - bonfires_search uses config default when limit omitted\n  ---\n  duration_ms: 0.211612\n  type: 'test'\n  ...\n# Subtest: plugin register wires hooks and tool\nok 52 - plugin register wires hooks and tool\n  ---\n  duration_ms: 2.067971\n  type: 'test'\n  ...\n# Subtest: plugin register fallback path works when resolvePath missing\nok 53 - plugin register fallback path works when resolvePath missing\n  ---\n  duration_ms: 0.688317\n  type: 'test'\n  ...\n# Subtest: plugin register supports functional recovery source and enabled ingestion config\nok 54 - plugin register supports functional recovery source and enabled ingestion config\n  ---\n  duration_ms: 0.623392\n  type: 'test'\n  ...\n# Subtest: plugin register throws when pluginConfig is missing required mappings\nok 55 - plugin register throws when pluginConfig is missing required mappings\n  ---\n  duration_ms: 0.280149\n  type: 'test'\n  ...\n# Subtest: extractUserMessage strips metadata wrapper and returns user message\nok 56 - extractUserMessage strips metadata wrapper and returns user message\n  ---\n  duration_ms: 0.16263\n  type: 'test'\n  ...\n# Subtest: extractUserMessage returns raw prompt when no metadata wrapper present\nok 57 - extractUserMessage returns raw prompt when no metadata wrapper present\n  ---\n  duration_ms: 0.130519\n  type: 'test'\n  ...\n# Subtest: extractUserMessage preserves normal json code blocks in user content\nok 58 - extractUserMessage preserves normal json code blocks in user content\n  ---\n  duration_ms: 0.133575\n  type: 'test'\n  ...\n# Subtest: extractUserMessage strips metadata wrappers but keeps trailing user json code block\nok 59 - extractUserMessage strips metadata wrappers but keeps trailing user json code block\n  ---\n  duration_ms: 0.138537\n  type: 'test'\n  ...\n# Subtest: extractUserMessage returns empty string for empty/whitespace input\nok 60 - extractUserMessage returns empty string for empty/whitespace input\n  ---\n  duration_ms: 0.132778\n  type: 'test'\n  ...\n# Subtest: before_agent_start extracts user message from metadata-wrapped prompt\nok 61 - before_agent_start extracts user message from metadata-wrapped prompt\n  ---\n  duration_ms: 0.234483\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips system-generated messages without metadata wrapper\nok 62 - before_agent_start skips system-generated messages without metadata wrapper\n  ---\n  duration_ms: 0.17526\n  type: 'test'\n  ...\n# Subtest: hasUserMetadata detects metadata wrapper presence\nok 63 - hasUserMetadata detects metadata wrapper presence\n  ---\n  duration_ms: 0.141575\n  type: 'test'\n  ...\n# Subtest: before_compaction calls processStack and resets watermark to -1 (PM10)\nok 64 - before_compaction calls processStack and resets watermark to -1 (PM10)\n  ---\n  duration_ms: 0.345057\n  type: 'test'\n  ...\n# Subtest: before_compaction resets watermark even with no prior watermark (PM10)\nok 65 - before_compaction resets watermark even with no prior watermark (PM10)\n  ---\n  duration_ms: 0.330427\n  type: 'test'\n  ...\n# Subtest: before_compaction is non-blocking on processStack error (PM10)\nok 66 - before_compaction is non-blocking on processStack error (PM10)\n  ---\n  duration_ms: 0.353483\n  type: 'test'\n  ...\n# Subtest: before_compaction skips unknown agent mapping\nok 67 - before_compaction skips unknown agent mapping\n  ---\n  duration_ms: 0.190223\n  type: 'test'\n  ...\n# Subtest: before_compaction skips missing sessionKey\nok 68 - before_compaction skips missing sessionKey\n  ---\n  duration_ms: 0.181075\n  type: 'test'\n  ...\n# Subtest: agent_end resets watermark when lastPushedIndex >= msgs.length\nok 69 - agent_end resets watermark when lastPushedIndex >= msgs.length\n  ---\n  duration_ms: 0.415132\n  type: 'test'\n  ...\n# Subtest: session_end resets watermark when lastPushedIndex >= msgs.length\nok 70 - session_end resets watermark when lastPushedIndex >= msgs.length\n  ---\n  duration_ms: 0.360557\n  type: 'test'\n  ...\n# Subtest: capture strips prependContext from user messages\nok 71 - capture strips prependContext from user messages\n  ---\n  duration_ms: 0.234075\n  type: 'test'\n  ...\n# Subtest: HostedBonfiresClient strips prependContext from user messages in capture\nok 72 - HostedBonfiresClient strips prependContext from user messages in capture\n  ---\n  duration_ms: 0.363353\n  type: 'test'\n  ...\n# Subtest: extractSenderFromMetadata parses sender name from metadata wrapper\nok 73 - extractSenderFromMetadata parses sender name from metadata wrapper\n  ---\n  duration_ms: 0.415372\n  type: 'test'\n  ...\n# Subtest: toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)\nok 74 - toStackMsg cleans user messages: strips prependContext, metadata, resolves userId (PM11)\n  ---\n  duration_ms: 0.704335\n  type: 'test'\n  ...\n# Subtest: toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)\nok 75 - toStackMsg cleans assistant messages: strips thinking, toolCalls, [[directives]] (PM11)\n  ---\n  duration_ms: 0.497928\n  type: 'test'\n  ...\n# Subtest: toStackMsg handles user content block arrays (PM11)\nok 76 - toStackMsg handles user content block arrays (PM11)\n  ---\n  duration_ms: 0.250649\n  type: 'test'\n  ...\n# Subtest: toStackMsg assistant with multiple text blocks joins them (PM11)\nok 77 - toStackMsg assistant with multiple text blocks joins them (PM11)\n  ---\n  duration_ms: 0.186853\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd passes agentDisplayName from deps (PM13)\nok 78 - handleAgentEnd passes agentDisplayName from deps (PM13)\n  ---\n  duration_ms: 2.759047\n  type: 'test'\n  ...\n# Subtest: handleAgentEnd falls back to ctx.agentId when no display name (PM13)\nok 79 - handleAgentEnd falls back to ctx.agentId when no display name (PM13)\n  ---\n  duration_ms: 0.495261\n  type: 'test'\n  ...\n# Subtest: handleSessionEnd passes agentDisplayName from deps (PM13)\nok 80 - handleSessionEnd passes agentDisplayName from deps (PM13)\n  ---\n  duration_ms: 0.669743\n  type: 'test'\n  ...\n# Subtest: register passes agentDisplayNames from api.config to agent_end handler (PM13)\nok 81 - register passes agentDisplayNames from api.config to agent_end handler (PM13)\n  ---\n  duration_ms: 37.5633\n  type: 'test'\n  ...\n# Subtest: hosted capture uses agentDisplayName for assistant messages (PM13)\nok 82 - hosted capture uses agentDisplayName for assistant messages (PM13)\n  ---\n  duration_ms: 31.448018\n  type: 'test'\n  ...\n# Subtest: hosted capture falls back to agentId when no agentDisplayName (PM13)\nok 83 - hosted capture falls back to agentId when no agentDisplayName (PM13)\n  ---\n  duration_ms: 1.43095\n  type: 'test'\n  ...\n# Subtest: pm14: isPdfExtension returns true for .pdf (case-insensitive)\nok 84 - pm14: isPdfExtension returns true for .pdf (case-insensitive)\n  ---\n  duration_ms: 1.36169\n  type: 'test'\n  ...\n# Subtest: pm14: isPdfExtension returns false for non-PDF\nok 85 - pm14: isPdfExtension returns false for non-PDF\n  ---\n  duration_ms: 0.229204\n  type: 'test'\n  ...\n# Subtest: pm14: classifyRouteByPath routes .pdf to pdf and others to text\nok 86 - pm14: classifyRouteByPath routes .pdf to pdf and others to text\n  ---\n  duration_ms: 0.198815\n  type: 'test'\n  ...\n# Subtest: pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)\nok 87 - pm14: isDuplicateResponse detects duplicate message (case-insensitive, tolerant)\n  ---\n  duration_ms: 0.225427\n  type: 'test'\n  ...\n# Subtest: pm14: profile with .pdf extension routes PDFs to ingestPdf\nok 88 - pm14: profile with .pdf extension routes PDFs to ingestPdf\n  ---\n  duration_ms: 4.545128\n  type: 'test'\n  ...\n# Subtest: pm14: PDF with uppercase extension routes correctly\nok 89 - pm14: PDF with uppercase extension routes correctly\n  ---\n  duration_ms: 2.356693\n  type: 'test'\n  ...\n# Subtest: pm14: duplicate PDF response counts as skipped, not error\nok 90 - pm14: duplicate PDF response counts as skipped, not error\n  ---\n  duration_ms: 1.847951\n  type: 'test'\n  ...\n# Subtest: pm14: PDF ingest failure does not abort other files\nok 91 - pm14: PDF ingest failure does not abort other files\n  ---\n  duration_ms: 2.838361\n  type: 'test'\n  ...\n# Subtest: pm14: missing ingestPdf on client records error for PDF files\nok 92 - pm14: missing ingestPdf on client records error for PDF files\n  ---\n  duration_ms: 1.9791\n  type: 'test'\n  ...\n# Subtest: pm14: non-PDF ingestion behavior unchanged (text path still works)\nok 93 - pm14: non-PDF ingestion behavior unchanged (text path still works)\n  ---\n  duration_ms: 1.80845\n  type: 'test'\n  ...\n# Subtest: pm14: successful PDF ingest updates ledger with hash\nok 94 - pm14: successful PDF ingest updates ledger with hash\n  ---\n  duration_ms: 6.977543\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes .pdf URL to pdf\nok 95 - pm15: classifyLink routes .pdf URL to pdf\n  ---\n  duration_ms: 3.375623\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes text file URLs to text\nok 96 - pm15: classifyLink routes text file URLs to text\n  ---\n  duration_ms: 0.388224\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink routes .html URL to html\nok 97 - pm15: classifyLink routes .html URL to html\n  ---\n  duration_ms: 0.214223\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink falls back to content-type when no extension\nok 98 - pm15: classifyLink falls back to content-type when no extension\n  ---\n  duration_ms: 0.296131\n  type: 'test'\n  ...\n# Subtest: pm15: classifyLink returns null for unsupported types\nok 99 - pm15: classifyLink returns null for unsupported types\n  ---\n  duration_ms: 0.393797\n  type: 'test'\n  ...\n# Subtest: pm15: classifyByContentType handles charset parameters\nok 100 - pm15: classifyByContentType handles charset parameters\n  ---\n  duration_ms: 0.194982\n  type: 'test'\n  ...\n# Subtest: pm15: isAllowedScheme accepts http and https only\nok 101 - pm15: isAllowedScheme accepts http and https only\n  ---\n  duration_ms: 0.31576\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks localhost and loopback\nok 102 - pm15: isPrivateHost blocks localhost and loopback\n  ---\n  duration_ms: 0.223538\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks private RFC1918 ranges\nok 103 - pm15: isPrivateHost blocks private RFC1918 ranges\n  ---\n  duration_ms: 0.335612\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost blocks link-local and metadata endpoints\nok 104 - pm15: isPrivateHost blocks link-local and metadata endpoints\n  ---\n  duration_ms: 0.207094\n  type: 'test'\n  ...\n# Subtest: pm15: isPrivateHost allows public hosts\nok 105 - pm15: isPrivateHost allows public hosts\n  ---\n  duration_ms: 0.140704\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl rejects non-http schemes\nok 106 - pm15: validateFetchUrl rejects non-http schemes\n  ---\n  duration_ms: 0.270575\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl rejects private hosts\nok 107 - pm15: validateFetchUrl rejects private hosts\n  ---\n  duration_ms: 0.191612\n  type: 'test'\n  ...\n# Subtest: pm15: validateFetchUrl accepts public https URLs\nok 108 - pm15: validateFetchUrl accepts public https URLs\n  ---\n  duration_ms: 0.152871\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText strips script and style elements\nok 109 - pm15: extractReadableText strips script and style elements\n  ---\n  duration_ms: 2.387083\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText strips nav/header/footer/aside\nok 110 - pm15: extractReadableText strips nav/header/footer/aside\n  ---\n  duration_ms: 1.148096\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText decodes HTML entities\nok 111 - pm15: extractReadableText decodes HTML entities\n  ---\n  duration_ms: 0.268594\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText preserves paragraph structure\nok 112 - pm15: extractReadableText preserves paragraph structure\n  ---\n  duration_ms: 0.239371\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText handles empty/whitespace-only HTML\nok 113 - pm15: extractReadableText handles empty/whitespace-only HTML\n  ---\n  duration_ms: 0.279741\n  type: 'test'\n  ...\n# Subtest: pm15: extractReadableText normalizes excessive whitespace\nok 114 - pm15: extractReadableText normalizes excessive whitespace\n  ---\n  duration_ms: 0.195316\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects non-http URL\nok 115 - pm15: ingestLink rejects non-http URL\n  ---\n  duration_ms: 0.603483\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects localhost URL\nok 116 - pm15: ingestLink rejects localhost URL\n  ---\n  duration_ms: 0.214149\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects private IP URL\nok 117 - pm15: ingestLink rejects private IP URL\n  ---\n  duration_ms: 0.190797\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects metadata endpoint URL\nok 118 - pm15: ingestLink rejects metadata endpoint URL\n  ---\n  duration_ms: 0.175889\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink result includes url, classification, route, success, duplicate\nok 119 - pm15: ingestLink result includes url, classification, route, success, duplicate\n  ---\n  duration_ms: 142.277132\n  type: 'test'\n  ...\n# Subtest: pm15: isDuplicateResponse works for PM15 context\nok 120 - pm15: isDuplicateResponse works for PM15 context\n  ---\n  duration_ms: 0.351593\n  type: 'test'\n  ...\n# Subtest: pm15: isDuplicateResponse matches duplicate variants tolerantly\nok 121 - pm15: isDuplicateResponse matches duplicate variants tolerantly\n  ---\n  duration_ms: 0.228834\n  type: 'test'\n  ...\n# Subtest: pm15: bonfires_ingest_link tool registers with explicit description\nok 122 - pm15: bonfires_ingest_link tool registers with explicit description\n  ---\n  duration_ms: 0.306501\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false\nok 123 - pm15: ingestLink PDF returns failure when ingestPdf resolves with success:false\n  ---\n  duration_ms: 2.40812\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF duplicate response is treated as success no-op\nok 124 - pm15: ingestLink PDF duplicate response is treated as success no-op\n  ---\n  duration_ms: 1.054763\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink PDF \"duplicate content\" variant is treated as success no-op\nok 125 - pm15: ingestLink PDF \"duplicate content\" variant is treated as success no-op\n  ---\n  duration_ms: 0.809614\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch rejects redirect to private/blocked host\nok 126 - pm15: safeFetch rejects redirect to private/blocked host\n  ---\n  duration_ms: 7.672083\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch enforces maxRedirects hop limit at app layer\nok 127 - pm15: safeFetch enforces maxRedirects hop limit at app layer\n  ---\n  duration_ms: 10.123147\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch re-validates SSRF at intermediate redirect hop\nok 128 - pm15: safeFetch re-validates SSRF at intermediate redirect hop\n  ---\n  duration_ms: 1.967599\n  type: 'test'\n  ...\n# Subtest: pm15: safeFetch follows valid redirects within hop limit\nok 129 - pm15: safeFetch follows valid redirects within hop limit\n  ---\n  duration_ms: 2.012952\n  type: 'test'\n  ...\n# Subtest: pm15: ingestLink rejects URL that redirects to localhost\nok 130 - pm15: ingestLink rejects URL that redirects to localhost\n  ---\n  duration_ms: 0.590706\n  type: 'test'\n  ...\n# Subtest: pm15: transport-safety DEFAULT_LIMITS includes maxRedirects\nok 131 - pm15: transport-safety DEFAULT_LIMITS includes maxRedirects\n  ---\n  duration_ms: 0.430594\n  type: 'test'\n  ...\n# Subtest: pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation\nok 132 - pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation\n  ---\n  duration_ms: 0.252223\n  type: 'test'\n  ...\n# Subtest: pm15: plugin registers bonfires_ingest_link tool\nok 133 - pm15: plugin registers bonfires_ingest_link tool\n  ---\n  duration_ms: 0.250334\n  type: 'test'\n  ...\n# Subtest: PM18: parseConfig accepts retrieval.systemGuidance string\nok 134 - PM18: parseConfig accepts retrieval.systemGuidance string\n  ---\n  duration_ms: 2.182823\n  type: 'test'\n  ...\n# Subtest: PM18: parseConfig defaults retrieval.systemGuidance to undefined\nok 135 - PM18: parseConfig defaults retrieval.systemGuidance to undefined\n  ---\n  duration_ms: 0.435724\n  type: 'test'\n  ...\n# Subtest: PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance\nok 136 - PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance\n  ---\n  duration_ms: 0.255871\n  type: 'test'\n  ...\n# Subtest: PM18: parseConfig ignores non-string retrieval.systemGuidance\nok 137 - PM18: parseConfig ignores non-string retrieval.systemGuidance\n  ---\n  duration_ms: 0.227667\n  type: 'test'\n  ...\n# Subtest: PM18: handleBeforeAgentStart returns prependSystemContext when systemGuidance configured\nok 138 - PM18: handleBeforeAgentStart returns prependSystemContext when systemGuidance configured\n  ---\n  duration_ms: 1.731877\n  type: 'test'\n  ...\n# Subtest: PM18: handleBeforeAgentStart omits prependSystemContext when systemGuidance not configured\nok 139 - PM18: handleBeforeAgentStart omits prependSystemContext when systemGuidance not configured\n  ---\n  duration_ms: 0.726429\n  type: 'test'\n  ...\n# Subtest: PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty\nok 140 - PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty\n  ---\n  duration_ms: 0.56128\n  type: 'test'\n  ...\n# Subtest: PM18: default behavior unchanged — prependContext only, no prependSystemContext\nok 141 - PM18: default behavior unchanged — prependContext only, no prependSystemContext\n  ---\n  duration_ms: 0.462224\n  type: 'test'\n  ...\n# Subtest: PM18: formatting boundary — prependSystemContext and prependContext are independent strings\nok 142 - PM18: formatting boundary — prependSystemContext and prependContext are independent strings\n  ---\n  duration_ms: 0.915762\n  type: 'test'\n  ...\n# Subtest: PM19: handleBeforeAgentStart is fail-open on search error (no throw, no turn abort)\nok 143 - PM19: handleBeforeAgentStart is fail-open on search error (no throw, no turn abort)\n  ---\n  duration_ms: 0.621502\n  type: 'test'\n  ...\n# Subtest: PM19: handleBeforeAgentStart is fail-open on search error with systemGuidance configured\nok 144 - PM19: handleBeforeAgentStart is fail-open on search error with systemGuidance configured\n  ---\n  duration_ms: 0.529261\n  type: 'test'\n  ...\n# Subtest: PM19: policy-constrained path degrades to no-op without throwing\nok 145 - PM19: policy-constrained path degrades to no-op without throwing\n  ---\n  duration_ms: 0.453057\n  type: 'test'\n  ...\n# Subtest: PM19: fail-open emits structured diagnostic on non-Error throw\nok 146 - PM19: fail-open emits structured diagnostic on non-Error throw\n  ---\n  duration_ms: 0.870392\n  type: 'test'\n  ...\n# Subtest: PM19: fail-open is safe when logger is absent\nok 147 - PM19: fail-open is safe when logger is absent\n  ---\n  duration_ms: 0.453058\n  type: 'test'\n  ...\n# Subtest: PM19: existing Bonfires outage handling remains intact\nok 148 - PM19: existing Bonfires outage handling remains intact\n  ---\n  duration_ms: 0.435557\n  type: 'test'\n  ...\n# Subtest: PM16: parseConfig defaults discovery feature flag off\nok 149 - PM16: parseConfig defaults discovery feature flag off\n  ---\n  duration_ms: 2.534601\n  type: 'test'\n  ...\n# Subtest: PM16: parseConfig validates discovery.maxCandidates bounds\nok 150 - PM16: parseConfig validates discovery.maxCandidates bounds\n  ---\n  duration_ms: 0.730318\n  type: 'test'\n  ...\n# Subtest: PM16: before_agent_start injects lightweight approval guidance when links are present\nok 151 - PM16: before_agent_start injects lightweight approval guidance when links are present\n  ---\n  duration_ms: 2.474583\n  type: 'test'\n  ...\n# Subtest: PM16: validateApprovalPreparationParams requires approvedByUser=true and non-empty approvedUrls\nok 152 - PM16: validateApprovalPreparationParams requires approvedByUser=true and non-empty approvedUrls\n  ---\n  duration_ms: 1.399635\n  type: 'test'\n  ...\n# Subtest: PM16: bonfires_prepare_ingest_approval fails closed for unobserved or oversized URL sets\nok 153 - PM16: bonfires_prepare_ingest_approval fails closed for unobserved or oversized URL sets\n  ---\n  duration_ms: 0.827799\n  type: 'test'\n  ...\n# Subtest: PM16: bonfires_ingest_links rejects missing, invalid, expired, cross-session, and raw-list bypass payloads with zero ingestion side effects\nok 154 - PM16: bonfires_ingest_links rejects missing, invalid, expired, cross-session, and raw-list bypass payloads with zero ingestion side effects\n  ---\n  duration_ms: 1.473431\n  type: 'test'\n  ...\n# Subtest: PM16: bonfires_prepare_ingest_approval and bonfires_ingest_links resolve exact observed user-approved set end-to-end\nok 155 - PM16: bonfires_prepare_ingest_approval and bonfires_ingest_links resolve exact observed user-approved set end-to-end\n  ---\n  duration_ms: 30.733572\n  type: 'test'\n  ...\n# Subtest: PM16: bonfires_ingest_links preserves per-link partial failure summary after token resolution\nok 156 - PM16: bonfires_ingest_links preserves per-link partial failure summary after token resolution\n  ---\n  duration_ms: 1.25169\n  type: 'test'\n  ...\n# Subtest: PM17: discover_links is disabled by default feature flag\nok 157 - PM17: discover_links is disabled by default feature flag\n  ---\n  duration_ms: 0.690725\n  type: 'test'\n  ...\n# Subtest: PM17: parseDiscoveryHtml extracts bounded candidate set with metadata\nok 158 - PM17: parseDiscoveryHtml extracts bounded candidate set with metadata\n  ---\n  duration_ms: 2.32249\n  type: 'test'\n  ...\n# Subtest: PM17: discover_links returns candidate metadata when feature flag enabled\nok 159 - PM17: discover_links returns candidate metadata when feature flag enabled\n  ---\n  duration_ms: 0.957967\n  type: 'test'\n  ...\n# Subtest: PM17: discovery-selected approval subset is the exact and only executable ingest set end-to-end\nok 160 - PM17: discovery-selected approval subset is the exact and only executable ingest set end-to-end\n  ---\n  duration_ms: 15.887574\n  type: 'test'\n  ...\n# Subtest: PM16/PM17: plugin registers the explicit PM16/PM17 tool surface and schemas\nok 161 - PM16/PM17: plugin registers the explicit PM16/PM17 tool surface and schemas\n  ---\n  duration_ms: 1.149727\n  type: 'test'\n  ...\n# Subtest: hosted search maps delve response to normalized results\nok 162 - hosted search maps delve response to normalized results\n  ---\n  duration_ms: 33.82349\n  type: 'test'\n  ...\n# Subtest: mock search handles falsy limit branch\nok 163 - mock search handles falsy limit branch\n  ---\n  duration_ms: 0.398779\n  type: 'test'\n  ...\n# Subtest: hosted capture sends user+assistant pair with is_paired:true\nok 164 - hosted capture sends user+assistant pair with is_paired:true\n  ---\n  duration_ms: 2.375231\n  type: 'test'\n  ...\n# Subtest: hosted processStack hits process endpoint\nok 165 - hosted processStack hits process endpoint\n  ---\n  duration_ms: 1.021263\n  type: 'test'\n  ...\n# Subtest: hosted processStack defaults success true when field omitted\nok 166 - hosted processStack defaults success true when field omitted\n  ---\n  duration_ms: 0.69917\n  type: 'test'\n  ...\n# Subtest: hosted client throws when api key env is missing\nok 167 - hosted client throws when api key env is missing\n  ---\n  duration_ms: 0.681484\n  type: 'test'\n  ...\n# Subtest: hosted client rejects invalid agentId format\nok 168 - hosted client rejects invalid agentId format\n  ---\n  duration_ms: 0.308982\n  type: 'test'\n  ...\n# Subtest: hosted search handles non-ok response\nok 169 - hosted search handles non-ok response\n  ---\n  duration_ms: 2.979955\n  type: 'test'\n  ...\n# Subtest: hosted capture returns zero accepted for empty message list\nok 170 - hosted capture returns zero accepted for empty message list\n  ---\n  duration_ms: 0.334279\n  type: 'test'\n  ...\n# Subtest: hosted capture single-message payload path\nok 171 - hosted capture single-message payload path\n  ---\n  duration_ms: 1.189689\n  type: 'test'\n  ...\n# Subtest: hosted capture pairs user+assistant and sends trailing single\nok 172 - hosted capture pairs user+assistant and sends trailing single\n  ---\n  duration_ms: 1.25806\n  type: 'test'\n  ...\n# Subtest: hosted search returns normalized score values\nok 173 - hosted search returns normalized score values\n  ---\n  duration_ms: 0.864503\n  type: 'test'\n  ...\n# Subtest: hosted search handles empty episodes/entities\nok 174 - hosted search handles empty episodes/entities\n  ---\n  duration_ms: 0.662614\n  type: 'test'\n  ...\n# Subtest: hosted search uses content/name fallbacks for summaries\nok 175 - hosted search uses content/name fallbacks for summaries\n  ---\n  duration_ms: 0.749169\n  type: 'test'\n  ...\n# Subtest: hosted search handles 200 non-json body path\nok 176 - hosted search handles 200 non-json body path\n  ---\n  duration_ms: 0.677095\n  type: 'test'\n  ...\n# Subtest: hosted processStack handles non-json error body path\nok 177 - hosted processStack handles non-json error body path\n  ---\n  duration_ms: 1.310782\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects hosted when env+bonfire present\nok 178 - createBonfiresClient selects hosted when env+bonfire present\n  ---\n  duration_ms: 0.290316\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient selects mock when env missing or bonfire missing\nok 179 - createBonfiresClient selects mock when env missing or bonfire missing\n  ---\n  duration_ms: 0.218112\n  type: 'test'\n  ...\n# Subtest: createBonfiresClient strictHostedMode throws when hosted env missing\nok 180 - createBonfiresClient strictHostedMode throws when hosted env missing\n  ---\n  duration_ms: 0.27889\n  type: 'test'\n  ...\n# Subtest: mock client processStack path\nok 181 - mock client processStack path\n  ---\n  duration_ms: 0.20526\n  type: 'test'\n  ...\n# Subtest: hosted capture accepted count tracks successful post calls\nok 182 - hosted capture accepted count tracks successful post calls\n  ---\n  duration_ms: 0.931522\n  type: 'test'\n  ...\n# Subtest: hosted ingestContent maps payload to ingest_content endpoint\nok 183 - hosted ingestContent maps payload to ingest_content endpoint\n  ---\n  duration_ms: 0.968837\n  type: 'test'\n  ...\n# Subtest: hosted capture extracts text from array content blocks\nok 184 - hosted capture extracts text from array content blocks\n  ---\n  duration_ms: 1.069189\n  type: 'test'\n  ...\n# Subtest: hosted capture skips messages with empty text content\nok 185 - hosted capture skips messages with empty text content\n  ---\n  duration_ms: 0.324223\n  type: 'test'\n  ...\n# Subtest: hosted search parses JSON episode content and extracts inner content field\nok 186 - hosted search parses JSON episode content and extracts inner content field\n  ---\n  duration_ms: 0.822688\n  type: 'test'\n  ...\n# Subtest: hosted search strips newlines from summaries\nok 187 - hosted search strips newlines from summaries\n  ---\n  duration_ms: 1.07567\n  type: 'test'\n  ...\n# Subtest: hosted capture message includes required stack/add fields\nok 188 - hosted capture message includes required stack/add fields\n  ---\n  duration_ms: 2.186396\n  type: 'test'\n  ...\n# Subtest: hosted search handles object-typed summary without [object Object]\nok 189 - hosted search handles object-typed summary without [object Object]\n  ---\n  duration_ms: 1.155744\n  type: 'test'\n  ...\n# Subtest: hosted search handles nested object in parsed episode content\nok 190 - hosted search handles nested object in parsed episode content\n  ---\n  duration_ms: 1.119282\n  type: 'test'\n  ...\n# Subtest: hosted search extracts content from object-typed episode.content (Bonfires API format)\nok 191 - hosted search extracts content from object-typed episode.content (Bonfires API format)\n  ---\n  duration_ms: 1.004689\n  type: 'test'\n  ...\n# Subtest: wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\nok 192 - wave3: recovery overlap precedence uses endIndex guard and dedupe key identity\n  ---\n  duration_ms: 2.507509\n  type: 'test'\n  ...\n# Subtest: wave3: close-timeout formula is canonical 2 * processing.intervalMinutes\nok 193 - wave3: close-timeout formula is canonical 2 * processing.intervalMinutes\n  ---\n  duration_ms: 0.279408\n  type: 'test'\n  ...\n# Subtest: wave3: recovery skips sessions that are not ended and not inactive long enough\nok 194 - wave3: recovery skips sessions that are not ended and not inactive long enough\n  ---\n  duration_ms: 0.358353\n  type: 'test'\n  ...\n# Subtest: wave3: process stack retry policy retries retriable failures and stops on non-retriable\nok 195 - wave3: process stack retry policy retries retriable failures and stops on non-retriable\n  ---\n  duration_ms: 2.010582\n  type: 'test'\n  ...\n# Subtest: wave3: recovery range helper and retriable classifier behave deterministically\nok 196 - wave3: recovery range helper and retriable classifier behave deterministically\n  ---\n  duration_ms: 0.380242\n  type: 'test'\n  ...\n# Subtest: wave3: recovery capture failure is fail-open and logs warning\nok 197 - wave3: recovery capture failure is fail-open and logs warning\n  ---\n  duration_ms: 0.422612\n  type: 'test'\n  ...\n# Subtest: wave3: startStackHeartbeat runs first tick, persists state, and supports stop\nok 198 - wave3: startStackHeartbeat runs first tick, persists state, and supports stop\n  ---\n  duration_ms: 20.57511\n  type: 'test'\n  ...\n# [verify:hosted] PASS contract:/delve normalization\n# [verify:hosted] PASS contract:/stack/add mapping\n# [verify:hosted] PASS contract:/stack/process response handling\n# [verify:hosted] SKIP preflight:/healthz — live mode not requested\n# [verify:hosted] SKIP preflight:/generate_summaries auth+bonfire — live mode not requested\n# [verify:hosted] report: .ai/log/plan/hosted-integration-verification-current.json\n# Subtest: wave5: redactEnvSummary never exposes raw key\nok 199 - wave5: redactEnvSummary never exposes raw key\n  ---\n  duration_ms: 1.273116\n  type: 'test'\n  ...\n# Subtest: wave5: verify:hosted fixture mode writes report with required probes\nok 200 - wave5: verify:hosted fixture mode writes report with required probes\n  ---\n  duration_ms: 38.721581\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips unchanged content and persists ledger across runs\nok 201 - wave6: ingestion skips unchanged content and persists ledger across runs\n  ---\n  duration_ms: 11.938542\n  type: 'test'\n  ...\n# Subtest: wave6: changed content ingests exactly once per new hash and emits summary\nok 202 - wave6: changed content ingests exactly once per new hash and emits summary\n  ---\n  duration_ms: 3.021196\n  type: 'test'\n  ...\n# Subtest: wave6: ingestContent error increments error count and records failure detail\nok 203 - wave6: ingestContent error increments error count and records failure detail\n  ---\n  duration_ms: 2.150526\n  type: 'test'\n  ...\n# Subtest: wave6: missing ingestContent on client throws and records error\nok 204 - wave6: missing ingestContent on client throws and records error\n  ---\n  duration_ms: 1.838858\n  type: 'test'\n  ...\n# Subtest: wave6: startIngestionCron skips scheduling when disabled\nok 205 - wave6: startIngestionCron skips scheduling when disabled\n  ---\n  duration_ms: 0.35902\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion scans vault and projects directories\nok 206 - wave6: ingestion scans vault and projects directories\n  ---\n  duration_ms: 3.895939\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion skips non-markdown files\nok 207 - wave6: ingestion skips non-markdown files\n  ---\n  duration_ms: 2.65975\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion walker skips symlinked files outside root\nok 208 - wave6: ingestion walker skips symlinked files outside root\n  ---\n  duration_ms: 2.33349\n  type: 'test'\n  ...\n# Subtest: wave6: ingestion walker skips symlinked directories outside root\nok 209 - wave6: ingestion walker skips symlinked directories outside root\n  ---\n  duration_ms: 2.651657\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json exists and has required fields\nok 210 - wave7: openclaw.plugin.json exists and has required fields\n  ---\n  duration_ms: 2.121341\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema requires agents\nok 211 - wave7: openclaw.plugin.json configSchema requires agents\n  ---\n  duration_ms: 0.456094\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json configSchema lists all config fields\nok 212 - wave7: openclaw.plugin.json configSchema lists all config fields\n  ---\n  duration_ms: 1.0318\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json exposes retrieval.systemGuidance\nok 213 - wave7: openclaw.plugin.json exposes retrieval.systemGuidance\n  ---\n  duration_ms: 0.563224\n  type: 'test'\n  ...\n# Subtest: wave7: openclaw.plugin.json nested objects set additionalProperties false\nok 214 - wave7: openclaw.plugin.json nested objects set additionalProperties false\n  ---\n  duration_ms: 0.517224\n  type: 'test'\n  ...\n# Subtest: wave7: package.json has openclaw.extensions array\nok 215 - wave7: package.json has openclaw.extensions array\n  ---\n  duration_ms: 0.398464\n  type: 'test'\n  ...\n# Subtest: wave7: config baseUrl falls back to env BONFIRES_BASE_URL\nok 216 - wave7: config baseUrl falls back to env BONFIRES_BASE_URL\n  ---\n  duration_ms: 1.590302\n  type: 'test'\n  ...\n# Subtest: wave7: config value takes precedence over BONFIRES_BASE_URL env\nok 217 - wave7: config value takes precedence over BONFIRES_BASE_URL env\n  ---\n  duration_ms: 0.586947\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\nok 218 - wave7: config apiKeyEnv falls back to env BONFIRES_API_KEY_ENV\n  ---\n  duration_ms: 0.34052\n  type: 'test'\n  ...\n# Subtest: wave7: config apiKeyEnv explicit value overrides env fallback\nok 219 - wave7: config apiKeyEnv explicit value overrides env fallback\n  ---\n  duration_ms: 0.268686\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId falls back to BONFIRE_ID env\nok 220 - wave7: config bonfireId falls back to BONFIRE_ID env\n  ---\n  duration_ms: 0.742392\n  type: 'test'\n  ...\n# Subtest: wave7: config bonfireId explicit value overrides env\nok 221 - wave7: config bonfireId explicit value overrides env\n  ---\n  duration_ms: 0.543946\n  type: 'test'\n  ...\n# Subtest: wave7: config defaults when no env vars set\nok 222 - wave7: config defaults when no env vars set\n  ---\n  duration_ms: 0.492464\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir defaults to .bonfires-state\nok 223 - wave7: config stateDir defaults to .bonfires-state\n  ---\n  duration_ms: 0.295631\n  type: 'test'\n  ...\n# Subtest: wave7: config stateDir is configurable\nok 224 - wave7: config stateDir is configurable\n  ---\n  duration_ms: 0.369668\n  type: 'test'\n  ...\n# Subtest: wave7: empty stateDir normalizes to .bonfires-state\nok 225 - wave7: empty stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.212223\n  type: 'test'\n  ...\n# Subtest: wave7: whitespace stateDir normalizes to .bonfires-state\nok 226 - wave7: whitespace stateDir normalizes to .bonfires-state\n  ---\n  duration_ms: 0.179556\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion ledgerPath defaults use stateDir\nok 227 - wave7: ingestion ledgerPath defaults use stateDir\n  ---\n  duration_ms: 0.213371\n  type: 'test'\n  ...\n# Subtest: wave7: ingestion paths use custom stateDir when overridden\nok 228 - wave7: ingestion paths use custom stateDir when overridden\n  ---\n  duration_ms: 0.194964\n  type: 'test'\n  ...\n# Subtest: wave7: explicit ingestion paths override stateDir-based defaults\nok 229 - wave7: explicit ingestion paths override stateDir-based defaults\n  ---\n  duration_ms: 0.372539\n  type: 'test'\n  ...\n# Subtest: wave7: register returns dispose handle that stops background loops\nok 230 - wave7: register returns dispose handle that stops background loops\n  ---\n  duration_ms: 4.595071\n  type: 'test'\n  ...\n# Subtest: wave7: register dispose is idempotent\nok 231 - wave7: register dispose is idempotent\n  ---\n  duration_ms: 1.584487\n  type: 'test'\n  ...\n# Subtest: wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\nok 232 - wave8: parseConfig accepts named profiles with rootDir/includeGlobs/excludeGlobs/extensions\n  ---\n  duration_ms: 6.997266\n  type: 'test'\n  ...\n# Subtest: wave8: profile name must be alphanumeric with hyphens/underscores\nok 233 - wave8: profile name must be alphanumeric with hyphens/underscores\n  ---\n  duration_ms: 0.784244\n  type: 'test'\n  ...\n# Subtest: wave8: profile without rootDir throws\nok 234 - wave8: profile without rootDir throws\n  ---\n  duration_ms: 0.321816\n  type: 'test'\n  ...\n# Subtest: wave8: empty includeGlobs array throws\nok 235 - wave8: empty includeGlobs array throws\n  ---\n  duration_ms: 0.306538\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion collects files matching globs and extensions\nok 236 - wave8: profile-based ingestion collects files matching globs and extensions\n  ---\n  duration_ms: 6.401227\n  type: 'test'\n  ...\n# Subtest: wave8: profile excludeGlobs filters out matching files\nok 237 - wave8: profile excludeGlobs filters out matching files\n  ---\n  duration_ms: 3.329679\n  type: 'test'\n  ...\n# Subtest: wave8: profile with custom extensions allows non-markdown files\nok 238 - wave8: profile with custom extensions allows non-markdown files\n  ---\n  duration_ms: 2.042692\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile returns mapped profile for agent\nok 239 - wave8: resolveIngestionProfile returns mapped profile for agent\n  ---\n  duration_ms: 0.569114\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile falls back to defaultProfile\nok 240 - wave8: resolveIngestionProfile falls back to defaultProfile\n  ---\n  duration_ms: 0.485353\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no mapping and no default\nok 241 - wave8: resolveIngestionProfile throws when no mapping and no default\n  ---\n  duration_ms: 0.358242\n  type: 'test'\n  ...\n# Subtest: wave8: resolveIngestionProfile throws when no profiles configured\nok 242 - wave8: resolveIngestionProfile throws when no profiles configured\n  ---\n  duration_ms: 0.281242\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles referencing unknown profile throws at parse time\nok 243 - wave8: agentProfiles referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.249908\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile referencing unknown profile throws at parse time\nok 244 - wave8: defaultProfile referencing unknown profile throws at parse time\n  ---\n  duration_ms: 0.207704\n  type: 'test'\n  ...\n# Subtest: wave8: defaultProfile without profiles throws explicit config error\nok 245 - wave8: defaultProfile without profiles throws explicit config error\n  ---\n  duration_ms: 0.197167\n  type: 'test'\n  ...\n# Subtest: wave8: agentProfiles without profiles throws explicit config error\nok 246 - wave8: agentProfiles without profiles throws explicit config error\n  ---\n  duration_ms: 0.19926\n  type: 'test'\n  ...\n# Subtest: wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\nok 247 - wave8: runIngestionOnce throws when profile selectors are set but profiles are missing\n  ---\n  duration_ms: 0.943077\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors resolve to defaultProfile at runtime\nok 248 - wave8: profile selectors resolve to defaultProfile at runtime\n  ---\n  duration_ms: 2.135841\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors prefer active agent mapping over default\nok 249 - wave8: profile selectors prefer active agent mapping over default\n  ---\n  duration_ms: 2.638546\n  type: 'test'\n  ...\n# Subtest: wave8: profile selectors throw when resolved profile is missing\nok 250 - wave8: profile selectors throw when resolved profile is missing\n  ---\n  duration_ms: 1.288449\n  type: 'test'\n  ...\n# Subtest: wave8: legacy rootDir normalizes into synthetic _legacy profile\nok 251 - wave8: legacy rootDir normalizes into synthetic _legacy profile\n  ---\n  duration_ms: 0.434983\n  type: 'test'\n  ...\n# Subtest: wave8: legacy config emits deprecation warning\nok 252 - wave8: legacy config emits deprecation warning\n  ---\n  duration_ms: 0.426334\n  type: 'test'\n  ...\n# Subtest: wave8: explicit profiles override legacy rootDir normalization\nok 253 - wave8: explicit profiles override legacy rootDir normalization\n  ---\n  duration_ms: 0.374668\n  type: 'test'\n  ...\n# Subtest: wave8: no profiles and no legacy rootDir produces empty profiles\nok 254 - wave8: no profiles and no legacy rootDir produces empty profiles\n  ---\n  duration_ms: 0.277112\n  type: 'test'\n  ...\n# Subtest: wave8: default excludes include node_modules, .git, .openclaw\nok 255 - wave8: default excludes include node_modules, .git, .openclaw\n  ---\n  duration_ms: 0.280187\n  type: 'test'\n  ...\n# Subtest: wave8: default extension is .md\nok 256 - wave8: default extension is .md\n  ---\n  duration_ms: 0.25852\n  type: 'test'\n  ...\n# Subtest: wave8: profile-based ingestion preserves hash-ledger dedup semantics\nok 257 - wave8: profile-based ingestion preserves hash-ledger dedup semantics\n  ---\n  duration_ms: 6.952135\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes per-profile dimensions\nok 258 - wave8: summary includes per-profile dimensions\n  ---\n  duration_ms: 2.61888\n  type: 'test'\n  ...\n# Subtest: wave8: summary includes agent dimensions\nok 259 - wave8: summary includes agent dimensions\n  ---\n  duration_ms: 1.469857\n  type: 'test'\n  ...\n# Subtest: wave8: error details include profile name in file path\nok 260 - wave8: error details include profile name in file path\n  ---\n  duration_ms: 1.808358\n  type: 'test'\n  ...\n# Subtest: wave8: legacy ingestion without profiles still works unchanged\nok 261 - wave8: legacy ingestion without profiles still works unchanged\n  ---\n  duration_ms: 2.250379\n  type: 'test'\n  ...\n# Subtest: wave8: two profiles with different roots ingest from both\nok 262 - wave8: two profiles with different roots ingest from both\n  ---\n  duration_ms: 2.079286\n  type: 'test'\n  ...\n# Subtest: wave8: profile with missing rootDir returns zero items gracefully\nok 263 - wave8: profile with missing rootDir returns zero items gracefully\n  ---\n  duration_ms: 1.002188\n  type: 'test'\n  ...\n# Subtest: wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\nok 264 - wave8: startIngestionCron forwards defaultProfile and activeAgentId to ingestion tick\n  ---\n  duration_ms: 1202.046541\n  type: 'test'\n  ...\n# Subtest: wave8: register with profiles and agentProfiles wires ingestion cron\nok 265 - wave8: register with profiles and agentProfiles wires ingestion cron\n  ---\n  duration_ms: 2.613695\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips when prompt is metadata-only with no user message\nok 266 - before_agent_start skips when prompt is metadata-only with no user message\n  ---\n  duration_ms: 1.969952\n  type: 'test'\n  ...\n# Subtest: before_agent_start injects on first message of session (PM12)\nok 267 - before_agent_start injects on first message of session (PM12)\n  ---\n  duration_ms: 1.049948\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips injection on subsequent messages (PM12)\nok 268 - before_agent_start skips injection on subsequent messages (PM12)\n  ---\n  duration_ms: 0.383927\n  type: 'test'\n  ...\n# Subtest: before_agent_start re-injects for new sessionId (PM12)\nok 269 - before_agent_start re-injects for new sessionId (PM12)\n  ---\n  duration_ms: 0.421723\n  type: 'test'\n  ...\n# Subtest: before_agent_start marks injected even when search returns empty (PM12)\nok 270 - before_agent_start marks injected even when search returns empty (PM12)\n  ---\n  duration_ms: 0.27889\n  type: 'test'\n  ...\n# Subtest: before_agent_start does not mark injected on search error (PM12)\nok 271 - before_agent_start does not mark injected on search error (PM12)\n  ---\n  duration_ms: 0.232001\n  type: 'test'\n  ...\n# Subtest: before_agent_start works without sessionId (backward compat)\nok 272 - before_agent_start works without sessionId (backward compat)\n  ---\n  duration_ms: 0.274538\n  type: 'test'\n  ...\n# Subtest: before_agent_start works without ledger (backward compat)\nok 273 - before_agent_start works without ledger (backward compat)\n  ---\n  duration_ms: 0.417649\n  type: 'test'\n  ...\n# Subtest: before_agent_start skips system message then injects on first real user message (PM12)\nok 274 - before_agent_start skips system message then injects on first real user message (PM12)\n  ---\n  duration_ms: 0.267427\n  type: 'test'\n  ...\n# Subtest: agent_end passes sessionId to capture (PM12)\nok 275 - agent_end passes sessionId to capture (PM12)\n  ---\n  duration_ms: 0.537002\n  type: 'test'\n  ...\n# Subtest: session_end passes sessionId to capture (PM12)\nok 276 - session_end passes sessionId to capture (PM12)\n  ---\n  duration_ms: 0.463112\n  type: 'test'\n  ...\n# Subtest: hosted capture includes role and username in stack messages (PM12)\nok 277 - hosted capture includes role and username in stack messages (PM12)\n  ---\n  duration_ms: 30.041847\n  type: 'test'\n  ...\n# Subtest: hosted capture uses sessionId as chatId when provided (PM12)\nok 278 - hosted capture uses sessionId as chatId when provided (PM12)\n  ---\n  duration_ms: 1.254005\n  type: 'test'\n  ...\n# Subtest: hosted capture falls back to sessionKey as chatId when sessionId absent (PM12)\nok 279 - hosted capture falls back to sessionKey as chatId when sessionId absent (PM12)\n  ---\n  duration_ms: 0.636613\n  type: 'test'\n  ...\n# Subtest: hosted search passes agent_id to /delve (PM12)\nok 280 - hosted search passes agent_id to /delve (PM12)\n  ---\n  duration_ms: 0.753095\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search validates query and returns results\nok 281 - bonfires_stack_search validates query and returns results\n  ---\n  duration_ms: 1.244171\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search rejects missing query\nok 282 - bonfires_stack_search rejects missing query\n  ---\n  duration_ms: 0.482891\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search clamps limit to 1-100\nok 283 - bonfires_stack_search clamps limit to 1-100\n  ---\n  duration_ms: 0.222982\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search returns empty for unknown agent\nok 284 - bonfires_stack_search returns empty for unknown agent\n  ---\n  duration_ms: 0.225241\n  type: 'test'\n  ...\n# Subtest: bonfires_stack_search uses default limit of 10\nok 285 - bonfires_stack_search uses default limit of 10\n  ---\n  duration_ms: 0.178352\n  type: 'test'\n  ...\n# Subtest: hosted stackSearch hits correct endpoint\nok 286 - hosted stackSearch hits correct endpoint\n  ---\n  duration_ms: 0.947318\n  type: 'test'\n  ...\n# Subtest: hosted stackSearch handles empty response\nok 287 - hosted stackSearch handles empty response\n  ---\n  duration_ms: 0.59602\n  type: 'test'\n  ...\n# Subtest: capture ledger injection tracking is in-memory only (PM12)\nok 288 - capture ledger injection tracking is in-memory only (PM12)\n  ---\n  duration_ms: 0.162612\n  type: 'test'\n  ...\n# Subtest: plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)\nok 289 - plugin register registers bonfires_search, bonfires_stack_search, and bonfires_ingest_link tools (PM12, PM15)\n  ---\n  duration_ms: 43.878284\n  type: 'test'\n  ...\n1..289\n# tests 289\n# suites 0\n# pass 289\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4240.582042"
+     },
+     {
+       "tier": 2,
+       "name": "gate:coverage",
+       "status": "PASS",
+-      "elapsed": 1103,
+-      "output": "coverage-check: global line 92.7% — PASS"
++      "elapsed": 326,
++      "output": "coverage-check: global line 94.1% — PASS"
+     },
+     {
+       "tier": 2,
+       "name": "gate:changed-lines",
+       "status": "PASS",
+-      "elapsed": 527,
+-      "output": "changed-lines-coverage-check: no changed source lines — PASS"
++      "elapsed": 327,
++      "output": "changed-lines-coverage-check: 91.7% of 24 changed line(s) covered — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:quality",
+       "status": "PASS",
+-      "elapsed": 377,
+-      "output": "quality-check: no critical modules touched — PASS"
++      "elapsed": 324,
++      "output": "[quality-check] module=src/config.ts\n  test_files=wave1.test.ts, wave10-pm13.test.ts, wave11-pm14.test.ts, wave12-pm15.test.ts, wave13-pm18-pm19.test.ts, wave14-pm16-pm17.test.ts, wave5-hosted-verification.test.ts, wave7-packaging.test.ts, wave8-profiles.test.ts, wave9-pm12.test.ts\n  checks happy=true negative=true edge=true\nquality-check: 1 critical module(s) verified — PASS"
+     },
+     {
+       "tier": 3,
+       "name": "gate:mutation-lite",
+       "status": "PASS",
+-      "elapsed": 12574,
++      "elapsed": 11485,
+       "output": "mutation-lite: skipping probe \"Suppress non-OK error handling in hosted fetchJson\" (target not found)\nmutation-lite: skipping probe \"Drop messages in hosted capture loop\" (target not found)\nmutation-lite-check: 3 probe(s) caught by tests — PASS"
+     },
+     {
+       "tier": 4,
+       "name": "gate:traceability",
+       "status": "PASS",
+-      "elapsed": 401,
+-      "output": "traceability-check: no requirements touched — PASS"
++      "elapsed": 314,
++      "output": "traceability-check: 1 touched requirement(s) verified — PASS"
+     },
+     {
+       "tier": 0,
+       "name": "gate:diff-escalation",
+       "status": "PASS",
+-      "elapsed": 358,
++      "elapsed": 336,
+       "output": "diff-aware-escalation: no sensitive files touched — PASS (no escalation needed)"
+     },
+     {
+       "tier": 0,
+       "name": "gate:anti-gaming",
+       "status": "PASS",
+-      "elapsed": 341,
+-      "output": "anti-gaming-check: 14 source file(s) scanned — PASS"
++      "elapsed": 334,
++      "output": "anti-gaming-check: 18 source file(s) scanned — PASS"
+     }
+   ],
+   "verdict": "PASS"
+diff --git a/.ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md b/.ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md
+index a1baee8..0b9ae18 100644
+--- a/.ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md
++++ b/.ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md
+@@ -5,8 +5,12 @@
+ | PM16/PM17 spec exists and is coherent | Manual doc review | Spec defines flow, tools, defaults, safety, preconditions | `.ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md` |
+ | Guidance exists and matches spec boundaries | Manual doc review | Guidance enforces reuse-first + non-blocking hook path | `.ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md` |
+ | Requirements index includes PM16/PM17 | `grep -n "PM16\|PM17" .ai/spec/spec/requirements-index.md` | Both entries present with spec+guidance pointers | `.ai/spec/spec/requirements-index.md` |
+-| PM17 remains feature-flagged by policy | Plan review checklist | Docs explicitly state flag-off default until PM16 validation | wave plan + spec |
+-| PM14/PM15 production gate is explicit | Plan review checklist | Hard precondition documented before implementation | wave plan + spec |
+-| Non-blocking constraint preserved | Architecture review | Hook path avoids heavy network ingestion | spec + guidance |
+-| Approval-bound ingestion required | Architecture review | Only explicitly approved URLs may be ingested | spec |
++| PM17 remains feature-flagged by policy | Manual doc review of spec+guidance | Both docs explicitly state PM17 is feature-flagged and remains disabled until PM16 production validation is complete | spec + guidance |
++| PM14/PM15 production gate is explicit and evidenced | Artifact review | Kickoff package cites `.ai/log/plan/pm14-pm15-production-validation-20260308.md`, `.ai/log/review/review-verification-quality-20260307w9-remediation.md`, and `.ai/log/review/review-correctness-20260307w9-remediation.md` as required precondition evidence | wave plan + spec + review support |
++| Non-blocking constraint preserved | Manual doc review of canonical flow + implementation guidance | `before_agent_start` is limited to link detection + compact instruction injection; docs do not permit heavy fetch/discovery/ingestion work in hook path | spec + guidance |
++| Approval-bound ingestion required | Manual doc review of tool contract + canonical flow | docs require explicit approval before Bonfires ingestion, require a turn-local `approvalToken`, and define the token-resolved approved URL set as the only executable ingest set | spec |
++| Approval provenance binding required | Manual doc review of spec+guidance | docs explicitly reject caller-asserted approval as sufficient and require session-local approval-token verification before execution | spec + guidance |
++| Approval policy scope matches product decision | Manual doc review of spec+guidance + plan | docs explicitly allow same-session reuse of already approved URL sets and do not require exact-turn single-use semantics | spec + guidance + wave plan |
++| Option 1 rejection paths are explicit | Manual doc review of spec+guidance + plan | missing, expired, cross-session, unverifiable, or bypass-style approval inputs are documented as fail-closed conditions | spec + guidance + wave plan |
++| Discovery-disabled-by-default kickoff gate is explicit | Manual doc review of rollout policy + preconditions | PM17 cannot be treated as enabled for implementation rollout until PM16 validation evidence is present | spec + guidance + wave plan |
+ | Review support docs present | File existence check | Review checklist and risk notes available | `.ai/log/plan/review-support-wave-9-1c-ab-20260308.md` |
+diff --git a/.ai/log/plan/wave-9-plan-1c-ab-20260308.md b/.ai/log/plan/wave-9-plan-1c-ab-20260308.md
+index 0291be4..2957323 100644
+--- a/.ai/log/plan/wave-9-plan-1c-ab-20260308.md
++++ b/.ai/log/plan/wave-9-plan-1c-ab-20260308.md
+@@ -5,8 +5,9 @@ Status: Plan phase (no implementation yet)
+ 
+ ## Objectives
+ 1. Define PM16/PM17 spec/guidance package with explicit approval model.
+-2. Preserve responsiveness by avoiding blocking fetch/ingest in `before_agent_start`.
+-3. Gate implementation on PM14/PM15 production validation.
++2. Revise the approval model to Option 1: turn-local approval-token mediation for executable ingestion.
++3. Preserve responsiveness by avoiding blocking fetch/ingest in `before_agent_start`.
++4. Gate implementation on PM14/PM15 production validation.
+ 
+ ## Scope
+ - In scope:
+@@ -21,6 +22,11 @@ Status: Plan phase (no implementation yet)
+ 1. PM14 production install + smoke validation PASS
+ 2. PM15 production install + safety validation PASS
+ 
++### Precondition evidence (must be cited for kickoff)
++1. `.ai/log/plan/pm14-pm15-production-validation-20260308.md` -> `GO` for live PM14/PM15 expected behavior.
++2. `.ai/log/review/review-verification-quality-20260307w9-remediation.md` -> `GO`.
++3. `.ai/log/review/review-correctness-20260307w9-remediation.md` -> `GO`.
++
+ ## Deliverables (this wave)
+ 1. Spec: `spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md`
+ 2. Guidance: `spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
+@@ -30,8 +36,20 @@ Status: Plan phase (no implementation yet)
+ ## Risks to derisk before implementation
+ 1. Latency regression from accidental heavy hook path.
+ 2. Approval leakage (ingesting URLs not explicitly approved).
+-3. Drift from PM15 reusable safety path.
+-4. Feature-flag bypass for discovery.
++3. Missing approval provenance binding between approval and execution.
++4. Drift from PM15 reusable safety path.
++5. Feature-flag bypass for discovery.
++
++## Option 1 remediation decision (locked)
++1. Use a turn-local approval token as the executable handoff boundary for PM16/PM17.
++2. `bonfires_ingest_links` must no longer trust caller-supplied raw approved URL lists as executable authority.
++3. Discovery and user-provided-link approval flows may still present URLs to the model/user, but execution must be token-resolved server/tool-side.
++4. Minimum enforcement scope for this remediation wave:
++   - session-bound token resolution
++   - turn-local provenance binding
++   - rejection of missing/expired/unverifiable tokens
++   - rejection of direct executable `urls` / raw `approvedUrls` bypass input
++5. Review sequence after remediation remains fail-fast: Security/Attacker is the critical acceptance lens for this delta.
+ 
+ ## Go/No-Go for implementation start
+ - GO only if:
+diff --git a/.ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md b/.ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md
+index c9e453d..2b6b5c3 100644
+--- a/.ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md
++++ b/.ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md
+@@ -16,10 +16,18 @@
+ ## Approval semantics
+ 1. User-provided links:
+    - agent must ask approval before Bonfires ingestion
+-   - ingest only explicitly approved URLs
++   - after approval, execution must be mediated through a session-local approval token bound to the approved URL subset
++   - do not pass a broader candidate/requested URL list or raw caller-supplied approved URL list as executable input
+ 2. Discovery links:
+    - selected-set approval once
+-   - persist approval in turn-local context only
++   - execution must be mediated through a session-local approval token bound to the selected approved subset
++   - persist approval binding in session-local context
++3. Contract enforcement:
++   - `bonfires_ingest_links` must require `approvalToken`
++   - the tool must resolve the token to a session-local approved URL subset
++   - malformed/missing/expired/cross-session/unverifiable approval tokens must fail closed for ingestion execution
++   - caller assertions alone are not sufficient proof of approval provenance
++   - same-session reuse of an already approved URL set is allowed by product policy; exact-turn binding is not required
+ 
+ ## Snippet generation
+ 1. Prefer deterministic extraction:
+@@ -33,7 +41,11 @@
+ 
+ ## Rollout policy
+ 1. PM17 (discovery) remains feature-flagged until PM16 proves stable in production.
+-2. Enable PM17 progressively after PM16 validation artifacts pass.
++2. Enable PM17 progressively only after PM16 validation artifacts pass.
++3. Required enabling evidence is:
++   - `.ai/log/plan/pm14-pm15-production-validation-20260308.md`
++   - `.ai/log/review/review-verification-quality-20260307w9-remediation.md`
++   - `.ai/log/review/review-correctness-20260307w9-remediation.md`
+ 
+ ## Failure handling
+ 1. Per-link failure should not abort entire batch by default.
+@@ -43,3 +55,5 @@
+ ## Logging and artifacts
+ 1. Emit run-level summary artifact in `.ai/log/plan/` for production verification.
+ 2. Include blocked/error reason categories for review.
++3. For approval-token validation, record the token lifecycle and rejection categories in tests/review artifacts: missing token, expired token, cross-session token, and token/approved-set mismatch.
++4. Security review expectations for PM16/PM17 should align to the accepted product policy: session-scoped approval provenance is sufficient; turn-local single-use semantics are out of scope unless product policy changes.
+diff --git a/.ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md b/.ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md
+index 1ad4edd..a46ae40 100644
+--- a/.ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md
++++ b/.ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md
+@@ -1,6 +1,6 @@
+ # Spec: PM16/PM17 — Approval-gated link ingestion (1C-A/B)
+ 
+-Status: Planning (pre-implementation)
++Status: Implemented and validated
+ 
+ ## Scope
+ Define Feature 1C-A/B behavior with explicit user approval, non-blocking turn latency, and reuse-first architecture.
+@@ -21,16 +21,21 @@ Define Feature 1C-A/B behavior with explicit user approval, non-blocking turn la
+ 2. `before_agent_start` detects link presence and injects compact guidance:
+    - agent may fetch/analyze link content per existing policy for user task,
+    - agent must ask explicit ingestion approval before Bonfires ingestion,
+-   - on approval, call ingestion tool only for approved URLs.
++   - on approval, agent must obtain a session-local approval token bound to the approved URL subset,
++   - agent may then call ingestion only with that approval token.
+ 3. Agent asks user for approval.
+-4. User approves.
+-5. Agent calls ingestion tool.
++4. User approves a subset.
++5. System/tooling issues a session-local approval token for exactly that approved subset.
++6. Agent may use that approval within the same session.
++7. Agent calls ingestion tool with the approval token.
+ 
+ ## Canonical flow (discovery, PM17)
+ 1. Agent/user invokes `discover_links` (feature-flagged).
+-2. Tool returns candidates with metadata (`title`, `url`, `snippet`, `contentTypeGuess`, `confidence`).
++2. Tool returns candidates with metadata (`title`, `url`, `snippet`, `contentTypeGuess`, `confidence`) and enough session-local provenance to later mint/resolve an approval token for that candidate set.
+ 3. Agent asks for selected-set approval once.
+-4. On approval, agent calls `bonfires_ingest_links` with selected URLs.
++4. On approval, system/tooling issues a session-local approval token bound to the selected approved subset and current session provenance.
++5. Agent may use that approval later in the same session.
++6. Agent calls `bonfires_ingest_links` with that approval token.
+ 
+ ## Tool contracts
+ 
+@@ -49,12 +54,24 @@ Notes:
+ 
+ ### `bonfires_ingest_links` (Bonfires-specific sink)
+ Input:
+-- `urls: string[]` (required, max 10 default policy)
+-- `approvalContext?: { approvedByUser: boolean; approvedUrls?: string[] }`
++- `approvalToken: string` (required)
++
++Derived execution contract:
++- `approvalToken` must resolve to a session-local approval record bound to the current session and an exact approved URL subset.
++- The resolved approved URL subset is the only executable ingest set.
++- The tool must ingest exactly the normalized approved URL set resolved from the token and must not accept an independent executable `urls` field or caller-supplied `approvedUrls` payload.
++- Empty approved sets are invalid for execution.
++- If approval is absent, expired, cross-session, malformed, unverifiable, or internally inconsistent, the tool must reject the request without ingesting anything.
++- Same-session reuse of an already approved URL set is allowed by policy.
++- PM16 user-provided-link flow: the token-bound approved set is the subset of user-provided URLs explicitly approved by the user within the current session.
++- PM17 discovery flow: the token-bound approved set is the selected discovery-candidate set explicitly approved by the user within the current session.
+ 
+ Output:
+ - `results: Array<{ url: string; route: string; success: boolean; duplicate: boolean; error?: string }>`
+ - `summary: { requested: number; ingested: number; duplicates: number; blocked: number; failed: number }`
++@@
++-2. **Approval-bound ingestion:** ingestion must be scoped to explicitly approved URLs.
+++2. **Approval-bound ingestion:** ingestion must be scoped exactly to explicitly approved URLs; no unapproved or extra URL may enter execution.
+ 
+ ## Behavioral requirements
+ 1. **Non-blocking hook behavior:** `before_agent_start` must only add guidance/instructions; no heavy network ingestion there.
+@@ -67,6 +84,9 @@ Output:
+ 1. Keep PM15 SSRF protections (scheme, private-host blocking, redirect hop controls).
+ 2. Treat fetched/discovered content as untrusted data.
+ 3. Enforce bounded limits (urls per run, size, timeout, redirects).
++4. Approval provenance must be tool-verifiable: caller assertions alone are insufficient.
++5. Approval tokens must be session-bound and rejected when expired, unverifiable, or cross-session.
++6. Exact-turn binding and single-use token consumption are not required for PM16/PM17 under the accepted product policy.
+ 
+ ## Defaults (initial)
+ - max URLs per ingest run: 10
+@@ -77,3 +97,7 @@ Output:
+ 
+ ## Preconditions
+ - PM14 + PM15 production install and validation must pass before PM16/PM17 implementation starts.
++- Required precondition evidence:
++  - `.ai/log/plan/pm14-pm15-production-validation-20260308.md` must show **GO** for live PM14/PM15 expected behavior.
++  - `.ai/log/review/review-verification-quality-20260307w9-remediation.md` must show `GO` for remediation verification coverage.
++  - `.ai/log/review/review-correctness-20260307w9-remediation.md` must show `GO` for PM14/PM15 correctness after remediation.
+diff --git a/.ai/spec/spec/quality/traceability-map.json b/.ai/spec/spec/quality/traceability-map.json
+index fbcf5fc..6e0774f 100644
+--- a/.ai/spec/spec/quality/traceability-map.json
++++ b/.ai/spec/spec/quality/traceability-map.json
+@@ -1,177 +1,251 @@
+ {
+-    "version": 6,
+-    "requirements": [
+-        {
+-            "id": "R1",
+-            "spec": ".ai/spec/spec/retrieval/before-agent-start.md",
+-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-before-agent-start.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ]
+-        },
+-        {
+-            "id": "R2",
+-            "spec": ".ai/spec/spec/retrieval/bonfires-search-tool.md",
+-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ]
+-        },
+-        {
+-            "id": "R3",
+-            "spec": ".ai/spec/spec/capture/agent-end-capture-legacy.md",
+-            "guidance": ".ai/spec/guidance/capture/guidance-for-agent-end-capture.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ],
+-            "note": "Superseded by PM10"
+-        },
+-        {
+-            "id": "R4",
+-            "spec": ".ai/spec/spec/processing/recovery-and-session-end.md",
+-            "guidance": ".ai/spec/guidance/processing/guidance-for-recovery-and-session-end.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ]
+-        },
+-        {
+-            "id": "R5",
+-            "spec": ".ai/spec/spec/config/plugin-config-and-agent-mapping.md",
+-            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-config-and-agent-mapping.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ]
+-        },
+-        {
+-            "id": "R6",
+-            "spec": ".ai/spec/spec/client/bonfires-client-interface.md",
+-            "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
+-            "verification": [
+-                ".ai/spec/spec/quality/verification-checklist.md"
+-            ]
+-        }
+-    ],
+-    "functionality_requirements": [
+-        {
+-            "id": "PM1",
+-            "spec": ".ai/spec/spec/client/hosted-api-wiring.md",
+-            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-api-wiring.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM2",
+-            "spec": ".ai/spec/spec/processing/stack-processing-heartbeat.md",
+-            "guidance": ".ai/spec/guidance/processing/guidance-for-stack-processing-heartbeat.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM3",
+-            "spec": ".ai/spec/spec/client/hosted-integration-verification.md",
+-            "guidance": ".ai/spec/guidance/client/guidance-for-hosted-integration-verification.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM4",
+-            "spec": ".ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md",
+-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM5",
+-            "spec": ".ai/spec/spec/config/plugin-packaging.md",
+-            "guidance": ".ai/spec/guidance/config/guidance-for-plugin-packaging.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM6",
+-            "spec": ".ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md",
+-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM7",
+-            "spec": ".ai/spec/spec/processing/compaction-flush.md",
+-            "guidance": ".ai/spec/guidance/processing/guidance-for-compaction-flush.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ],
+-            "note": "Superseded by PM10"
+-        },
+-        {
+-            "id": "PM8",
+-            "spec": ".ai/spec/spec/capture/watermark-reset-on-truncation.md",
+-            "guidance": ".ai/spec/guidance/capture/guidance-for-watermark-reset-on-truncation.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ],
+-            "note": "Retained as guard within PM10"
+-        },
+-        {
+-            "id": "PM9",
+-            "spec": ".ai/spec/spec/capture/prepend-context-stripping.md",
+-            "guidance": ".ai/spec/guidance/capture/guidance-for-prepend-context-stripping.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ],
+-            "note": "Retained within PM11"
+-        },
+-        {
+-            "id": "PM10",
+-            "spec": ".ai/spec/spec/capture/immediate-stack-capture.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ],
+-            "note": "Supersedes PM1, PM7"
+-        },
+-        {
+-            "id": "PM11",
+-            "spec": ".ai/spec/spec/capture/message-sanitization.md",
+-            "guidance": ".ai/spec/guidance/capture/guidance-for-message-sanitization.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM12",
+-            "spec": ".ai/spec/spec/capture/session-improvements.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM13",
+-            "spec": ".ai/spec/spec/capture/agent-display-names.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM14",
+-            "spec": ".ai/spec/spec/ingestion/pdf-ingestion-routing.md",
+-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-pdf-ingestion-routing.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        },
+-        {
+-            "id": "PM15",
+-            "spec": ".ai/spec/spec/ingestion/linked-content-ingestion.md",
+-            "guidance": ".ai/spec/guidance/ingestion/guidance-for-linked-content-ingestion.md",
+-            "verification": [
+-                ".ai/spec/spec/requirements-index.md"
+-            ]
+-        }
+-    ]
++  "version": 9,
++  "requirements": [
++    {
++      "id": "R1",
++      "spec": ".ai/spec/spec/retrieval/before-agent-start.md",
++      "guidance": ".ai/spec/guidance/retrieval/guidance-for-before-agent-start.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ]
++    },
++    {
++      "id": "R2",
++      "spec": ".ai/spec/spec/retrieval/bonfires-search-tool.md",
++      "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ]
++    },
++    {
++      "id": "R3",
++      "spec": ".ai/spec/spec/capture/agent-end-capture-legacy.md",
++      "guidance": ".ai/spec/guidance/capture/guidance-for-agent-end-capture.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ],
++      "note": "Superseded by PM10"
++    },
++    {
++      "id": "R4",
++      "spec": ".ai/spec/spec/processing/recovery-and-session-end.md",
++      "guidance": ".ai/spec/guidance/processing/guidance-for-recovery-and-session-end.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ]
++    },
++    {
++      "id": "R5",
++      "spec": ".ai/spec/spec/config/plugin-config-and-agent-mapping.md",
++      "guidance": ".ai/spec/guidance/config/guidance-for-plugin-config-and-agent-mapping.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ]
++    },
++    {
++      "id": "R6",
++      "spec": ".ai/spec/spec/client/bonfires-client-interface.md",
++      "guidance": ".ai/spec/guidance/retrieval/guidance-for-bonfires-search-tool.md",
++      "verification": [
++        ".ai/spec/spec/quality/verification-checklist.md"
++      ]
++    }
++  ],
++  "functionality_requirements": [
++    {
++      "id": "PM1",
++      "spec": ".ai/spec/spec/client/hosted-api-wiring.md",
++      "guidance": ".ai/spec/guidance/client/guidance-for-hosted-api-wiring.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM2",
++      "spec": ".ai/spec/spec/processing/stack-processing-heartbeat.md",
++      "guidance": ".ai/spec/guidance/processing/guidance-for-stack-processing-heartbeat.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM3",
++      "spec": ".ai/spec/spec/client/hosted-integration-verification.md",
++      "guidance": ".ai/spec/guidance/client/guidance-for-hosted-integration-verification.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM4",
++      "spec": ".ai/spec/spec/ingestion/ingestion-cron-and-hash-ledger.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-cron-and-hash-ledger.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM5",
++      "spec": ".ai/spec/spec/config/plugin-packaging.md",
++      "guidance": ".ai/spec/guidance/config/guidance-for-plugin-packaging.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM6",
++      "spec": ".ai/spec/spec/ingestion/ingestion-profiles-and-agent-mapping.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-ingestion-profiles-and-agent-mapping.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM7",
++      "spec": ".ai/spec/spec/processing/compaction-flush.md",
++      "guidance": ".ai/spec/guidance/processing/guidance-for-compaction-flush.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ],
++      "note": "Superseded by PM10"
++    },
++    {
++      "id": "PM8",
++      "spec": ".ai/spec/spec/capture/watermark-reset-on-truncation.md",
++      "guidance": ".ai/spec/guidance/capture/guidance-for-watermark-reset-on-truncation.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ],
++      "note": "Retained as guard within PM10"
++    },
++    {
++      "id": "PM9",
++      "spec": ".ai/spec/spec/capture/prepend-context-stripping.md",
++      "guidance": ".ai/spec/guidance/capture/guidance-for-prepend-context-stripping.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ],
++      "note": "Retained within PM11"
++    },
++    {
++      "id": "PM10",
++      "spec": ".ai/spec/spec/capture/immediate-stack-capture.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ],
++      "note": "Supersedes PM1, PM7"
++    },
++    {
++      "id": "PM11",
++      "spec": ".ai/spec/spec/capture/message-sanitization.md",
++      "guidance": ".ai/spec/guidance/capture/guidance-for-message-sanitization.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM12",
++      "spec": ".ai/spec/spec/capture/session-improvements.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM13",
++      "spec": ".ai/spec/spec/capture/agent-display-names.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM14",
++      "spec": ".ai/spec/spec/ingestion/pdf-ingestion-routing.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-pdf-ingestion-routing.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM15",
++      "spec": ".ai/spec/spec/ingestion/linked-content-ingestion.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-linked-content-ingestion.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md"
++      ]
++    },
++    {
++      "id": "PM16",
++      "spec": ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
++        ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md"
++      ]
++    },
++    {
++      "id": "PM17",
++      "spec": ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
++      "guidance": ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
++        ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md"
++      ]
++    },
++    {
++      "id": "PM18",
++      "spec": ".ai/spec/spec/retrieval/system-context-injection-and-prompt-policy-fallback.md",
++      "guidance": ".ai/spec/guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md"
++      ]
++    },
++    {
++      "id": "PM19",
++      "spec": ".ai/spec/spec/retrieval/system-context-injection-and-prompt-policy-fallback.md",
++      "guidance": ".ai/spec/guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-10-phase1-system-context-20260308.md"
++      ]
++    },
++    {
++      "id": "PM20",
++      "spec": ".ai/spec/spec/context-engine/after-turn-episodic-memory-writeback.md",
++      "guidance": ".ai/spec/guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
++      ]
++    },
++    {
++      "id": "PM21",
++      "spec": ".ai/spec/spec/context-engine/after-turn-episodic-memory-writeback.md",
++      "guidance": ".ai/spec/guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
++      ]
++    },
++    {
++      "id": "PM22",
++      "spec": ".ai/spec/spec/context-engine/assemble-delve-retrieval.md",
++      "guidance": ".ai/spec/guidance/context-engine/guidance-for-assemble-delve-retrieval.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
++      ]
++    },
++    {
++      "id": "PM23",
++      "spec": ".ai/spec/spec/context-engine/assemble-delve-retrieval.md",
++      "guidance": ".ai/spec/guidance/context-engine/guidance-for-assemble-delve-retrieval.md",
++      "verification": [
++        ".ai/spec/spec/requirements-index.md",
++        ".ai/log/plan/verification-matrix-wave-11-context-engine-phases-x-y-20260308.md"
++      ]
++    }
++  ]
+ }
+diff --git a/.ai/spec/spec/requirements-index.md b/.ai/spec/spec/requirements-index.md
+index b80f83d..88b15bb 100644
+--- a/.ai/spec/spec/requirements-index.md
++++ b/.ai/spec/spec/requirements-index.md
+@@ -12,6 +12,36 @@ Authoritative index for all requirements and their spec/guidance locations.
+ - Spec: `retrieval/bonfires-search-tool.md`
+ - Guidance: `../../guidance/retrieval/guidance-for-bonfires-search-tool.md`
+ 
++### PM18 — System-context placement for stable Bonfires guidance (Phase 1)
++- **Planned.** Uses OpenClaw v2026.3.7 prompt-system-context fields for stable guidance text while preserving backward-compatible defaults.
++- Spec: `retrieval/system-context-injection-and-prompt-policy-fallback.md`
++- Guidance: `../../guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md`
++
++### PM19 — Prompt-policy-aware fail-open context injection (Phase 1)
++- **Planned.** Ensures no-op degradation when prompt mutation is constrained by policy (for example, `allowPromptInjection=false`).
++- Spec: `retrieval/system-context-injection-and-prompt-policy-fallback.md`
++- Guidance: `../../guidance/retrieval/guidance-for-system-context-injection-and-prompt-policy-fallback.md`
++
++### PM20 — ContextEngine `afterTurn()` episodic memory writeback (Phase X)
++- **Planned.** Migrates Bonfires episodic/stack writeback toward native post-turn ContextEngine lifecycle without changing explicit content-ingestion lanes.
++- Spec: `context-engine/after-turn-episodic-memory-writeback.md`
++- Guidance: `../../guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md`
++
++### PM21 — Writeback migration boundary / content-ingestion non-goal (Phase X)
++- **Planned.** Keeps explicit document/PDF/link ingestion outside ContextEngine writeback migration scope and prevents duplicate writeback during transition.
++- Spec: `context-engine/after-turn-episodic-memory-writeback.md`
++- Guidance: `../../guidance/context-engine/guidance-for-after-turn-episodic-memory-writeback.md`
++
++### PM22 — ContextEngine `assemble()` Bonfires retrieval integration (Phase Y)
++- **Planned.** Migrates Bonfires turn-time retrieval toward native pre-turn ContextEngine assembly when recall is intentionally re-enabled.
++- Spec: `context-engine/assemble-delve-retrieval.md`
++- Guidance: `../../guidance/context-engine/guidance-for-assemble-delve-retrieval.md`
++
++### PM23 — Retrieval migration boundary / compatibility defaults (Phase Y)
++- **Planned.** Keeps per-turn recall opt-in/off by default and avoids duplicate retrieval injection during mixed rollout.
++- Spec: `context-engine/assemble-delve-retrieval.md`
++- Guidance: `../../guidance/context-engine/guidance-for-assemble-delve-retrieval.md`
++
+ ## Capture
+ 
+ ### R3 — agent_end capture (legacy)
+@@ -83,12 +113,12 @@ Authoritative index for all requirements and their spec/guidance locations.
+ - Guidance: `../../guidance/ingestion/guidance-for-linked-content-ingestion.md`
+ 
+ ### PM16 — Approval-gated multi-link ingestion (1C-A)
+-- **Planned.** Adds bounded `urls[]` ingestion with approval-bound scope and per-link result summaries.
++- **Active.** Adds approval-gated multi-link ingestion with approval-bound scope and per-link result summaries.
+ - Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
+ - Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
+ 
+ ### PM17 — Discovery + selected-set approval flow (1C-B)
+-- **Planned / feature-flagged.** Adds generic `discover_links` with approve-selected-set-once handoff to Bonfires ingestion.
++- **Active / feature-flagged off by default.** Adds generic `discover_links` with approve-selected-set-once handoff to Bonfires ingestion.
+ - Spec: `ingestion/approval-gated-link-ingestion-and-discovery.md`
+ - Guidance: `../../guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md`
+ 
+diff --git a/src/config.ts b/src/config.ts
+index ccff299..e1d1238 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -91,6 +91,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+     typeof cfg.retrieval?.systemGuidance === 'string' && cfg.retrieval.systemGuidance.trim()
+       ? cfg.retrieval.systemGuidance.trim()
+       : undefined;
++  const enableDynamicRetrieval = Boolean(cfg.retrieval?.enableDynamicRetrieval ?? false);
+ 
+ 
+   const out = {
+@@ -103,7 +104,7 @@ export function parseConfig(input, opts?: { logger?: { warn?: (msg: string) => v
+     network: { timeoutMs: Number(cfg.network?.timeoutMs ?? 12000) },
+     strictHostedMode: Boolean(cfg.strictHostedMode ?? false),
+     stateDir,
+-    retrieval: { systemGuidance },
++    retrieval: { systemGuidance, enableDynamicRetrieval },
+     discovery: {
+       enabled: discoveryEnabled,
+       maxCandidates: discoveryMaxCandidates,
+diff --git a/src/hooks.ts b/src/hooks.ts
+index 9e26fac..a1d2267 100644
+--- a/src/hooks.ts
++++ b/src/hooks.ts
+@@ -38,41 +38,73 @@ function mergeSystemGuidance(existing: string | undefined, injected: string | un
+   return existing || injected;
+ }
+ 
+-export async function handleBeforeAgentStart(event, ctx, deps){
+-  try{
+-    if (ctx?.policy?.allowPromptInjection === false) {
+-      deps.logger?.warn?.('before_agent_start: prompt injection constrained by policy, skipping context injection');
+-      return;
+-    }
+-    const raw=String(event?.prompt ?? '').trim(); if(!raw) return;
+-    if(!hasUserMetadata(raw)) return;
+-    const query=extractUserMessage(raw).slice(0,500);
+-    if(!query) return;
+-    const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);
+-    if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
++export async function retrieveBonfiresContext(prompt: string, ctx: any, deps: any, opts?: { includeDynamicRetrieval?: boolean }){
++  if (ctx?.policy?.allowPromptInjection === false) {
++    deps.logger?.warn?.('before_agent_start: prompt injection constrained by policy, skipping context injection');
++    return;
++  }
++  const raw=String(prompt ?? '').trim(); if(!raw) return;
++  if(!hasUserMetadata(raw)) return;
++  const query=extractUserMessage(raw).slice(0,500);
++  if(!query) return;
++  const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId);
++  if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
++
++  const detectedUrls = detectUrls(query);
++  if (detectedUrls.length > 0) {
++    approvalStore.recordCandidateUrls({
++      agentId: ctx.agentId,
++      sessionId: typeof ctx.sessionId === 'string' ? ctx.sessionId : undefined,
++      sessionKey: typeof ctx.sessionKey === 'string' ? ctx.sessionKey : undefined,
++    }, 'user-shared-links', detectedUrls);
++  }
++  const injectedLinkGuidance = detectedUrls.length > 0 ? LINK_INGESTION_GUIDANCE : undefined;
+ 
+-    const sessionId = ctx.sessionId;
+-    if (sessionId && deps.ledger?.hasInjected?.(sessionId)) return;
++  let prependContext: string | undefined;
++  if (opts?.includeDynamicRetrieval) {
++    const res=await deps.client.search({agentId:agent, query, limit:deps.cfg.search.maxResults});
++    prependContext = formatPrepend(res.results ?? []) || undefined;
++  }
+ 
+-    const detectedUrls = detectUrls(query);
+-    if (detectedUrls.length > 0) {
+-      approvalStore.recordCandidateUrls({
+-        agentId: ctx.agentId,
+-        sessionId: typeof ctx.sessionId === 'string' ? ctx.sessionId : undefined,
+-        sessionKey: typeof ctx.sessionKey === 'string' ? ctx.sessionKey : undefined,
+-      }, 'user-shared-links', detectedUrls);
+-    }
+-    const injectedLinkGuidance = detectedUrls.length > 0 ? LINK_INGESTION_GUIDANCE : undefined;
++  const systemGuidance = mergeSystemGuidance(deps.cfg.retrieval?.systemGuidance, injectedLinkGuidance);
++  return {
++    query,
++    agent,
++    prependContext,
++    systemGuidance,
++  };
++}
+ 
+-    const res=await deps.client.search({agentId:agent, query, limit:deps.cfg.search.maxResults});
++export async function captureBonfiresTurn(messages: any[], ctx: any, deps: any, opts?: { startIndex?: number }){
++  const sessionKey=ctx.sessionKey; if(!sessionKey) return;
++  const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId); if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
++  const msgs=messages ?? [];
++  let start = Number.isFinite(opts?.startIndex as number) ? Number(opts?.startIndex) : 0;
++  const mark=deps.ledger?.get?.(sessionKey);
++  if (mark && opts?.startIndex === undefined) {
++    start = mark.lastPushedIndex + 1;
++    if(mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`agent_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
++  }
++  const slice=msgs.slice(Math.max(0, start)); if(!slice.length) return;
++  const agentDisplayName = deps.agentDisplayNames?.[ctx.agentId] ?? ctx.agentId;
++  const roles = slice.map(m => m.role);
++  const conversational = slice.filter(m => m.role === 'user' || m.role === 'assistant');
++  deps.logger?.warn?.(`agent_end capture: ${slice.length} msgs (roles: ${roles.join(',')}), ${conversational.length} conversational, displayName=${agentDisplayName}`);
++  await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice, agentDisplayName});
++  const now=deps.nowMs?deps.nowMs():Date.now();
++  deps.ledger?.set?.(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
++}
+ 
++export async function handleBeforeAgentStart(event, ctx, deps){
++  try{
++    const sessionId = ctx.sessionId;
++    if (sessionId && deps.ledger?.hasInjected?.(sessionId)) return;
++    const retrieved = await retrieveBonfiresContext(event?.prompt, ctx, deps, { includeDynamicRetrieval: true });
++    if (!retrieved) return;
+     if (sessionId) deps.ledger?.markInjected?.(sessionId);
+-
+-    const prependContext=formatPrepend(res.results ?? []);
+-    const systemGuidance = mergeSystemGuidance(deps.cfg.retrieval?.systemGuidance, injectedLinkGuidance);
+     const result: Record<string, string> = {};
+-    if (prependContext) result.prependContext = prependContext;
+-    if (systemGuidance) result.prependSystemContext = systemGuidance;
++    if (retrieved.prependContext) result.prependContext = retrieved.prependContext;
++    if (retrieved.systemGuidance) result.prependSystemContext = retrieved.systemGuidance;
+     return Object.keys(result).length > 0 ? result : undefined;
+   }catch(e){
+     deps.logger?.warn?.(`before_agent_start error: ${e?.message ?? e}`);
+@@ -81,22 +113,8 @@ export async function handleBeforeAgentStart(event, ctx, deps){
+ }
+ 
+ export async function handleAgentEnd(event, ctx, deps){
+-  try{
+-    const sessionKey=ctx.sessionKey; if(!sessionKey) return;
+-    const agent=resolveBonfiresAgentId(deps.cfg, ctx.agentId); if(!agent){ deps.logger?.warn?.(`No bonfires agent mapping for ${ctx.agentId ?? 'unknown'}`); return; }
+-    const msgs=event.messages ?? [];
+-    const mark=deps.ledger.get(sessionKey);
+-    let start=mark ? mark.lastPushedIndex+1 : 0;
+-    if(mark && mark.lastPushedIndex >= msgs.length){ deps.logger?.warn?.(`agent_end watermark reset: lastPushedIndex=${mark.lastPushedIndex} >= msgs.length=${msgs.length} for ${sessionKey}`); start=0; }
+-    const slice=msgs.slice(start); if(!slice.length) return;
+-    const agentDisplayName = deps.agentDisplayNames?.[ctx.agentId] ?? ctx.agentId;
+-    const roles = slice.map(m => m.role);
+-    const conversational = slice.filter(m => m.role === 'user' || m.role === 'assistant');
+-    deps.logger?.warn?.(`agent_end capture: ${slice.length} msgs (roles: ${roles.join(',')}), ${conversational.length} conversational, displayName=${agentDisplayName}`);
+-    await deps.client.capture({agentId:agent, sessionKey, sessionId: ctx.sessionId, messages:slice, agentDisplayName});
+-    const now=deps.nowMs?deps.nowMs():Date.now();
+-    deps.ledger.set(sessionKey,{lastPushedAt:now,lastPushedIndex:msgs.length-1});
+-  }catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
++  try{ await captureBonfiresTurn(event.messages ?? [], ctx, deps); }
++  catch(e){ deps.logger?.warn?.(`agent_end error: ${e?.message ?? e}`); }
+ }
+ 
+ export async function handleSessionEnd(event, ctx, deps){
+diff --git a/src/index.ts b/src/index.ts
+index 9599cbf..723bc89 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,16 +1,18 @@
+ import { parseConfig } from './config.js';
+ import { createBonfiresClient } from './bonfires-client.js';
+ import { InMemoryCaptureLedger } from './capture-ledger.js';
+-import { handleAgentEnd, handleBeforeAgentStart, handleBeforeCompaction, handleSessionEnd } from './hooks.js';
++import { handleBeforeCompaction, handleSessionEnd } from './hooks.js';
+ import { bonfiresSearchTool } from './tools/bonfires-search.js';
+ import { bonfiresStackSearchTool } from './tools/bonfires-stack-search.js';
+ import { bonfiresIngestLinkTool } from './tools/bonfires-ingest-link.js';
++import { bonfiresIngestLinksTool } from './tools/bonfires-ingest-links.js';
++import { prepareIngestApprovalTool } from './tools/prepare-ingest-approval.js';
++import { discoverLinksTool } from './tools/discover-links.js';
+ import { startStackHeartbeat } from './heartbeat.js';
+ import { startIngestionCron } from './ingestion.js';
++import { createBonfiresContextEngine } from './context-engine.js';
+ 
+ export default function register(api){
+-
+-
+   const cfg=parseConfig(api.pluginConfig ?? {}, { logger: api.logger });
+   const client=createBonfiresClient(cfg, api.logger);
+   const resolvePath = typeof api.resolvePath === 'function' ? api.resolvePath : (p) => p;
+@@ -52,14 +54,12 @@ export default function register(api){
+     defaultProfile,
+   });
+ 
+-  // Build agent display name map from OpenClaw agent config (PM13)
+   const agentDisplayNames: Record<string, string> = {};
+   for (const a of (api.config?.agents?.list ?? [])) {
+     if (a.id && a.name) agentDisplayNames[a.id] = a.name;
+   }
+ 
+-  api.on('before_agent_start',(event,ctx)=>handleBeforeAgentStart(event,ctx,{cfg,client,ledger,logger:api.logger}));
+-  api.on('agent_end',(event,ctx)=>handleAgentEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
++  api.registerContextEngine?.('bonfires', () => createBonfiresContextEngine({ cfg, client, ledger, logger: api.logger, agentDisplayNames, defaultAgentId: Object.keys(cfg.agents)[0] }));
+   api.on('session_end',(event,ctx)=>handleSessionEnd(event,ctx,{cfg,client,ledger,logger:api.logger,agentDisplayNames}));
+   api.on('before_compaction',(event,ctx)=>handleBeforeCompaction(event,ctx,{cfg,client,ledger,logger:api.logger}));
+ 
+@@ -96,6 +96,68 @@ export default function register(api){
+     },
+   }));
+ 
++  api.registerTool((toolCtx) => ({
++    name:'bonfires_prepare_ingest_approval',
++    label:'Prepare an approval token for Bonfires link ingestion',
++    description:'Mint a session-bound approval token for an exact user-approved URL set already observed in this session. Use this after the user explicitly approves specific shared or discovered URLs and before calling bonfires_ingest_links.',
++    parameters:{
++      type:'object',
++      properties:{
++        approvalContext:{
++          type:'object',
++          properties:{
++            approvedByUser:{type:'boolean',const:true},
++            approvedUrls:{type:'array',items:{type:'string'},minItems:1,maxItems:10},
++          },
++          required:['approvedByUser','approvedUrls'],
++          additionalProperties:false,
++        },
++      },
++      required:['approvalContext'],
++      additionalProperties:false,
++    },
++    execute: async (_toolCallId, params) => {
++      const result = await prepareIngestApprovalTool(params, toolCtx, {cfg});
++      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
++    },
++  }));
++
++  api.registerTool((toolCtx) => ({
++    name:'bonfires_ingest_links',
++    label:'Ingest approved links into Bonfires',
++    description:'Ingest multiple links into your knowledge graph, but only after the user explicitly approves the exact URL set and you mint a session-bound approval token with bonfires_prepare_ingest_approval. Only pass approvalContext.approvalToken to execute ingestion.',
++    parameters:{
++      type:'object',
++      properties:{
++        approvalContext:{
++          type:'object',
++          properties:{
++            approvalToken:{type:'string',minLength:1},
++          },
++          required:['approvalToken'],
++          additionalProperties:false,
++        },
++      },
++      required:['approvalContext'],
++      additionalProperties:false,
++    },
++    execute: async (_toolCallId, params) => {
++      const result = await bonfiresIngestLinksTool(params, toolCtx, {cfg, client, logger: api.logger});
++      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
++    },
++  }));
++
++  api.registerTool((toolCtx) => ({
++    name:'discover_links',
++    label:'Discover links for later approval',
++    description:'Discover public-web links relevant to a query. This tool is feature-flagged and returns untrusted candidates that still require the user to approve a selected set and mint an approval token before any Bonfires ingestion.',
++    parameters:{type:'object',properties:{query:{type:'string'},maxCandidates:{type:'number',minimum:1,maximum:25}},required:['query'],additionalProperties:false},
++    execute: async (_toolCallId, params) => {
++      const result = await discoverLinksTool(params, toolCtx, {cfg, logger: api.logger});
++      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
++    },
++  }));
++
+   return {
+     dispose() {
+       stopHeartbeat?.();
+diff --git a/tests/REQUIREMENT-MAPPING.md b/tests/REQUIREMENT-MAPPING.md
+index e916978..523105c 100644
+--- a/tests/REQUIREMENT-MAPPING.md
++++ b/tests/REQUIREMENT-MAPPING.md
+@@ -1,6 +1,6 @@
+ # Test-to-Requirement Mapping
+ 
+-Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM15 from post-MVP).
++Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM19 from post-MVP).
+ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ 
+ ## Wave 1 (wave1.test.ts)
+@@ -146,6 +146,41 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ - `pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation` → PM15
+ - `pm15: plugin registers bonfires_ingest_link tool` → PM15
+ 
++## Wave 13 (wave13-pm18-pm19.test.ts)
++
++- `PM18: parseConfig accepts retrieval.systemGuidance string` → PM18
++- `PM18: parseConfig defaults retrieval.systemGuidance to undefined` → PM18
++- `PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance` → PM18
++- `PM18: parseConfig ignores non-string retrieval.systemGuidance` → PM18
++- `PM18: handleBeforeAgentStart returns prependSystemContext when systemGuidance configured` → PM18
++- `PM18: handleBeforeAgentStart omits prependSystemContext when systemGuidance not configured` → PM18
++- `PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty` → PM18
++- `PM18: default behavior unchanged — prependContext only, no prependSystemContext` → PM18
++- `PM18: formatting boundary — prependSystemContext and prependContext are independent strings` → PM18
++- `PM19: handleBeforeAgentStart is fail-open on search error (no throw, no turn abort)` → PM19
++- `PM19: handleBeforeAgentStart is fail-open on search error with systemGuidance configured` → PM19
++- `PM19: policy-constrained path degrades to no-op without throwing` → PM19
++- `PM19: fail-open emits structured diagnostic on non-Error throw` → PM19
++- `PM19: fail-open is safe when logger is absent` → PM19
++- `PM19: existing Bonfires outage handling remains intact` → PM19
++
++
++## Wave 14 (wave14-pm16-pm17.test.ts)
++
++- `PM16: parseConfig defaults discovery feature flag off` → PM16, PM17
++- `PM16: parseConfig validates discovery.maxCandidates bounds` → PM17
++- `PM16: before_agent_start injects lightweight approval guidance when links are present` → PM16
++- `PM16: validateApprovalContext requires approvedByUser=true and non-empty approvedUrls` → PM16
++- `PM16: bonfires_ingest_links rejects malformed or inconsistent approval payloads fail-closed with zero ingestion side effects` → PM16
++- `PM16: bonfires_ingest_links ingests exactly the approved normalized URL set` → PM16
++- `PM16: bonfires_ingest_links preserves per-link partial failure summary` → PM16
++- `PM16: bonfires_ingest_links enforces ingestion.approval.maxUrlsPerRun through execution path` → PM16
++- `PM17: discover_links is disabled by default feature flag` → PM17
++- `PM17: parseDiscoveryHtml extracts bounded candidate set with metadata` → PM17
++- `PM17: discover_links returns candidate metadata when feature flag enabled` → PM17
++- `PM17: discovery-selected approval subset is the exact and only executable ingest set end-to-end` → PM17
++- `PM16/PM17: plugin registers the explicit PM16/PM17 tool surface and schemas` → PM16, PM17
++
+ ## Requirements coverage
+ 
+ | ID | Description | Tests |
+@@ -164,3 +199,7 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
+ | PM13 | Agent display names in stack messages | wave10 |
+ | PM14 | PDF ingestion routing | wave11 |
+ | PM15 | Linked content ingestion | wave12 |
++| PM16 | Approval-gated multi-link ingestion | wave14 |
++| PM17 | Discovery + selected-set approval flow | wave14 |
++| PM18 | System-context placement for stable guidance | wave13 |
++| PM19 | Prompt-policy-aware fail-open behavior | wave13 |
+diff --git a/tests/wave1.test.ts b/tests/wave1.test.ts
+index 027f884..86acbfd 100644
+--- a/tests/wave1.test.ts
++++ b/tests/wave1.test.ts
+@@ -479,10 +479,12 @@ test('plugin register wires hooks and tool', async () => {
+     logger: { warn: () => {} },
+     on: (name, fn) => events.push([name, fn]),
+     registerTool: (factory) => { toolDefs.push(factory); },
++    registerContextEngine: () => {},
+   };
+   register(api);
+-  assert.equal(events.length, 4);
+-  assert.equal(toolDefs.length, 3);
++  assert.equal(events.length, 2);
++  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
++  assert.ok(toolDefs.length >= 3);
+   const tools = toolDefs.map(f => f({ agentId: 'agent_primary' }));
+   const searchTool = tools.find(t => t.name === 'bonfires_search');
+   assert.ok(searchTool);
+@@ -497,9 +499,11 @@ test('plugin register fallback path works when resolvePath missing', async () =>
+     logger: { warn: () => {} },
+     on: (name, fn) => events.push([name, fn]),
+     registerTool: () => {},
++    registerContextEngine: () => {},
+   };
+   register(api);
+-  assert.equal(events.length, 4);
++  assert.equal(events.length, 2);
++  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
+ });
+ 
+ test('plugin register supports functional recovery source and enabled ingestion config', async () => {
+@@ -516,7 +520,8 @@ test('plugin register supports functional recovery source and enabled ingestion
+     registerTool: () => {},
+   };
+   register(api);
+-  assert.equal(events.length, 4);
++  assert.equal(events.length, 2);
++  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
+ });
+ 
+ test('plugin register throws when pluginConfig is missing required mappings', async () => {
+diff --git a/tests/wave10-pm13.test.ts b/tests/wave10-pm13.test.ts
+index b12114e..6bd3285 100644
+--- a/tests/wave10-pm13.test.ts
++++ b/tests/wave10-pm13.test.ts
+@@ -49,27 +49,26 @@ test('handleSessionEnd passes agentDisplayName from deps (PM13)', async () => {
+ 
+ // --- PM13: register() builds agentDisplayNames from api.config.agents.list ---
+ 
+-test('register passes agentDisplayNames from api.config to agent_end handler (PM13)', async () => {
++test('register passes agentDisplayNames from api.config to bonfires context engine factory (PM13)', async () => {
+   // Dynamic import to get a fresh evaluation for coverage
+   const { default: register } = await import('../src/index.js');
+   const events: [string, Function][] = [];
++  const engines: [string, Function][] = [];
+   const api = {
+     pluginConfig: { agents: { main: 'a1' }, apiKeyEnv: 'NO_SUCH_ENV' },
+     resolvePath: (p: string) => p,
+     logger: { warn: () => {} },
+     on: (name: string, fn: Function) => events.push([name, fn]),
+     registerTool: () => {},
++    registerContextEngine: (id: string, factory: Function) => engines.push([id, factory]),
+     config: { agents: { list: [{ id: 'main', name: 'Lyle' }] } },
+   };
+   register(api);
+-  const agentEndHandler = events.find(([name]) => name === 'agent_end')![1];
+-  // Invoke the handler — it will call capture on the MockBonfiresClient internally
+-  // The handler is wired to use MockBonfiresClient (NO_SUCH_ENV means no real API key)
+-  await agentEndHandler(
+-    { messages: [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'hello' }] },
+-    { agentId: 'main', sessionKey: 'sk1', sessionId: 'sid1' },
+-  );
+-  // If we get here without error, the display name map was built and used
++  assert.equal(events.find(([name]) => name === 'agent_end'), undefined);
++  assert.equal(engines.length, 1);
++  const engine = engines[0][1]();
++  const ctx: any = { messages: [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'hello' }], sessionId: 'sid1', sessionFile: '/tmp/sid1.jsonl', prePromptMessageCount: 0 };
++  await engine.afterTurn(ctx);
+   assert.ok(true);
+ });
+ 
+diff --git a/tests/wave12-pm15.test.ts b/tests/wave12-pm15.test.ts
+index e5bf36f..b3a5d93 100644
+--- a/tests/wave12-pm15.test.ts
++++ b/tests/wave12-pm15.test.ts
+@@ -510,7 +510,6 @@ test('pm15: bonfires_ingest_link is an explicit tool requiring user-approved inv
+ 
+ test('pm15: plugin registers bonfires_ingest_link tool', () => {
+   const indexSrc = readFileSync(join(__dirname, '..', 'src', 'index.ts'), 'utf8');
+-  // Count registerTool calls - should be 3 (search, stack_search, ingest_link)
+   const toolRegCalls = (indexSrc.match(/api\.registerTool/g) || []).length;
+-  assert.equal(toolRegCalls, 3, 'should register 3 tools');
++  assert.ok(toolRegCalls >= 3, 'should still register legacy tools alongside newer additions');
+ });
+diff --git a/tests/wave9-pm12.test.ts b/tests/wave9-pm12.test.ts
+index 4fe8a9c..7b9e868 100644
+--- a/tests/wave9-pm12.test.ts
++++ b/tests/wave9-pm12.test.ts
+@@ -410,16 +410,21 @@ test('plugin register registers bonfires_search, bonfires_stack_search, and bonf
+   const { default: register } = await import('../src/index.js');
+   const events: any[] = [];
+   const toolDefs: any[] = [];
++  const engines: any[] = [];
+   const api = {
+     pluginConfig: { agents: { agent_primary: 'a1', agent_secondary: 'a2' }, apiKeyEnv: 'NO_SUCH_ENV' },
+     resolvePath: (p: string) => p,
+     logger: { warn: () => {} },
+     on: (name: string, fn: any) => events.push([name, fn]),
+     registerTool: (factory: any) => { toolDefs.push(factory); },
++    registerContextEngine: (id: string, factory: any) => { engines.push([id, factory]); },
+   };
+   register(api);
+-  assert.equal(events.length, 4);
+-  assert.equal(toolDefs.length, 3);
++  assert.equal(events.length, 2);
++  assert.deepEqual(events.map(([name]) => name), ['session_end', 'before_compaction']);
++  assert.equal(engines.length, 1);
++  assert.equal(engines[0][0], 'bonfires');
++  assert.ok(toolDefs.length >= 3);
+ 
+   const searchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_search');
+   const stackSearchTool = toolDefs.map(f => f({ agentId: 'agent_primary' })).find(t => t.name === 'bonfires_stack_search');

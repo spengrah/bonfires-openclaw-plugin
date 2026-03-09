@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-03-08T17:55:20.091Z",
+  "scanned": 508,
+  "ingested": 12,
+  "skipped": 473,
+  "errors": 23,
+  "errorDetails": [
+    {
+      "file": "lyle:vault/scaling-trust/application/sources/arxiv-2504.21848.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Axelrod_1984_full.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Baier_1986_v2.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Luhmann_1979.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 413"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/North_1990.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Werbach_2018.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Williamson_1993.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/scaling-trust/trust-zones/reference/secondary/originals/Zuboff_2019.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Axelrod_1984_full.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Baier_1986_v2.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Fukuyama_1995_v2.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Gambetta_1988.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Hardin_2002_Chapter1.pdf",
+      "error": "This operation was aborted"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Jones_1996.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Luhmann_1979.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/MayerDavisSchoorman_1995.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/McAllister_1995.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Nooteboom_2002_v2.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/North_1990.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Werbach_2018.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Williamson_1993.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Yamagishi_1994.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    },
+    {
+      "file": "lyle:vault/trust-zones/reference/secondary/originals/Zuboff_2019.pdf",
+      "error": "Bonfires /ingest_pdf failed: HTTP 503"
+    }
+  ],
+  "profiles": {
+    "lyle": {
+      "scanned": 508,
+      "ingested": 12,
+      "skipped": 473,
+      "errors": 23
+    }
+  }
+}

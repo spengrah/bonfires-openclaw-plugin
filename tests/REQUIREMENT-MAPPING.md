@@ -1,6 +1,6 @@
 # Test-to-Requirement Mapping
 
-Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM15 from post-MVP).
+Maps each test to its canonical requirement ID (R1–R6 from MVP, PM1–PM23 from post-MVP).
 See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 
 ## Wave 1 (wave1.test.ts)
@@ -146,6 +146,57 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 - `pm15: bonfires_ingest_link is an explicit tool requiring user-approved invocation` → PM15
 - `pm15: plugin registers bonfires_ingest_link tool` → PM15
 
+## Wave 13 (wave13-pm18-pm19.test.ts)
+
+- `PM18: parseConfig accepts retrieval.systemGuidance string` → PM18
+- `PM18: parseConfig defaults retrieval.systemGuidance to undefined` → PM18
+- `PM18: parseConfig ignores empty/whitespace retrieval.systemGuidance` → PM18
+- `PM18: parseConfig ignores non-string retrieval.systemGuidance` → PM18
+- `PM18: handleBeforeAgentStart returns prependSystemContext when systemGuidance configured` → PM18
+- `PM18: handleBeforeAgentStart omits prependSystemContext when systemGuidance not configured` → PM18
+- `PM18: handleBeforeAgentStart returns only prependSystemContext when search results empty` → PM18
+- `PM18: default behavior unchanged — prependContext only, no prependSystemContext` → PM18
+- `PM18: formatting boundary — prependSystemContext and prependContext are independent strings` → PM18
+- `PM19: handleBeforeAgentStart is fail-open on search error (no throw, no turn abort)` → PM19
+- `PM19: handleBeforeAgentStart is fail-open on search error with systemGuidance configured` → PM19
+- `PM19: policy-constrained path degrades to no-op without throwing` → PM19
+- `PM19: fail-open emits structured diagnostic on non-Error throw` → PM19
+- `PM19: fail-open is safe when logger is absent` → PM19
+- `PM19: existing Bonfires outage handling remains intact` → PM19
+
+
+## Wave 14 (wave14-pm16-pm17.test.ts)
+
+- `PM16: parseConfig defaults discovery feature flag off` → PM16, PM17
+- `PM16: parseConfig validates discovery.maxCandidates bounds` → PM17
+- `PM16: before_agent_start injects lightweight approval guidance when links are present` → PM16
+- `PM16: validateApprovalPreparationParams requires approvedByUser=true and non-empty approvedUrls` → PM16
+- `PM16: bonfires_prepare_ingest_approval fails closed for unobserved or oversized URL sets` → PM16
+- `PM16: bonfires_ingest_links rejects missing, invalid, expired, cross-session, and raw-list bypass payloads with zero ingestion side effects` → PM16
+- `PM16: bonfires_prepare_ingest_approval and bonfires_ingest_links resolve exact observed user-approved set end-to-end` → PM16
+- `PM16: bonfires_ingest_links preserves per-link partial failure summary after token resolution` → PM16
+- `PM17: discover_links is disabled by default feature flag` → PM17
+- `PM17: parseDiscoveryHtml extracts bounded candidate set with metadata` → PM17
+- `PM17: discover_links returns candidate metadata when feature flag enabled` → PM17
+- `PM17: discovery-selected approval subset is the exact and only executable ingest set end-to-end` → PM17
+- `PM16/PM17: plugin registers the explicit PM16/PM17 tool surface and schemas` → PM16, PM17
+
+## Wave 15 (wave15-pm20-pm23.test.ts)
+
+- `PM20: afterTurn captures only post-turn delta from prePromptMessageCount` → PM20
+- `PM20: afterTurn remains delta-safe across repeated turns in the same session` → PM20
+- `PM20: afterTurn defaults missing prePromptMessageCount to zero` → PM20
+- `PM20/PM21: afterTurn skips capture and warns when sessionId is missing` → PM20, PM21
+- `PM20/PM21: afterTurn skips capture when sessionId is empty string` → PM20, PM21
+- `PM21: afterTurn remains fail-open on capture error` → PM21
+- `PM22: assemble is default-off for dynamic retrieval but preserves stable system guidance` → PM22
+- `PM22: assemble preserves stable guidance for empty message input` → PM22
+- `PM22/PM23: assemble performs dynamic retrieval only when explicitly enabled` → PM22, PM23
+- `PM22/PM23: assemble also performs dynamic retrieval for raw user content` → PM22, PM23
+- `PM22/PM23: assemble warns but still returns stable guidance when sessionId missing and dynamic retrieval enabled` → PM22, PM23
+- `PM23: assemble is fail-open on retrieval failure` → PM23
+- `PM21/PM23: plugin register activates context engine and deactivates before_agent_start/agent_end hooks` → PM21, PM23
+
 ## Requirements coverage
 
 | ID | Description | Tests |
@@ -164,3 +215,11 @@ See `.ai/spec/spec/requirements-index.md` for the authoritative index.
 | PM13 | Agent display names in stack messages | wave10 |
 | PM14 | PDF ingestion routing | wave11 |
 | PM15 | Linked content ingestion | wave12 |
+| PM16 | Approval-gated multi-link ingestion | wave14 |
+| PM17 | Discovery + selected-set approval flow | wave14 |
+| PM18 | System-context placement for stable guidance | wave13 |
+| PM19 | Prompt-policy-aware fail-open behavior | wave13 |
+| PM20 | ContextEngine afterTurn() episodic memory writeback | wave15 |
+| PM21 | Writeback migration boundary / content-ingestion non-goal | wave15 |
+| PM22 | ContextEngine assemble() Bonfires retrieval integration | wave15 |
+| PM23 | Retrieval migration boundary / compatibility defaults | wave15 |

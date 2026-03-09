@@ -1,0 +1,27 @@
+{
+  "tz_id": "tz:reviewer:bonfires-plugin",
+  "project_slug": "bonfires-plugin",
+  "review_lens": "Correctness",
+  "delta": {
+    "git_diff": ".ai/log/review/delta-pm16-pm17-planning-c541802.patch",
+    "artifacts": [
+      ".ai/spec/spec/ingestion/approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/guidance/ingestion/guidance-for-approval-gated-link-ingestion-and-discovery.md",
+      ".ai/spec/spec/requirements-index.md",
+      ".ai/log/plan/wave-9-plan-1c-ab-20260308.md",
+      ".ai/log/plan/verification-matrix-wave-9-1c-ab-20260308.md",
+      ".ai/log/plan/review-support-wave-9-1c-ab-20260308.md"
+    ]
+  },
+  "focus_problems": [
+    "problem:bonfires-plugin:verify-pm16-approval-gated-multi-link-ingestion",
+    "problem:bonfires-plugin:verify-pm17-discovery-selected-set-approval",
+    "problem:bonfires-plugin:verify-spec-guidance-traceability-coherence"
+  ],
+  "notes": "Planning-only review for PM16/PM17. Evaluate logical correctness, invariant clarity, approval-scope correctness, feature-flag gating, and consistency between the PM16/PM17 spec, guidance, verification matrix, and review-support docs.",
+  "session_policy": {
+    "fresh_session_per_lens": true,
+    "sequence_index": 2,
+    "sequence_total": 2
+  }
+}
